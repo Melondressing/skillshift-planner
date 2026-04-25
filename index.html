@@ -17,12 +17,12 @@
   <header class="app-header">
     <div>
       <h1>SkillShift Planner</h1>
-      <p>파트 · 스테이션 · Level/Step 기반 근무표 & 인건비 관리</p>
+      <p id="headerSubtitle">파트 · 스테이션 · Level/Step 기반 근무표 & 인건비 관리</p>
     </div>
     <div class="header-actions">
       <button id="saveBtn" class="btn secondary">저장</button>
       <button id="exportBtn" class="btn secondary">JSON 내보내기</button>
-      <label class="btn secondary file-label">JSON 가져오기<input id="importFile" type="file" accept="application/json" /></label>
+      <label class="btn secondary file-label"><span id="importLabel">JSON 가져오기</span><input id="importFile" type="file" accept="application/json" /></label>
       <button id="resetBtn" class="btn danger">샘플 초기화</button>
     </div>
   </header>
@@ -38,6 +38,7 @@
     <section id="schedule" class="tab-panel"></section>
     <section id="labor" class="tab-panel"></section>
     <section id="validation" class="tab-panel"></section>
+    <section id="settings" class="tab-panel"></section>
     <section id="roadmap" class="tab-panel"></section>
   </main>
 
