@@ -95,7 +95,7 @@ const I18N = {
     },
     settings: {
       title: '설정',
-      subtitle: '언어 전환, 기본 표시값, 저장/복원 정책을 관리한다.',
+      subtitle: '언어 전환, 기본 표시값, 광고/피드백 링크, 저장/복원 정책을 관리한다.',
       languageLabel: '언어 전환',
       languageHelp: '앱의 주요 버튼과 섹션 제목을 한국어 또는 영어로 바꾼다. 저장된 데이터 이름은 그대로 유지된다.',
       laborTitle: '인건비 기준',
@@ -103,6 +103,20 @@ const I18N = {
       budgetHelp: '대시보드와 인건비 계산의 기준값이다.',
       ratioLabel: '목표 인건비율',
       ratioHelp: '매출 대비 인건비 비율을 계산할 때 사용한다.',
+      supportTitle: '광고 / 피드백',
+      supportSubtitle: '광고가 들어갈 자리와 사용자 문의 채널을 따로 분리해 둔다.',
+      adTitle: '광고 영역',
+      adHelp: 'AdSense, 배너, 제휴 링크처럼 외부 광고를 붙일 수 있는 고정 구역이다.',
+      adPlaceholder: '광고가 표시될 자리',
+      adNote: '실제 광고 코드는 나중에 이 구역에 연결하면 된다.',
+      feedbackTitle: '메일 / 피드백',
+      feedbackHelp: '사용자가 메일을 보내거나 피드백 폼으로 이동할 수 있는 링크를 관리한다.',
+      feedbackEmailLabel: '피드백 받을 메일',
+      feedbackUrlLabel: '피드백 링크',
+      feedbackEmailHelp: 'mailto: 링크로 연결된다.',
+      feedbackUrlHelp: 'Google Form, Typeform, 설문 링크 등을 넣을 수 있다.',
+      feedbackOpenEmail: '메일 보내기',
+      feedbackOpenLink: '피드백 링크 열기',
       current: '현재 언어',
       koreanLabel: '한국어',
       englishLabel: '영어',
@@ -372,7 +386,7 @@ const I18N = {
     },
     settings: {
       title: 'Settings',
-      subtitle: 'Manage language, default display values, and save/restore behavior.',
+      subtitle: 'Manage language, default display values, ad/feedback links, and save/restore behavior.',
       languageLabel: 'Language switch',
       languageHelp: 'Switch the main app buttons and section titles between Korean and English. Saved data names stay unchanged.',
       laborTitle: 'Labor settings',
@@ -380,6 +394,20 @@ const I18N = {
       budgetHelp: 'Used as the baseline for the dashboard and labor calculations.',
       ratioLabel: 'Target labor ratio',
       ratioHelp: 'Used when calculating labor cost as a share of sales.',
+      supportTitle: 'Ads / Feedback',
+      supportSubtitle: 'Keep ad space and contact channels separate from the core scheduler.',
+      adTitle: 'Ad space',
+      adHelp: 'A reserved slot for AdSense, banners, or sponsor links.',
+      adPlaceholder: 'Ad will appear here',
+      adNote: 'You can wire real ad code into this space later.',
+      feedbackTitle: 'Mail / Feedback',
+      feedbackHelp: 'Manage the email and form links users can use to reach you.',
+      feedbackEmailLabel: 'Feedback email',
+      feedbackUrlLabel: 'Feedback link',
+      feedbackEmailHelp: 'Turns into a mailto: link.',
+      feedbackUrlHelp: 'Paste a Google Form, Typeform, or survey link.',
+      feedbackOpenEmail: 'Send email',
+      feedbackOpenLink: 'Open feedback link',
       current: 'Current language',
       koreanLabel: 'Korean',
       englishLabel: 'English',
@@ -808,6 +836,8 @@ function createDefaultState() {
       targetLaborRatio: 28,
       currency: '$',
       weekLabel: 'Sample Week',
+      feedbackEmail: '',
+      feedbackUrl: '',
     },
     parts,
     stations,
@@ -876,6 +906,16 @@ function dayLabel(key) { return DAYS.find((d) => d.key === key)?.[currentLanguag
 function dayShort(key) { return DAYS.find((d) => d.key === key)?.[currentLanguage()]?.short || key; }
 function money(value) { return `${state.settings.currency}${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`; }
 function num(value, fallback = 0) { const n = Number(value); return Number.isFinite(n) ? n : fallback; }
+function normalizeExternalUrl(value) {
+  const raw = String(value ?? '').trim();
+  if (!raw) return '';
+  if (/^(https?:|mailto:|tel:)/i.test(raw)) return raw;
+  return `https://${raw}`;
+}
+function mailtoLink(email) {
+  const raw = String(email ?? '').trim();
+  return raw ? `mailto:${encodeURIComponent(raw)}` : '';
+}
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -2278,6 +2318,9 @@ function renderRoadmap() {
 function renderSettings() {
   const el = document.getElementById('settings');
   const lang = currentLanguage();
+  const feedbackEmail = String(state.settings.feedbackEmail || '').trim();
+  const feedbackUrl = normalizeExternalUrl(state.settings.feedbackUrl);
+  const feedbackEmailHref = mailtoLink(feedbackEmail);
   el.innerHTML = `
     <div class="section-head">
       <div>
@@ -2311,6 +2354,44 @@ function renderSettings() {
           </label>
         </div>
         <p class="small-text">${t('settings.ratioHelp')}</p>
+      </div>
+    </div>
+    <div class="section-head" style="margin-top: 24px;">
+      <div>
+        <h2>${t('settings.supportTitle')}</h2>
+        <p>${t('settings.supportSubtitle')}</p>
+      </div>
+    </div>
+    <div class="grid two">
+      <div class="card">
+        <h3>${t('settings.adTitle')}</h3>
+        <p class="small-text">${t('settings.adHelp')}</p>
+        <div class="ad-slot">
+          <div>
+            <strong>${t('settings.adPlaceholder')}</strong>
+            <p class="small-text" style="margin: 8px 0 0;">${t('settings.adNote')}</p>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>${t('settings.feedbackTitle')}</h3>
+        <p class="small-text">${t('settings.feedbackHelp')}</p>
+        <div class="form-row compact" style="grid-template-columns: 1fr; margin-top: 8px;">
+          <label class="small-text" style="display:grid; gap:6px;">
+            ${t('settings.feedbackEmailLabel')}
+            <input type="email" placeholder="you@example.com" value="${escapeHtml(state.settings.feedbackEmail || '')}" data-setting="feedbackEmail" />
+            <span class="small-text">${t('settings.feedbackEmailHelp')}</span>
+          </label>
+          <label class="small-text" style="display:grid; gap:6px;">
+            ${t('settings.feedbackUrlLabel')}
+            <input type="url" placeholder="https://..." value="${escapeHtml(state.settings.feedbackUrl || '')}" data-setting="feedbackUrl" />
+            <span class="small-text">${t('settings.feedbackUrlHelp')}</span>
+          </label>
+        </div>
+        <div class="inline-actions" style="margin-top: 12px;">
+          ${feedbackEmailHref ? `<a class="btn" href="${escapeHtml(feedbackEmailHref)}">${t('settings.feedbackOpenEmail')}</a>` : `<button class="btn" type="button" disabled>${t('settings.feedbackOpenEmail')}</button>`}
+          ${feedbackUrl ? `<a class="btn secondary" href="${escapeHtml(feedbackUrl)}" target="_blank" rel="noopener noreferrer">${t('settings.feedbackOpenLink')}</a>` : `<button class="btn secondary" type="button" disabled>${t('settings.feedbackOpenLink')}</button>`}
+        </div>
       </div>
     </div>
   `;
@@ -2366,7 +2447,11 @@ function handleChange(e) {
       setLanguage(el.value);
       return;
     }
-    state.settings[el.dataset.setting] = num(el.value);
+    if (el.type === 'number' || el.dataset.settingType === 'number') {
+      state.settings[el.dataset.setting] = num(el.value);
+    } else {
+      state.settings[el.dataset.setting] = el.value;
+    }
     saveState(false);
     render();
     return;
