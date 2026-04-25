@@ -1,14 +1,15 @@
-# SkillShift Planner v14
+# SkillShift Planner v15
 
-Lightweight roster planner for small teams.
+Cross-platform roster planner for small teams.
 
-This version is set up as a PWA-ready web app:
+This repository now has two layers:
 
-- opens in desktop browsers on MacBook,
-- works on iPad, iPhone, and Android browsers,
-- can be installed to the home screen on supported devices,
-- keeps data in `localStorage`,
-- caches core files for offline reuse after the first load.
+- the root web app is a PWA-ready planner that runs in browsers on MacBook, iPad, iPhone, and Android,
+- `mobile/` is an Expo scaffold for a native-style iOS/Android app and Expo Web.
+
+The live web app is here:
+
+- [GitHub Pages](https://melondressing.github.io/skillshift-planner/)
 
 ## Main updates in v9
 
@@ -21,11 +22,14 @@ This version is set up as a PWA-ready web app:
   - unassigned work keeps the station name and leaves the employee name blank,
   - each actual Part prints on its own A4 landscape page.
 
-## Files
+## Web App
 
 - `index.html`
 - `styles.css`
 - `app.js`
+- `manifest.webmanifest`
+- `sw.js`
+- `icon.svg`
 
 ## Run locally
 
@@ -46,6 +50,18 @@ Then open `http://localhost:8000` in your browser.
 
 You can upload the folder as a static site to Netlify, Vercel, GitHub Pages, or any static host.
 
+## Mobile App
+
+The Expo starter lives in `mobile/`.
+
+```bash
+cd mobile
+npm install
+npm run web
+```
+
+You can also run `npm run ios` or `npm run android` from inside `mobile/` once the Expo toolchain is installed.
+
 If you want the next step after this, the natural upgrade is to port the same data model into `Expo + React Native` so the same app can later become a native iOS/Android app.
 
 ## v12 update
@@ -53,3 +69,6 @@ Members 화면에서 직원별 Skill 추가/갱신 UI를 분리했습니다. 이
 
 ## v14 update
 PWA 설정을 추가해서 브라우저에서 바로 열 수 있고, 지원되는 기기에서는 홈 화면 설치도 가능하게 정리했습니다.
+
+## v15 update
+Expo 기반 `mobile/` 앱 뼈대와 웹/모바일 공용 샘플 상태 추출 스크립트를 추가했습니다.
