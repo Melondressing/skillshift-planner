@@ -48,6 +48,10 @@ You can upload the folder as a static site to Netlify, Vercel, GitHub Pages, or 
 
 If you want the next step after this, the natural upgrade is to port the same data model into `Expo + React Native` so the same app can later become a native iOS/Android app.
 
+## Live Site
+
+- GitHub Pages: https://melondressing.github.io/skillshift-planner/
+
 ## v12 update
 Members 화면에서 직원별 Skill 추가/갱신 UI를 분리했습니다. 이제 Skill을 먼저 선택하고, 해당 Skill 안에 정의된 Level과 Step을 각각 선택해서 직원에게 추가할 수 있습니다. 기존처럼 추가된 Skill은 badge와 제거 버튼으로 유지됩니다.
 
