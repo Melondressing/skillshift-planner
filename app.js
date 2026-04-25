@@ -1,0 +1,2093 @@
+const STORE_KEY = 'skillshift_planner_v13';
+
+const DAYS = [
+  { key: 'monday', label: '월요일', short: '월' },
+  { key: 'tuesday', label: '화요일', short: '화' },
+  { key: 'wednesday', label: '수요일', short: '수' },
+  { key: 'thursday', label: '목요일', short: '목' },
+  { key: 'friday', label: '금요일', short: '금' },
+  { key: 'saturday', label: '토요일', short: '토' },
+  { key: 'sunday', label: '일요일', short: '일' },
+];
+
+const TABS = [
+  { id: 'dashboard', label: 'Dashboard' },
+  { id: 'parts', label: 'Parts / Stations' },
+  { id: 'skills', label: 'Skills' },
+  { id: 'members', label: 'Members' },
+  { id: 'requirements', label: 'Requirements' },
+  { id: 'schedule', label: 'Schedule Board' },
+  { id: 'labor', label: 'Labor Cost' },
+  { id: 'validation', label: 'Validation' },
+  { id: 'roadmap', label: 'Roadmap' },
+];
+
+let state = loadState();
+let activeTab = 'dashboard';
+let selectedSkillId = state.skills[0]?.id || '';
+let scheduleView = 'sheet';
+let selectedScheduleDay = 'monday';
+let selectedRequirementDay = 'monday';
+let selectedMemberPart = 'all';
+let recommendationContext = null;
+let replacementContext = null;
+
+function uid(prefix = 'id') {
+  return `${prefix}_${Math.random().toString(36).slice(2, 9)}_${Date.now().toString(36)}`;
+}
+
+function defaultAvailability(start = '10:00', end = '22:00', weekdaysOnly = false) {
+  return DAYS.reduce((acc, day) => {
+    const isWeekend = day.key === 'saturday' || day.key === 'sunday';
+    acc[day.key] = {
+      available: weekdaysOnly ? !isWeekend : true,
+      startTime: start,
+      endTime: end,
+    };
+    return acc;
+  }, {});
+}
+
+function createDefaultState() {
+  const parts = [
+    { id: 'part_kitchen', name: 'Kitchen', description: '주방 파트', color: '#ef4444', sortOrder: 1, active: true },
+    { id: 'part_hall', name: 'Hall', description: '홀 파트', color: '#3b82f6', sortOrder: 2, active: true },
+    { id: 'part_barista', name: 'Barista', description: '커피/음료 파트', color: '#8b5cf6', sortOrder: 3, active: true },
+    { id: 'part_manager', name: 'Manager', description: '관리자/리더 파트', color: '#111827', sortOrder: 4, active: true },
+    { id: 'part_other', name: 'Other', description: '기타', color: '#64748b', sortOrder: 99, active: true },
+  ];
+
+  const stations = [
+    { id: 'st_hot', partId: 'part_kitchen', name: 'Hot', description: '핫 섹션', requiredSkillIds: ['sk_hot'], sortOrder: 1, active: true },
+    { id: 'st_fry', partId: 'part_kitchen', name: 'Fry', description: '프라이 섹션', requiredSkillIds: ['sk_fry'], sortOrder: 2, active: true },
+    { id: 'st_cold', partId: 'part_kitchen', name: 'Cold', description: '콜드 섹션', requiredSkillIds: ['sk_cold'], sortOrder: 3, active: true },
+    { id: 'st_pass', partId: 'part_kitchen', name: 'Pass', description: '패스/퀄리티 컨트롤', requiredSkillIds: ['sk_pass'], sortOrder: 4, active: true },
+    { id: 'st_prep', partId: 'part_kitchen', name: 'Prep', description: '준비/미장', requiredSkillIds: ['sk_prep'], sortOrder: 5, active: true },
+    { id: 'st_dish', partId: 'part_kitchen', name: 'Dish', description: '디시/세척', requiredSkillIds: ['sk_dish'], sortOrder: 6, active: true },
+    { id: 'st_floor', partId: 'part_hall', name: 'Floor', description: '홀 플로어', requiredSkillIds: ['sk_floor'], sortOrder: 1, active: true },
+    { id: 'st_cashier', partId: 'part_hall', name: 'Cashier', description: '포스/캐셔', requiredSkillIds: ['sk_cashier'], sortOrder: 2, active: true },
+    { id: 'st_runner', partId: 'part_hall', name: 'Runner', description: '러너', requiredSkillIds: ['sk_runner'], sortOrder: 3, active: true },
+    { id: 'st_barista', partId: 'part_barista', name: 'Coffee', description: '커피/음료 제조', requiredSkillIds: ['sk_barista'], sortOrder: 1, active: true },
+    { id: 'st_leader', partId: 'part_manager', name: 'Leader', description: '리더/운영 판단', requiredSkillIds: ['sk_leader'], sortOrder: 1, active: true },
+    { id: 'st_close', partId: 'part_manager', name: 'Closing', description: '마감/정산', requiredSkillIds: ['sk_closing'], sortOrder: 2, active: true },
+  ];
+
+  const skills = [
+    { id: 'sk_hot', name: 'Hot section', partId: 'part_kitchen', stationId: 'st_hot', category: 'Kitchen', description: '핫 섹션 조리 가능', isCritical: true, usesLevelStep: true, active: true },
+    { id: 'sk_fry', name: 'Fry section', partId: 'part_kitchen', stationId: 'st_fry', category: 'Kitchen', description: '프라이 섹션 가능', isCritical: true, usesLevelStep: true, active: true },
+    { id: 'sk_cold', name: 'Cold section', partId: 'part_kitchen', stationId: 'st_cold', category: 'Kitchen', description: '콜드 섹션 가능', isCritical: false, usesLevelStep: true, active: true },
+    { id: 'sk_pass', name: 'Pass control', partId: 'part_kitchen', stationId: 'st_pass', category: 'Kitchen', description: '패스/품질/타이밍 관리', isCritical: true, usesLevelStep: true, active: true },
+    { id: 'sk_prep', name: 'Prep', partId: 'part_kitchen', stationId: 'st_prep', category: 'Kitchen', description: '프렙/미장 가능', isCritical: false, usesLevelStep: true, active: true },
+    { id: 'sk_dish', name: 'Dish', partId: 'part_kitchen', stationId: 'st_dish', category: 'Kitchen', description: '디시/세척 가능', isCritical: false, usesLevelStep: true, active: true },
+    { id: 'sk_floor', name: 'Floor service', partId: 'part_hall', stationId: 'st_floor', category: 'Hall', description: '홀 플로어 가능', isCritical: true, usesLevelStep: true, active: true },
+    { id: 'sk_cashier', name: 'Cashier', partId: 'part_hall', stationId: 'st_cashier', category: 'Hall', description: '포스/캐셔 가능', isCritical: true, usesLevelStep: true, active: true },
+    { id: 'sk_runner', name: 'Runner', partId: 'part_hall', stationId: 'st_runner', category: 'Hall', description: '러너 가능', isCritical: false, usesLevelStep: true, active: true },
+    { id: 'sk_barista', name: 'Barista', partId: 'part_barista', stationId: 'st_barista', category: 'Barista', description: '커피/음료 제조', isCritical: true, usesLevelStep: true, active: true },
+    { id: 'sk_leader', name: 'Leader', partId: 'part_manager', stationId: 'st_leader', category: 'Manager', description: '리더/현장 판단 가능', isCritical: true, usesLevelStep: true, active: true },
+    { id: 'sk_closing', name: 'Closing', partId: 'part_manager', stationId: 'st_close', category: 'Manager', description: '마감/정산 가능', isCritical: true, usesLevelStep: true, active: true },
+  ];
+
+  const levelTemplates = [];
+  skills.forEach((skill) => {
+    const base = [
+      [1, 'Level 1', 1, 'Step 1', '기본 개념을 배우는 단계', '기본 보조 업무', '단독 업무와 피크타임 대응', false, false, true],
+      [1, 'Level 1', 2, 'Step 2', '반복 업무와 기본 흐름을 일부 수행할 수 있는 단계', '간단한 반복 업무', '조리/응대 상태 최종 판단', false, false, true],
+      [1, 'Level 1', 3, 'Step 3', '대부분의 흐름을 알고 몇 가지 확인을 통해 업무 가능', '일반 시간대 보조 및 일부 단독 업무', '피크타임 단독 업무', false, false, true],
+      [1, 'Level 1', 4, 'Step 4', 'Level 2 직전 단계. 약간의 어시스트를 제외하면 대부분 수행 가능', '일반 시간대 주요 업무', '복잡한 피크타임 판단', false, false, false],
+      [2, 'Level 2', 1, 'Step 1', '일반 시간대 단독 업무가 가능한 단계', '일반 운영', '고강도 피크타임 전체 통제', true, false, false],
+      [2, 'Level 2', 2, 'Step 2', '일반 업무와 일부 피크타임 대응이 가능한 단계', '일반 운영과 일부 피크 대응', '리더 역할', true, true, false],
+      [3, 'Level 3', 1, 'Step 1', '피크타임 핵심 업무가 가능한 단계', '피크타임 핵심 업무', '신입 교육과 전체 운영 판단', true, true, false],
+      [4, 'Level 4', 1, 'Step 1', '리더와 교육 담당이 가능한 단계', '리더/트레이닝/문제 해결', '상위 관리 업무', true, true, false],
+    ];
+    base.forEach(([levelNumber, levelName, stepNumber, stepName, description, canDo, cannotDoYet, canWorkAlone, canWorkPeakTime, needsSupervisor], index) => {
+      levelTemplates.push({
+        id: `lvl_${skill.id}_${levelNumber}_${stepNumber}`,
+        skillId: skill.id,
+        levelNumber,
+        levelName,
+        stepNumber,
+        stepName,
+        description,
+        canDo,
+        cannotDoYet,
+        canWorkAlone,
+        canWorkPeakTime,
+        needsSupervisor,
+        allowedStations: [skill.stationId].filter(Boolean),
+        nextPromotionCriteria: '운영자가 직접 승급 조건을 작성하세요.',
+        sortOrder: index + 1,
+      });
+    });
+  });
+
+  const employees = [
+    {
+      id: 'emp_alex', name: 'Alex', partId: 'part_kitchen', role: 'Kitchen Staff', employmentType: 'Casual', baseRate: 30,
+      saturdayMultiplier: 1.25, sundayMultiplier: 1.5, publicHolidayMultiplier: 2.25, maxWeeklyHours: 38, preferredWeeklyHours: 32,
+      availability: defaultAvailability('10:00', '22:00'), active: true, notes: '', assignedSkills: {
+        sk_hot: { level: 2, step: 2, note: '' }, sk_fry: { level: 3, step: 1, note: '' }, sk_closing: { level: 2, step: 1, note: '' }, sk_prep: { level: 2, step: 1, note: '' }
+      }
+    },
+    {
+      id: 'emp_jay', name: 'Jay', partId: 'part_kitchen', role: 'Kitchen Assistant', employmentType: 'Part-time', baseRate: 26,
+      saturdayMultiplier: 1.25, sundayMultiplier: 1.5, publicHolidayMultiplier: 2.25, maxWeeklyHours: 30, preferredWeeklyHours: 24,
+      availability: defaultAvailability('09:00', '21:00'), active: true, notes: '', assignedSkills: {
+        sk_prep: { level: 2, step: 1, note: '' }, sk_fry: { level: 1, step: 4, note: '' }, sk_dish: { level: 3, step: 1, note: '' }
+      }
+    },
+    {
+      id: 'emp_mina', name: 'Mina', partId: 'part_hall', role: 'Hall Staff', employmentType: 'Casual', baseRate: 28,
+      saturdayMultiplier: 1.25, sundayMultiplier: 1.5, publicHolidayMultiplier: 2.25, maxWeeklyHours: 35, preferredWeeklyHours: 28,
+      availability: defaultAvailability('10:00', '22:00'), active: true, notes: '', assignedSkills: {
+        sk_floor: { level: 2, step: 2, note: '' }, sk_cashier: { level: 1, step: 4, note: '' }, sk_runner: { level: 2, step: 1, note: '' }
+      }
+    },
+    {
+      id: 'emp_sara', name: 'Sara', partId: 'part_hall', role: 'Senior Hall Staff', employmentType: 'Casual', baseRate: 29,
+      saturdayMultiplier: 1.25, sundayMultiplier: 1.5, publicHolidayMultiplier: 2.25, maxWeeklyHours: 38, preferredWeeklyHours: 30,
+      availability: defaultAvailability('10:00', '23:00'), active: true, notes: '', assignedSkills: {
+        sk_floor: { level: 3, step: 1, note: '' }, sk_cashier: { level: 2, step: 2, note: '' }, sk_runner: { level: 2, step: 2, note: '' }
+      }
+    },
+    {
+      id: 'emp_james', name: 'James', partId: 'part_manager', role: 'Shift Manager', employmentType: 'Full-time', baseRate: 35,
+      saturdayMultiplier: 1.25, sundayMultiplier: 1.5, publicHolidayMultiplier: 2.25, maxWeeklyHours: 40, preferredWeeklyHours: 38,
+      availability: defaultAvailability('09:00', '22:30'), active: true, notes: '', assignedSkills: {
+        sk_pass: { level: 3, step: 1, note: '' }, sk_closing: { level: 4, step: 1, note: '' }, sk_cashier: { level: 3, step: 1, note: '' }, sk_leader: { level: 3, step: 1, note: '' }
+      }
+    },
+    {
+      id: 'emp_emma', name: 'Emma', partId: 'part_manager', role: 'Operations Lead', employmentType: 'Full-time', baseRate: 36,
+      saturdayMultiplier: 1.25, sundayMultiplier: 1.5, publicHolidayMultiplier: 2.25, maxWeeklyHours: 40, preferredWeeklyHours: 36,
+      availability: defaultAvailability('09:00', '22:30'), active: true, notes: '', assignedSkills: {
+        sk_leader: { level: 4, step: 1, note: '' }, sk_closing: { level: 3, step: 1, note: '' }, sk_floor: { level: 3, step: 1, note: '' }, sk_cashier: { level: 3, step: 1, note: '' }
+      }
+    },
+  ];
+
+  const requirements = [];
+  DAYS.forEach((day) => {
+    const slots = [
+      { label: 'Opening', startTime: '09:00', endTime: '10:00', isPeak: false, reqs: [['part_manager', 'st_leader', 'sk_leader', 1, 2, 1], ['part_kitchen', 'st_prep', 'sk_prep', 1, 1, 3]] },
+      { label: 'Normal Service', startTime: '10:00', endTime: '12:00', isPeak: false, reqs: [['part_kitchen', 'st_hot', 'sk_hot', 1, 1, 4], ['part_hall', 'st_floor', 'sk_floor', 1, 1, 3], ['part_hall', 'st_cashier', 'sk_cashier', 1, 1, 3]] },
+      { label: 'Lunch Peak', startTime: '12:00', endTime: '14:30', isPeak: true, reqs: [['part_kitchen', 'st_hot', 'sk_hot', 1, 2, 1], ['part_kitchen', 'st_fry', 'sk_fry', 1, 1, 4], ['part_hall', 'st_floor', 'sk_floor', 2, 1, 3], ['part_hall', 'st_cashier', 'sk_cashier', 1, 2, 1]] },
+      { label: 'Low Service', startTime: '14:30', endTime: '17:00', isPeak: false, reqs: [['part_kitchen', 'st_prep', 'sk_prep', 1, 1, 3], ['part_hall', 'st_floor', 'sk_floor', 1, 1, 3]] },
+      { label: 'Dinner Peak', startTime: '17:00', endTime: '20:30', isPeak: true, reqs: [['part_kitchen', 'st_hot', 'sk_hot', 1, 2, 1], ['part_kitchen', 'st_fry', 'sk_fry', 1, 2, 1], ['part_kitchen', 'st_pass', 'sk_pass', 1, 3, 1], ['part_hall', 'st_floor', 'sk_floor', 2, 2, 1], ['part_hall', 'st_cashier', 'sk_cashier', 1, 2, 1], ['part_manager', 'st_leader', 'sk_leader', 1, 3, 1]] },
+      { label: 'Closing', startTime: '20:30', endTime: '22:00', isPeak: false, reqs: [['part_manager', 'st_close', 'sk_closing', 1, 2, 1], ['part_kitchen', 'st_dish', 'sk_dish', 1, 1, 3], ['part_hall', 'st_floor', 'sk_floor', 1, 1, 4]] },
+    ];
+    slots.forEach((slot, index) => {
+      requirements.push({
+        id: `req_${day.key}_${index}`,
+        dayOfWeek: day.key,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        label: slot.label,
+        minTotalStaff: slot.reqs.reduce((sum, req) => sum + req[3], 0),
+        recommendedTotalStaff: slot.reqs.reduce((sum, req) => sum + req[3], 0),
+        isPeak: slot.isPeak,
+        needsHandover: false,
+        handoverMinutes: 0,
+        notes: '',
+        stationRequirements: slot.reqs.flatMap(([partId, stationId, requiredSkillId, requiredCount, minLevel, minStep], idx) =>
+          Array.from({ length: requiredCount }, (_, seatIdx) => ({
+            id: `sreq_${day.key}_${index}_${idx}_${seatIdx}`,
+            partId,
+            stationId,
+            requiredCount: 1,
+            requiredSkillId,
+            minLevel,
+            minStep,
+            needsLeader: stationId === 'st_leader',
+            canUseLowerStepAsEmergency: true,
+          }))
+        ),
+      });
+    });
+  });
+
+  return {
+    appVersion: 1,
+    settings: {
+      laborBudget: 4000,
+      targetLaborRatio: 28,
+      currency: '$',
+      weekLabel: 'Sample Week',
+    },
+    parts,
+    stations,
+    skills,
+    levelTemplates,
+    employees,
+    requirements,
+    schedule: {},
+  };
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return createDefaultState();
+    const parsed = JSON.parse(raw);
+    return { ...createDefaultState(), ...parsed };
+  } catch (err) {
+    console.error(err);
+    return createDefaultState();
+  }
+}
+
+function saveState(show = true) {
+  localStorage.setItem(STORE_KEY, JSON.stringify(state));
+  if (show) toast('저장됨');
+}
+
+function resetState() {
+  if (!confirm('모든 데이터를 샘플 데이터로 초기화할까요? 현재 데이터는 삭제됩니다.')) return;
+  state = createDefaultState();
+  selectedSkillId = state.skills[0]?.id || '';
+  recommendationContext = null;
+  replacementContext = null;
+  saveState(false);
+  render();
+  toast('샘플 데이터로 초기화됨');
+}
+
+function toast(message) {
+  const el = document.getElementById('toast');
+  el.textContent = message;
+  el.classList.add('show');
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => el.classList.remove('show'), 1600);
+}
+
+function byId(list, id) { return list.find((item) => item.id === id); }
+function partName(id) { return byId(state.parts, id)?.name || 'Unknown Part'; }
+function stationName(id) { return byId(state.stations, id)?.name || 'Unknown Station'; }
+function skillName(id) { return byId(state.skills, id)?.name || 'Unknown Skill'; }
+function employeeName(id) { return byId(state.employees, id)?.name || 'Unassigned'; }
+function dayLabel(key) { return DAYS.find((d) => d.key === key)?.label || key; }
+function money(value) { return `${state.settings.currency}${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`; }
+function num(value, fallback = 0) { const n = Number(value); return Number.isFinite(n) ? n : fallback; }
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+function toMinutes(time) {
+  if (!time || !time.includes(':')) return 0;
+  const [h, m] = time.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function durationHours(start, end) {
+  return Math.max(0, (toMinutes(end) - toMinutes(start)) / 60);
+}
+
+function getRate(employee, dayKey) {
+  const base = num(employee.baseRate);
+  if (dayKey === 'saturday') return base * num(employee.saturdayMultiplier, 1);
+  if (dayKey === 'sunday') return base * num(employee.sundayMultiplier, 1);
+  return base;
+}
+
+function assignmentKey(reqId, stationReqId, slotIndex) {
+  return `${reqId}__${stationReqId}__${slotIndex}`;
+}
+
+function parseAssignmentKey(key) {
+  const [reqId, stationReqId, slotIndex] = key.split('__');
+  return { reqId, stationReqId, slotIndex: Number(slotIndex) };
+}
+
+function getAssignments() {
+  return Object.entries(state.schedule)
+    .filter(([, employeeId]) => employeeId)
+    .map(([key, employeeId]) => ({ key, employeeId, ...parseAssignmentKey(key) }));
+}
+
+function getReqById(reqId) { return state.requirements.find((req) => req.id === reqId); }
+function getStationReq(reqId, stationReqId) { return getReqById(reqId)?.stationRequirements.find((s) => s.id === stationReqId); }
+function getRequiredSkillId(stationReq) {
+  if (stationReq?.requiredSkillId) return stationReq.requiredSkillId;
+  const station = byId(state.stations, stationReq?.stationId);
+  if (station?.requiredSkillIds?.length) return station.requiredSkillIds[0];
+  return state.skills.find((skill) => skill.stationId === stationReq?.stationId)?.id || '';
+}
+function requiredSkillName(stationReq) {
+  const skillId = getRequiredSkillId(stationReq);
+  return skillId ? skillName(skillId) : 'Station linked skill 없음';
+}
+function getRequirementSeatRows() {
+  const dayOrder = Object.fromEntries(DAYS.map((d, i) => [d.key, i]));
+  const rows = [];
+  state.requirements.forEach((req) => {
+    (req.stationRequirements || []).forEach((sreq) => {
+      const count = Math.max(1, Number(sreq.requiredCount || 1));
+      for (let slotIndex = 0; slotIndex < count; slotIndex += 1) {
+        rows.push({ req, sreq, slotIndex, key: assignmentKey(req.id, sreq.id, slotIndex) });
+      }
+    });
+  });
+  return rows.sort((a, b) =>
+    (dayOrder[a.req.dayOfWeek] - dayOrder[b.req.dayOfWeek]) ||
+    (toMinutes(a.req.startTime) - toMinutes(b.req.startTime)) ||
+    partName(a.sreq.partId).localeCompare(partName(b.sreq.partId)) ||
+    stationName(a.sreq.stationId).localeCompare(stationName(b.sreq.stationId)) ||
+    a.slotIndex - b.slotIndex
+  );
+}
+
+function employeeWeeklyHours(employeeId) {
+  return getAssignments().reduce((total, assignment) => {
+    if (assignment.employeeId !== employeeId) return total;
+    const req = getReqById(assignment.reqId);
+    if (!req) return total;
+    return total + durationHours(req.startTime, req.endTime);
+  }, 0);
+}
+
+function employeeWeeklyCost(employeeId) {
+  const employee = byId(state.employees, employeeId);
+  if (!employee) return 0;
+  return getAssignments().reduce((total, assignment) => {
+    if (assignment.employeeId !== employeeId) return total;
+    const req = getReqById(assignment.reqId);
+    if (!req) return total;
+    return total + durationHours(req.startTime, req.endTime) * getRate(employee, req.dayOfWeek);
+  }, 0);
+}
+
+function employeeWorkBreakdown(employeeId) {
+  const employee = byId(state.employees, employeeId);
+  const empty = {
+    weekdayHours: 0,
+    saturdayHours: 0,
+    sundayHours: 0,
+    weekdayCost: 0,
+    saturdayCost: 0,
+    sundayCost: 0,
+    totalHours: 0,
+    totalCost: 0,
+  };
+  if (!employee) return empty;
+  return getAssignments().reduce((acc, assignment) => {
+    if (assignment.employeeId !== employeeId) return acc;
+    const req = getReqById(assignment.reqId);
+    if (!req) return acc;
+    const hours = durationHours(req.startTime, req.endTime);
+    const cost = hours * getRate(employee, req.dayOfWeek);
+    if (req.dayOfWeek === 'saturday') {
+      acc.saturdayHours += hours;
+      acc.saturdayCost += cost;
+    } else if (req.dayOfWeek === 'sunday') {
+      acc.sundayHours += hours;
+      acc.sundayCost += cost;
+    } else {
+      acc.weekdayHours += hours;
+      acc.weekdayCost += cost;
+    }
+    acc.totalHours += hours;
+    acc.totalCost += cost;
+    return acc;
+  }, { ...empty });
+}
+
+function totalLaborCost() {
+  return state.employees.reduce((total, emp) => total + employeeWeeklyCost(emp.id), 0);
+}
+
+function isEmployeeAvailable(employee, req) {
+  const av = employee.availability?.[req.dayOfWeek];
+  if (!av || !av.available) return { status: 'bad', reason: `${dayLabel(req.dayOfWeek)} 근무 불가능` };
+  const reqStart = toMinutes(req.startTime);
+  const reqEnd = toMinutes(req.endTime);
+  const avStart = toMinutes(av.startTime);
+  const avEnd = toMinutes(av.endTime);
+  if (avStart <= reqStart && avEnd >= reqEnd) return { status: 'ok', reason: `${av.startTime}–${av.endTime} 가능` };
+  if (avEnd > reqStart && avStart < reqEnd) return { status: 'partial', reason: `부분 가능: ${av.startTime}–${av.endTime}` };
+  return { status: 'bad', reason: `시간 불가: ${av.startTime}–${av.endTime}` };
+}
+
+function hasOverlappingAssignment(employeeId, req, ignoreKey = '') {
+  return getAssignments().some((assignment) => {
+    if (assignment.key === ignoreKey) return false;
+    if (assignment.employeeId !== employeeId) return false;
+    const other = getReqById(assignment.reqId);
+    if (!other || other.dayOfWeek !== req.dayOfWeek) return false;
+    return toMinutes(other.startTime) < toMinutes(req.endTime) && toMinutes(other.endTime) > toMinutes(req.startTime);
+  });
+}
+
+function highestStepForSkillLevel(skillId, levelNumber) {
+  const steps = state.levelTemplates
+    .filter((tpl) => tpl.skillId === skillId && Number(tpl.levelNumber) === Number(levelNumber))
+    .map((tpl) => Number(tpl.stepNumber));
+  return steps.length ? Math.max(...steps) : 4;
+}
+
+function compareLevelStep(employee, stationReq) {
+  const requiredSkillId = getRequiredSkillId(stationReq);
+  const assigned = employee.assignedSkills?.[requiredSkillId];
+  if (!assigned) return { status: 'bad', reason: '필수 Skill 없음', score: -100 };
+  const level = num(assigned.level);
+  const step = num(assigned.step);
+  const minLevel = num(stationReq.minLevel);
+  const minStep = num(stationReq.minStep);
+
+  if (level > minLevel || (level === minLevel && step >= minStep)) {
+    return { status: 'ok', reason: `Level ${level} - Step ${step}: 요구 조건 충족`, score: 50 + (level - minLevel) * 10 + (step - minStep) };
+  }
+  if (level === minLevel && step < minStep) {
+    return { status: 'partial', reason: `Level은 맞지만 Step 부족: 현재 Step ${step}, 필요 Step ${minStep}`, score: 20 - (minStep - step) };
+  }
+  if (stationReq.canUseLowerStepAsEmergency && level === minLevel - 1) {
+    const maxStep = highestStepForSkillLevel(requiredSkillId, level);
+    if (step >= Math.max(3, maxStep - 1)) {
+      return { status: 'emergency', reason: `한 Level 아래지만 높은 Step: Level ${level} - Step ${step}`, score: 8 };
+    }
+  }
+  return { status: 'bad', reason: `숙련도 부족: Level ${level} - Step ${step}, 필요 Level ${minLevel} - Step ${minStep}`, score: -40 };
+}
+
+function getCandidateStatus(employee, req, stationReq, ignoreKey = '') {
+  if (!employee.active) return { category: 'bad', score: -999, reasons: ['비활성 직원'] };
+  const reasons = [];
+  let score = 0;
+
+  const availability = isEmployeeAvailable(employee, req);
+  reasons.push(availability.reason);
+  if (availability.status === 'ok') score += 40;
+  if (availability.status === 'partial') score += 5;
+  if (availability.status === 'bad') score -= 120;
+
+  const skill = compareLevelStep(employee, stationReq);
+  reasons.push(skill.reason);
+  score += skill.score;
+
+  if (req.isPeak) {
+    const template = getEmployeeLevelTemplate(employee, getRequiredSkillId(stationReq));
+    if (template?.canWorkPeakTime) {
+      score += 8;
+      reasons.push('피크타임 가능');
+    } else if (skill.status === 'ok') {
+      reasons.push('피크타임 가능 여부 확인 필요');
+      score -= 5;
+    }
+  }
+
+  if (hasOverlappingAssignment(employee.id, req, ignoreKey)) {
+    score -= 90;
+    reasons.push('같은 시간대 다른 배정 있음');
+  }
+
+  const projectedHours = employeeWeeklyHours(employee.id) + durationHours(req.startTime, req.endTime);
+  if (projectedHours > num(employee.maxWeeklyHours, 999)) {
+    score -= 60;
+    reasons.push(`최대 주간시간 초과 예상: ${projectedHours.toFixed(1)}h / ${employee.maxWeeklyHours}h`);
+  } else {
+    score += 5;
+    reasons.push(`주간 예상 ${projectedHours.toFixed(1)}h / ${employee.maxWeeklyHours}h`);
+  }
+
+  const addedCost = durationHours(req.startTime, req.endTime) * getRate(employee, req.dayOfWeek);
+  reasons.push(`추가 인건비 ${money(addedCost)}`);
+
+  let category = 'bad';
+  if (availability.status === 'ok' && skill.status === 'ok' && !hasOverlappingAssignment(employee.id, req, ignoreKey) && projectedHours <= num(employee.maxWeeklyHours, 999)) category = 'fit';
+  else if (availability.status !== 'bad' && (skill.status === 'partial' || skill.status === 'ok') && score > 0) category = 'partial';
+  else if (availability.status !== 'bad' && skill.status === 'emergency' && score > -20) category = 'emergency';
+
+  return { category, score, reasons, addedCost, projectedHours, availability, skill };
+}
+
+function getEmployeeLevelTemplate(employee, skillId) {
+  const assigned = employee.assignedSkills?.[skillId];
+  if (!assigned) return null;
+  return state.levelTemplates.find((tpl) =>
+    tpl.skillId === skillId &&
+    Number(tpl.levelNumber) === Number(assigned.level) &&
+    Number(tpl.stepNumber) === Number(assigned.step)
+  );
+}
+
+function getRecommendations(req, stationReq, excludeEmployeeId = '', ignoreKey = '') {
+  return state.employees
+    .filter((emp) => emp.id !== excludeEmployeeId)
+    .map((emp) => ({ employee: emp, ...getCandidateStatus(emp, req, stationReq, ignoreKey) }))
+    .sort((a, b) => b.score - a.score);
+}
+
+function calculateValidation() {
+  const issues = [];
+
+  state.requirements.forEach((req) => {
+    req.stationRequirements.forEach((sreq) => {
+      for (let i = 0; i < Number(sreq.requiredCount); i += 1) {
+        const key = assignmentKey(req.id, sreq.id, i);
+        const employeeId = state.schedule[key];
+        if (!employeeId) {
+          issues.push({ severity: 'high', type: '미배정', req, sreq, message: `${dayLabel(req.dayOfWeek)} ${req.startTime}–${req.endTime} / ${partName(sreq.partId)} / ${stationName(sreq.stationId)} 미배정` });
+          continue;
+        }
+        const employee = byId(state.employees, employeeId);
+        if (!employee) {
+          issues.push({ severity: 'high', type: '직원 없음', req, sreq, message: `삭제된 직원이 배정되어 있습니다.` });
+          continue;
+        }
+        const availability = isEmployeeAvailable(employee, req);
+        if (availability.status !== 'ok') {
+          issues.push({ severity: availability.status === 'partial' ? 'medium' : 'high', type: '가능 시간 위반', req, sreq, employee, message: `${employee.name}: ${availability.reason}` });
+        }
+        const skill = compareLevelStep(employee, sreq);
+        if (skill.status === 'bad') {
+          issues.push({ severity: 'high', type: 'Skill / Level 부족', req, sreq, employee, message: `${employee.name}: ${skill.reason}` });
+        } else if (skill.status !== 'ok') {
+          issues.push({ severity: 'medium', type: 'Skill / Level 주의', req, sreq, employee, message: `${employee.name}: ${skill.reason}` });
+        }
+        const replacements = getRecommendations(req, sreq, employee.id, key).filter((r) => ['fit', 'partial', 'emergency'].includes(r.category));
+        if (!replacements.length) {
+          issues.push({ severity: 'medium', type: '대체근무자 없음', req, sreq, employee, message: `${employee.name} 결근 시 대체 가능자가 없습니다.` });
+        }
+      }
+    });
+
+    const inSlot = getAssignments().filter((a) => a.reqId === req.id);
+    const duplicates = inSlot.reduce((acc, a) => {
+      acc[a.employeeId] = (acc[a.employeeId] || 0) + 1;
+      return acc;
+    }, {});
+    Object.entries(duplicates).forEach(([employeeId, count]) => {
+      if (count > 1) {
+        issues.push({ severity: 'high', type: '중복 배치', req, message: `${employeeName(employeeId)}가 같은 시간 블록에 ${count}번 배정되었습니다.` });
+      }
+    });
+  });
+
+  state.employees.forEach((emp) => {
+    const hours = employeeWeeklyHours(emp.id);
+    if (hours > num(emp.maxWeeklyHours, 999)) {
+      issues.push({ severity: 'high', type: '주간 최대시간 초과', employee: emp, message: `${emp.name}: ${hours.toFixed(1)}h / 최대 ${emp.maxWeeklyHours}h` });
+    }
+  });
+
+  const totalCost = totalLaborCost();
+  if (state.settings.laborBudget && totalCost > state.settings.laborBudget) {
+    issues.push({ severity: 'high', type: '목표 인건비 초과', message: `현재 인건비 ${money(totalCost)} / 목표 ${money(state.settings.laborBudget)}` });
+  }
+
+  return issues;
+}
+
+function render() {
+  renderTabs();
+  renderDashboard();
+  renderParts();
+  renderSkills();
+  renderMembers();
+  renderRequirements();
+  renderSchedule();
+  renderLabor();
+  renderValidation();
+  renderRoadmap();
+}
+
+function renderTabs() {
+  const tabs = document.getElementById('tabs');
+  tabs.innerHTML = TABS.map((tab) => `<button class="tab-btn ${activeTab === tab.id ? 'active' : ''}" data-tab="${tab.id}">${tab.label}</button>`).join('');
+  document.querySelectorAll('.tab-panel').forEach((panel) => panel.classList.toggle('active', panel.id === activeTab));
+}
+
+function metricCard(label, value, sub = '', status = '') {
+  return `<div class="card metric ${status}"><div class="label">${label}</div><div class="value">${value}</div><div class="sub">${sub}</div></div>`;
+}
+
+function renderDashboard() {
+  const el = document.getElementById('dashboard');
+  const totalHours = state.employees.reduce((sum, emp) => sum + employeeWeeklyHours(emp.id), 0);
+  const cost = totalLaborCost();
+  const budget = num(state.settings.laborBudget);
+  const ratio = budget ? (cost / budget) * 100 : 0;
+  const targetRatio = num(state.settings.targetLaborRatio) / 100;
+  const neededSales = targetRatio ? cost / targetRatio : 0;
+  const issues = calculateValidation();
+  const highIssues = issues.filter((i) => i.severity === 'high').length;
+  const missing = issues.filter((i) => i.type === '미배정').length;
+  const skillIssues = issues.filter((i) => i.type.includes('Skill')).length;
+  const replacementIssues = issues.filter((i) => i.type === '대체근무자 없음').length;
+  const budgetStatus = ratio > 100 ? 'danger' : ratio >= 90 ? 'warn' : 'ok';
+  const assignedSlots = getAssignments().length;
+  const totalSlots = getRequirementSeatRows().length;
+  const completion = totalSlots ? (assignedSlots / totalSlots) * 100 : 0;
+
+  const partCosts = state.parts.map((part) => {
+    const empIds = state.employees.filter((emp) => emp.partId === part.id).map((emp) => emp.id);
+    const partCost = empIds.reduce((sum, id) => sum + employeeWeeklyCost(id), 0);
+    return `<span class="badge info">${escapeHtml(part.name)} ${money(partCost)}</span>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="section-head">
+      <div>
+        <h2>Dashboard</h2>
+        <p>이번 주 스케줄의 운영 가능성, 인건비, 부족한 스테이션을 한눈에 확인한다.</p>
+      </div>
+      <div class="inline-actions">
+        <label class="small-text">목표 인건비 수정 <input type="number" value="${state.settings.laborBudget}" data-setting="laborBudget" /></label>
+        <label class="small-text">목표 인건비율 수정 % <input type="number" value="${state.settings.targetLaborRatio}" data-setting="targetLaborRatio" /></label>
+      </div>
+    </div>
+    <div class="grid four">
+      ${metricCard('총 배정 시간', `${totalHours.toFixed(1)}h`, '현재 스케줄 기준')}
+      ${metricCard('총 예상 인건비', money(cost), `목표 ${money(budget)}`, budgetStatus)}
+      ${metricCard('목표 대비 사용률', `${ratio.toFixed(1)}%`, ratio > 100 ? '목표 초과' : '목표 이내', budgetStatus)}
+      ${metricCard('필요 매출', money(neededSales), `목표 인건비율 ${state.settings.targetLaborRatio}% 기준`)}
+      ${metricCard('스케줄 완성률', `${completion.toFixed(1)}%`, `${assignedSlots}/${totalSlots} slots 배정`)}
+      ${metricCard('High Risk', highIssues, '즉시 확인 필요', highIssues ? 'danger' : 'ok')}
+      ${metricCard('미배정', missing, 'Station slot 기준', missing ? 'warn' : 'ok')}
+      ${metricCard('Skill/대체 이슈', `${skillIssues}/${replacementIssues}`, 'Skill 부족 / 대체 없음')}
+    </div>
+    <div class="card" style="margin-top:14px;">
+      <h3>목표 인건비 진행률</h3>
+      <div class="progress ${budgetStatus}"><div style="width:${Math.min(ratio, 120)}%"></div></div>
+      <p class="small-text">${ratio > 100 ? `목표를 ${money(cost - budget)} 초과했다.` : `남은 인건비 여유: ${money(budget - cost)}`}</p>
+    </div>
+    <div class="grid two" style="margin-top:14px;">
+      <div class="card"><h3>파트별 인건비</h3>${partCosts || '<p class="muted">데이터 없음</p>'}</div>
+      <div class="card"><h3>가장 먼저 볼 문제</h3>${issues.slice(0, 6).map(issueBadge).join('') || '<span class="badge ok">현재 주요 경고 없음</span>'}</div>
+    </div>
+  `;
+}
+
+function issueBadge(issue) {
+  const cls = issue.severity === 'high' ? 'danger' : issue.severity === 'medium' ? 'warn' : 'info';
+  return `<span class="badge ${cls}">${escapeHtml(issue.type)} · ${escapeHtml(issue.message)}</span>`;
+}
+
+function renderParts() {
+  const el = document.getElementById('parts');
+  el.innerHTML = `
+    <div class="section-head"><div><h2>Parts / Stations</h2><p>Part는 큰 부서, Station은 실제 배치 위치다. 예: Kitchen → Hot, Fry, Cold, Pass.</p></div></div>
+    <div class="grid two">
+      <div class="card">
+        <h3>Part 추가</h3>
+        <div class="form-row compact">
+          <label>Part 이름<input id="newPartName" placeholder="예: Kitchen" /></label>
+          <label>설명<input id="newPartDesc" placeholder="예: 주방 파트" /></label>
+          <label>색상<input id="newPartColor" type="color" value="#2563eb" /></label>
+          <button class="btn" data-action="add-part">추가</button>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>Part</th><th>설명</th><th>상태</th><th></th></tr></thead><tbody>
+          ${state.parts.sort((a,b)=>a.sortOrder-b.sortOrder).map((part) => `
+            <tr>
+              <td><span class="badge dark" style="background:${part.color}">${escapeHtml(part.name)}</span></td>
+              <td>${escapeHtml(part.description)}</td>
+              <td>${part.active ? '<span class="badge ok">Active</span>' : '<span class="badge">Inactive</span>'}</td>
+              <td><button class="btn small danger" data-action="delete-part" data-id="${part.id}">삭제</button></td>
+            </tr>`).join('')}
+        </tbody></table></div>
+      </div>
+      <div class="card">
+        <h3>Station 추가</h3>
+        <div class="form-row compact">
+          <label>Part<select id="newStationPart">${partOptions()}</select></label>
+          <label>Station 이름<input id="newStationName" placeholder="예: Hot" /></label>
+          <label>설명<input id="newStationDesc" placeholder="예: 핫 섹션" /></label>
+          <button class="btn" data-action="add-station">추가</button>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>Part</th><th>Station</th><th>설명</th><th></th></tr></thead><tbody>
+          ${state.stations.sort(sortStations).map((station) => `
+            <tr>
+              <td>${escapeHtml(partName(station.partId))}</td>
+              <td><span class="badge info">${escapeHtml(station.name)}</span></td>
+              <td>${escapeHtml(station.description)}</td>
+              <td><button class="btn small danger" data-action="delete-station" data-id="${station.id}">삭제</button></td>
+            </tr>`).join('')}
+        </tbody></table></div>
+      </div>
+    </div>
+  `;
+}
+
+function partOptions(selected = '') {
+  return state.parts.map((part) => `<option value="${part.id}" ${selected === part.id ? 'selected' : ''}>${escapeHtml(part.name)}</option>`).join('');
+}
+
+function memberPartFilterOptions() {
+  return `<option value="all" ${selectedMemberPart === 'all' ? 'selected' : ''}>전체 Part</option>` +
+    state.parts
+      .slice()
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((part) => `<option value="${part.id}" ${selectedMemberPart === part.id ? 'selected' : ''}>${escapeHtml(part.name)}</option>`)
+      .join('');
+}
+function stationOptions(selected = '', partFilter = '', compact = false) {
+  return state.stations
+    .filter((st) => !partFilter || st.partId === partFilter)
+    .sort(sortStations)
+    .map((st) => {
+      const label = compact ? st.name : `${partName(st.partId)} / ${st.name}`;
+      return `<option value="${st.id}" ${selected === st.id ? 'selected' : ''}>${escapeHtml(label)}</option>`;
+    }).join('');
+}
+function firstStationForPart(partId) {
+  return state.stations.filter((st) => st.partId === partId).sort(sortStations)[0]?.id || '';
+}
+function firstSkillForStation(stationId) {
+  return state.skills
+    .filter((sk) => !stationId || sk.stationId === stationId)
+    .sort((a, b) => a.name.localeCompare(b.name))[0]?.id || '';
+}
+function skillOptions(selected = '', stationFilter = '', compact = false) {
+  return state.skills
+    .filter((sk) => !stationFilter || sk.stationId === stationFilter)
+    .sort((a, b) => partName(a.partId).localeCompare(partName(b.partId)) || stationName(a.stationId).localeCompare(stationName(b.stationId)) || a.name.localeCompare(b.name))
+    .map((sk) => {
+      const label = compact ? sk.name : `${partName(sk.partId)} / ${stationName(sk.stationId)} / ${sk.name}`;
+      return `<option value="${sk.id}" ${selected === sk.id ? 'selected' : ''}>${escapeHtml(label)}</option>`;
+    }).join('');
+}
+function getSkillLevelTemplates(skillId) {
+  return state.levelTemplates
+    .filter((tpl) => tpl.skillId === skillId)
+    .sort((a, b) => Number(a.levelNumber) - Number(b.levelNumber) || Number(a.stepNumber) - Number(b.stepNumber));
+}
+function skillLevelComboOptions(selected = '') {
+  return state.skills.map((skill) => {
+    const templates = getSkillLevelTemplates(skill.id);
+    if (!templates.length) {
+      const value = `${skill.id}|1|1`;
+      return `<option value="${value}" ${selected === value ? 'selected' : ''}>${escapeHtml(skill.name)} · Level 1 / Step 1 · 단계 미정의</option>`;
+    }
+    return templates.map((tpl) => {
+      const value = `${skill.id}|${tpl.levelNumber}|${tpl.stepNumber}`;
+      const desc = tpl.description ? ` · ${tpl.description}` : '';
+      return `<option value="${value}" ${selected === value ? 'selected' : ''}>${escapeHtml(skill.name)} · Level ${tpl.levelNumber} / Step ${tpl.stepNumber}${escapeHtml(desc)}</option>`;
+    }).join('');
+  }).join('');
+}
+function memberSkillSelectOptions(selected = '', stationFilter = '') {
+  return state.skills
+    .filter((skill) => !stationFilter || skill.stationId === stationFilter)
+    .slice()
+    .sort((a, b) => partName(a.partId).localeCompare(partName(b.partId)) || stationName(a.stationId).localeCompare(stationName(b.stationId)) || a.name.localeCompare(b.name))
+    .map((skill) => `<option value="${skill.id}" ${selected === skill.id ? 'selected' : ''}>${escapeHtml(skill.name)}</option>`)
+    .join('');
+}
+function getMemberSkillDefaults(emp) {
+  const partId = emp?.partId || state.parts[0]?.id || '';
+  const stationId = firstStationForPart(partId) || state.stations[0]?.id || '';
+  const skillId = firstSkillForStation(stationId) || state.skills[0]?.id || '';
+  const level = levelsForSkill(skillId)[0] || 1;
+  const step = stepsForSkill(skillId, level)[0] || 1;
+  return { partId, stationId, skillId, level, step };
+}
+function uniqueNumbers(values) {
+  return [...new Set(values.map((v) => Number(v)).filter((v) => Number.isFinite(v)))].sort((a, b) => a - b);
+}
+function levelsForSkill(skillId) {
+  const levels = uniqueNumbers(getSkillLevelTemplates(skillId).map((tpl) => tpl.levelNumber));
+  return levels.length ? levels : [1];
+}
+function stepsForSkill(skillId, levelNumber) {
+  const steps = uniqueNumbers(getSkillLevelTemplates(skillId).filter((tpl) => Number(tpl.levelNumber) === Number(levelNumber)).map((tpl) => tpl.stepNumber));
+  return steps.length ? steps : [1];
+}
+function memberLevelOptions(skillId, selected = '') {
+  return levelsForSkill(skillId).map((level) => `<option value="${level}" ${String(selected) === String(level) ? 'selected' : ''}>Level ${level}</option>`).join('');
+}
+function memberStepOptions(skillId, levelNumber, selected = '') {
+  return stepsForSkill(skillId, levelNumber).map((step) => `<option value="${step}" ${String(selected) === String(step) ? 'selected' : ''}>Step ${step}</option>`).join('');
+}
+function employeeOptions(selected = '', includeBlank = true) {
+  return `${includeBlank ? '<option value="">미배정</option>' : ''}${state.employees.filter(e => e.active).map((emp) => `<option value="${emp.id}" ${selected === emp.id ? 'selected' : ''}>${escapeHtml(emp.name)} · ${escapeHtml(partName(emp.partId))}</option>`).join('')}`;
+}
+function sortStations(a, b) {
+  const pa = byId(state.parts, a.partId)?.sortOrder || 0;
+  const pb = byId(state.parts, b.partId)?.sortOrder || 0;
+  return pa - pb || a.sortOrder - b.sortOrder || a.name.localeCompare(b.name);
+}
+
+function renderSkills() {
+  const el = document.getElementById('skills');
+  if (!state.skills.some((skill) => skill.id === selectedSkillId)) selectedSkillId = state.skills[0]?.id || '';
+  const selectedSkill = byId(state.skills, selectedSkillId);
+  const selectedTemplates = selectedSkill ? getSkillLevelTemplates(selectedSkill.id) : [];
+  const groupedLevels = selectedTemplates.reduce((acc, tpl) => {
+    const levelKey = String(tpl.levelNumber);
+    if (!acc[levelKey]) acc[levelKey] = [];
+    acc[levelKey].push(tpl);
+    return acc;
+  }, {});
+  const levelKeys = Object.keys(groupedLevels).sort((a, b) => Number(a) - Number(b));
+
+  const sortedSkills = state.skills
+    .slice()
+    .sort((a, b) => partName(a.partId).localeCompare(partName(b.partId)) || stationName(a.stationId).localeCompare(stationName(b.stationId)) || a.name.localeCompare(b.name));
+
+  el.innerHTML = `
+    <div class="section-head">
+      <div>
+        <h2>Skills / Levels</h2>
+        <p>왼쪽에서 Skill을 선택하면 오른쪽에서 그 Skill에 속한 Level / Step을 관리한다. Level / Step은 Skill 밖의 별도 분류가 아니다.</p>
+      </div>
+    </div>
+
+    <div class="card req-guide">
+      <strong>구조 정리</strong>
+      <p class="small-text"><b>Station</b>은 근무 위치, <b>Skill</b>은 그 위치에서 필요한 업무 능력, <b>Level / Step</b>은 선택한 Skill 안에서의 숙련 단계다. 예: <b>Fry section → Level 1 / Step 4</b>.</p>
+    </div>
+
+    <div class="skills-split">
+      <section class="card skills-list-card">
+        <h3>Skill 추가</h3>
+        <div class="form-row compact skill-add-row">
+          <label>Part<select id="newSkillPart" data-action="new-skill-part">${partOptions()}</select></label>
+          <label>Station<select id="newSkillStation">${stationOptions('', state.parts[0]?.id || '', true)}</select></label>
+          <label>Skill 이름<input id="newSkillName" placeholder="예: Fry section" /></label>
+          <button class="btn" data-action="add-skill">추가</button>
+        </div>
+
+        <div class="table-wrap skills-table-wrap">
+          <table class="skills-list-table">
+            <thead>
+              <tr>
+                <th>Part</th>
+                <th>Station</th>
+                <th>Skill</th>
+                <th>단계 수</th>
+                <th>구분</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              ${sortedSkills.map((skill) => {
+                const isSelected = skill.id === selectedSkillId;
+                const count = getSkillLevelTemplates(skill.id).length;
+                return `
+                  <tr class="${isSelected ? 'selected-skill-row' : ''}">
+                    <td>${escapeHtml(partName(skill.partId))}</td>
+                    <td>${escapeHtml(stationName(skill.stationId))}</td>
+                    <td>
+                      <button class="link-btn skill-name-button" data-action="select-skill" data-id="${skill.id}">${escapeHtml(skill.name)}</button>
+                    </td>
+                    <td><span class="badge ${count ? 'info' : 'warn'}">${count} steps</span></td>
+                    <td><span class="badge ${skill.isCritical ? 'danger' : ''}">${skill.isCritical ? 'Critical' : 'Normal'}</span></td>
+                    <td class="inline-actions nowrap">
+                      <button class="btn small secondary" data-action="select-skill" data-id="${skill.id}">선택</button>
+                      <button class="btn small danger" data-action="delete-skill" data-id="${skill.id}">삭제</button>
+                    </td>
+                  </tr>`;
+              }).join('') || '<tr><td colspan="6" class="muted">아직 등록된 Skill이 없다.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card skill-detail-card">
+        ${selectedSkill ? `
+          <div class="skill-detail-head">
+            <div>
+              <h3>${escapeHtml(selectedSkill.name)}</h3>
+              <p class="small-text">${escapeHtml(partName(selectedSkill.partId))} / ${escapeHtml(stationName(selectedSkill.stationId))} · 이 Skill에 대한 Level / Step만 아래에서 관리한다.</p>
+            </div>
+            <span class="badge dark">Selected Skill</span>
+          </div>
+
+          <h4>Level / Step 추가</h4>
+          <div class="level-add-row clean">
+            <label>Level<input data-level-skill="${selectedSkill.id}" data-level-field="level" type="number" value="1" min="0" /></label>
+            <label>Step<input data-level-skill="${selectedSkill.id}" data-level-field="step" type="number" value="1" min="0" /></label>
+            <label>설명<input data-level-skill="${selectedSkill.id}" data-level-field="desc" placeholder="예: Level 2 직전 단계, 일부 확인 후 업무 가능" /></label>
+            <button class="btn small" data-action="add-level" data-skill="${selectedSkill.id}">단계 추가</button>
+          </div>
+
+          <div class="level-summary">
+            ${levelKeys.length ? levelKeys.map((levelKey) => {
+              const items = groupedLevels[levelKey].sort((a, b) => Number(a.stepNumber) - Number(b.stepNumber));
+              return `
+                <div class="level-group-card">
+                  <div class="level-group-head">
+                    <strong>Level ${escapeHtml(levelKey)}</strong>
+                    <span class="small-text">${items.length} step${items.length > 1 ? 's' : ''}</span>
+                  </div>
+                  <div class="table-wrap tight no-border">
+                    <table class="compact-table level-detail-table">
+                      <thead><tr><th>Step</th><th>설명</th><th>가능 업무</th><th>관리</th></tr></thead>
+                      <tbody>
+                        ${items.map((tpl) => `
+                          <tr>
+                            <td><span class="badge info">L${tpl.levelNumber} / S${tpl.stepNumber}</span></td>
+                            <td>${escapeHtml(tpl.description || '')}</td>
+                            <td>${escapeHtml(tpl.canDo || '') || '<span class="muted">-</span>'}</td>
+                            <td><button class="btn small danger" data-action="delete-level" data-id="${tpl.id}">삭제</button></td>
+                          </tr>`).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>`;
+            }).join('') : '<div class="empty-detail"><p class="muted">이 Skill에는 아직 Level / Step이 없다. 위에서 단계를 추가해라.</p></div>'}
+          </div>
+        ` : `
+          <div class="empty-detail"><h3>선택된 Skill 없음</h3><p class="muted">왼쪽에서 Skill을 추가하거나 선택하면 Level / Step 관리 패널이 열린다.</p></div>
+        `}
+      </section>
+    </div>
+  `;
+}
+
+function renderMembers() {
+  const el = document.getElementById('members');
+  if (selectedMemberPart !== 'all' && !state.parts.some((part) => part.id === selectedMemberPart)) selectedMemberPart = 'all';
+  const visibleParts = state.parts
+    .slice()
+    .sort((a,b)=>a.sortOrder-b.sortOrder)
+    .filter((part) => selectedMemberPart === 'all' || part.id === selectedMemberPart);
+  const grouped = visibleParts
+    .map((part) => ({ part, employees: state.employees.filter((emp) => emp.partId === part.id).sort((a,b)=>a.name.localeCompare(b.name)) }))
+    .filter((group) => group.employees.length || group.part.active);
+  const addPartDefault = selectedMemberPart === 'all' ? '' : selectedMemberPart;
+
+  el.innerHTML = `
+    <div class="section-head">
+      <div><h2>Members</h2><p>직원별 Part, 가능 요일/시간, 가능 Skill, Level/Step을 관리한다. Part 필터는 Parts 탭의 추가/삭제와 자동 연동된다.</p></div>
+      <label class="filter-label">보기 Part
+        <select data-action="member-part-filter">${memberPartFilterOptions()}</select>
+      </label>
+    </div>
+    <div class="card">
+      <h3>직원 추가</h3>
+      <div class="form-row">
+        <label>이름<input id="newEmpName" placeholder="예: Minho" /></label>
+        <label>Part<select id="newEmpPart">${partOptions(addPartDefault)}</select></label>
+        <label>역할<input id="newEmpRole" placeholder="예: Kitchen Staff" /></label>
+        <label>시급<input id="newEmpRate" type="number" value="28" /></label>
+        <label>최대 주간시간<input id="newEmpMax" type="number" value="38" /></label>
+        <button class="btn" data-action="add-employee">직원 추가</button>
+      </div>
+    </div>
+    ${grouped.map(({ part, employees }) => `
+      <h3 class="group-title"><span class="badge dark" style="background:${part.color}">${escapeHtml(part.name)}</span> ${employees.length}명</h3>
+      <div class="grid">
+        ${employees.map(renderEmployeeCard).join('') || '<p class="muted">이 Part에 등록된 직원 없음</p>'}
+      </div>
+    `).join('') || '<div class="card"><p class="muted">선택한 Part에 표시할 직원이 없다.</p></div>'}
+  `;
+}
+
+function renderEmployeeCard(emp) {
+  const breakdown = employeeWorkBreakdown(emp.id);
+  const hours = breakdown.totalHours;
+  const cost = breakdown.totalCost;
+  const usage = emp.maxWeeklyHours ? (hours / emp.maxWeeklyHours) * 100 : 0;
+  const skillBadges = Object.entries(emp.assignedSkills || {}).map(([skillId, value]) => `<span class="badge info">${escapeHtml(skillName(skillId))} L${value.level}-S${value.step}</span>`).join('') || '<span class="badge">Skill 없음</span>';
+  return `
+    <div class="card member-card">
+      <div>
+        <h3>${escapeHtml(emp.name)}</h3>
+        <p class="small-text">${escapeHtml(partName(emp.partId))} · ${escapeHtml(emp.role)} · ${money(emp.baseRate)}/h</p>
+        <div>${skillBadges}</div>
+        <p class="small-text">이번 주 ${hours.toFixed(1)}h · ${money(cost)} · 최대 ${emp.maxWeeklyHours}h</p>
+        <div class="work-breakdown mini">
+          <span>평일 ${breakdown.weekdayHours.toFixed(1)}h</span>
+          <span>토 ${breakdown.saturdayHours.toFixed(1)}h</span>
+          <span>일 ${breakdown.sundayHours.toFixed(1)}h</span>
+        </div>
+        <div class="progress ${usage > 100 ? 'danger' : usage > 90 ? 'warn' : ''}"><div style="width:${Math.min(usage,120)}%"></div></div>
+        <div class="inline-actions" style="margin-top:10px;">
+          <button class="btn small danger" data-action="delete-employee" data-id="${emp.id}">삭제</button>
+          <button class="btn small secondary" data-action="toggle-employee" data-id="${emp.id}">${emp.active ? '비활성' : '활성'}</button>
+        </div>
+      </div>
+      <div>
+        <h4>근무 가능 요일/시간</h4>
+        <div class="availability-grid">
+          ${DAYS.map((day) => {
+            const av = emp.availability?.[day.key] || { available: false, startTime: '10:00', endTime: '22:00' };
+            return `<div class="day-box">
+              <label><input type="checkbox" ${av.available ? 'checked' : ''} data-action="availability-check" data-emp="${emp.id}" data-day="${day.key}" /> ${day.label.slice(0,3)}</label>
+              <input type="time" value="${av.startTime || '10:00'}" data-action="availability-start" data-emp="${emp.id}" data-day="${day.key}" />
+              <input type="time" value="${av.endTime || '22:00'}" data-action="availability-end" data-emp="${emp.id}" data-day="${day.key}" />
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+      <div>
+        <h4>Skill별 Level / Step 지정</h4>
+        <p class="small-text">Skill 안에 정의된 단계 중 하나를 선택한다.</p>
+        ${(() => {
+          const pick = getMemberSkillDefaults(emp);
+          return `
+            <div class="form-row compact member-skill-editor">
+              <label>Part 선택<select data-action="member-skill-part" data-field="memberSkillPart" data-emp="${emp.id}">${partOptions(pick.partId)}</select></label>
+              <label>Section 선택<select data-action="member-skill-station" data-field="memberSkillStation" data-emp="${emp.id}">${stationOptions(pick.stationId, pick.partId, true)}</select></label>
+              <label>Skill 선택<select data-action="member-skill-select" data-field="memberSkillSelect" data-emp="${emp.id}">${memberSkillSelectOptions(pick.skillId, pick.stationId)}</select></label>
+              <label>Level 선택<select data-action="member-level-select" data-field="memberLevelSelect" data-emp="${emp.id}">${memberLevelOptions(pick.skillId, pick.level)}</select></label>
+              <label>Step 선택<select data-field="memberStepSelect" data-emp="${emp.id}">${memberStepOptions(pick.skillId, pick.level, pick.step)}</select></label>
+            </div>
+          `;
+        })()}
+        <button class="btn small" data-action="assign-skill" data-id="${emp.id}">Skill 추가/갱신</button>
+        <div style="margin-top:10px;">
+          ${Object.keys(emp.assignedSkills || {}).map((skillId) => `<button class="btn small ghost" data-action="remove-emp-skill" data-emp="${emp.id}" data-skill="${skillId}">${escapeHtml(skillName(skillId))} L${emp.assignedSkills[skillId].level}-S${emp.assignedSkills[skillId].step} 제거</button>`).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderDayPills(selectedDay, actionName) {
+  return `<div class="day-pills">
+    ${DAYS.map((day) => `<button class="day-pill ${selectedDay === day.key ? 'active' : ''}" data-action="${actionName}" data-day="${day.key}">${day.short || day.label}</button>`).join('')}
+  </div>`;
+}
+
+function renderRequirements() {
+  const el = document.getElementById('requirements');
+  const visibleDay = selectedRequirementDay || 'monday';
+  const visibleReqs = state.requirements
+    .filter((req) => req.dayOfWeek === visibleDay)
+    .sort((a,b)=>toMinutes(a.startTime)-toMinutes(b.startTime));
+  el.innerHTML = `
+    <div class="section-head">
+      <div>
+        <h2>Requirements</h2>
+        <p>요일별 시간 블록 안에 필요한 실제 자리만 한 줄씩 추가한다. 같은 자리가 2명 필요하면 같은 Station을 두 번 추가한다.</p>
+      </div>
+    </div>
+    <div class="card req-guide">
+      <strong>입력 방식</strong>
+      <p class="small-text">예: 디너 피크에 Kitchen/Fry 2명이 필요하면 <b>Kitchen / Fry</b> 자리를 두 번 추가한다. Schedule Board에는 두 줄이 자동 생성되고, 각 줄마다 조건에 맞는 직원만 선택된다.</p>
+    </div>
+    <div class="card req-toolbar">
+      <div>
+        <h3>요일 선택</h3>
+        ${renderDayPills(visibleDay, 'req-day')}
+      </div>
+      <div>
+        <h3>시간 블록 추가</h3>
+        <div class="req-block-row">
+          <label>요일<select id="newReqDay">${DAYS.map(d => `<option value="${d.key}" ${d.key === visibleDay ? 'selected' : ''}>${d.label}</option>`).join('')}</select></label>
+          <label>시작<input id="newReqStart" type="time" value="10:00" /></label>
+          <label>종료<input id="newReqEnd" type="time" value="12:00" /></label>
+          <label>라벨<input id="newReqLabel" placeholder="예: Dinner Peak" /></label>
+          <label>피크<select id="newReqPeak"><option value="false">No</option><option value="true">Yes</option></select></label>
+          <button class="btn" data-action="add-requirement">블록 추가</button>
+        </div>
+      </div>
+    </div>
+    <div class="req-day-board">
+      <h3 class="group-title">${dayLabel(visibleDay)} Requirements</h3>
+      ${visibleReqs.map(renderRequirementCard).join('') || '<div class="card"><p class="muted">이 요일에는 아직 시간 블록이 없다.</p></div>'}
+    </div>
+  `;
+}
+
+function renderRequirementCard(req) {
+  const rows = getRequirementSeatRows().filter((row) => row.req.id === req.id);
+  const seatCount = rows.length;
+  req.minTotalStaff = seatCount;
+  req.recommendedTotalStaff = seatCount;
+  const grouped = rows.reduce((acc, row) => {
+    const key = `${row.sreq.partId}__${row.sreq.stationId}__${row.sreq.minLevel}__${row.sreq.minStep}`;
+    if (!acc[key]) acc[key] = { ...row, count: 0 };
+    acc[key].count += 1;
+    return acc;
+  }, {});
+  const summary = Object.values(grouped).map((g) => `${partName(g.sreq.partId)} / ${stationName(g.sreq.stationId)} × ${g.count}`).join(' · ') || '자리 없음';
+  return `
+    <div class="card req-card simple-req-card">
+      <div class="req-card-head">
+        <div>
+          <h3>${escapeHtml(req.label)} <span class="badge ${req.isPeak ? 'danger' : 'info'}">${req.startTime}–${req.endTime}</span></h3>
+          <p class="small-text">필요 자리 ${seatCount}개 · ${escapeHtml(summary)}</p>
+        </div>
+        <button class="btn small danger" data-action="delete-requirement" data-id="${req.id}">블록 삭제</button>
+      </div>
+      <div class="req-seat-add-row">
+        <label>Part<select data-action="req-part-select" data-req-field="part" data-req="${req.id}">${partOptions()}</select></label>
+        <label>Section<select data-req-field="station" data-req="${req.id}">${stationOptions('', state.parts[0]?.id || '', true)}</select></label>
+        <label>Min Level<input type="number" value="1" min="0" data-req-field="level" data-req="${req.id}" /></label>
+        <label>Min Step<input type="number" value="1" min="0" data-req-field="step" data-req="${req.id}" /></label>
+        <button class="btn small" data-action="add-station-req" data-id="${req.id}">자리 1개 추가</button>
+      </div>
+      <div class="req-seat-table">
+        <table class="simple-table compact-table"><thead><tr><th>#</th><th>Part</th><th>Station</th><th>자동 Skill</th><th>Min</th><th>Action</th></tr></thead><tbody>
+          ${rows.map((row, idx) => `<tr>
+            <td>${idx + 1}</td>
+            <td>${escapeHtml(partName(row.sreq.partId))}</td>
+            <td><strong>${escapeHtml(stationName(row.sreq.stationId))}</strong></td>
+            <td>${escapeHtml(requiredSkillName(row.sreq))}</td>
+            <td>L${row.sreq.minLevel}-S${row.sreq.minStep}</td>
+            <td class="inline-actions"><button class="btn small secondary" data-action="clone-station-req" data-req="${req.id}" data-id="${row.sreq.id}">같은 자리 추가</button><button class="btn small danger" data-action="delete-station-req" data-req="${req.id}" data-id="${row.sreq.id}">삭제</button></td>
+          </tr>`).join('') || '<tr><td colspan="6" class="muted">필요 자리를 한 줄씩 추가하세요.</td></tr>'}
+        </tbody></table>
+      </div>
+    </div>
+  `;
+}
+
+function renderSchedule() {
+  const el = document.getElementById('schedule');
+  if (!['sheet', 'confirmed', 'member', 'part', 'time'].includes(scheduleView)) scheduleView = 'sheet';
+  const showDayTabs = scheduleView === 'sheet';
+  el.innerHTML = `
+    <div class="section-head">
+      <div><h2>Schedule Board</h2><p>Roster Sheet는 왼쪽에 Part/Station, 위쪽에 시간대를 두는 가로형 스프레드시트다. 조건에 맞지 않는 직원은 드롭다운에서 숨긴다.</p></div>
+      <div class="inline-actions">
+        <button class="btn ${scheduleView === 'sheet' ? '' : 'secondary'}" data-action="schedule-view" data-view="sheet">Roster Sheet</button>
+        <button class="btn ${scheduleView === 'confirmed' ? '' : 'secondary'}" data-action="schedule-view" data-view="confirmed">확정 근무표</button>
+        <button class="btn ${scheduleView === 'member' ? '' : 'secondary'}" data-action="schedule-view" data-view="member">직원별</button>
+        <button class="btn ${scheduleView === 'part' ? '' : 'secondary'}" data-action="schedule-view" data-view="part">파트별</button>
+      </div>
+    </div>
+    ${showDayTabs ? renderDayPills(selectedScheduleDay, 'schedule-day') : ''}
+    ${scheduleView === 'sheet' ? renderRosterSheet() : scheduleView === 'confirmed' ? renderConfirmedRoster() : scheduleView === 'member' ? renderScheduleMemberView() : scheduleView === 'part' ? renderSchedulePartView() : renderScheduleTimeView()}
+    ${recommendationContext ? renderRecommendationPanel() : ''}
+    ${replacementContext ? renderReplacementPanel() : ''}
+  `;
+}
+
+function getAssignmentStatus(req, sreq, key) {
+  const employeeId = state.schedule[key];
+  if (!employeeId) return { label: '미배정', className: 'danger', detail: '직원을 선택하세요.' };
+  const employee = byId(state.employees, employeeId);
+  if (!employee) return { label: '직원 없음', className: 'danger', detail: '삭제된 직원입니다.' };
+  const status = getCandidateStatus(employee, req, sreq, key);
+  if (status.category === 'fit') return { label: '적합', className: 'ok', detail: status.reasons.join(' · ') };
+  if (status.category === 'partial') return { label: '주의', className: 'warn', detail: status.reasons.join(' · ') };
+  if (status.category === 'emergency') return { label: '긴급', className: 'warn', detail: status.reasons.join(' · ') };
+  return { label: '부적합', className: 'danger', detail: status.reasons.join(' · ') };
+}
+
+function employeeOptionsForRequirement(req, sreq, selected = '', ignoreKey = '') {
+  const key = ignoreKey || assignmentKey(req.id, sreq.id, 0);
+  const recommendations = getRecommendations(req, sreq, '', key)
+    .filter((rec) => ['fit', 'partial', 'emergency'].includes(rec.category));
+  const selectedEmployee = selected ? byId(state.employees, selected) : null;
+  const selectedIncluded = recommendations.some((rec) => rec.employee.id === selected);
+  const options = ['<option value="">미배정</option>'];
+  if (selectedEmployee && !selectedIncluded) {
+    options.push(`<option value="${selectedEmployee.id}" selected>${escapeHtml(selectedEmployee.name)} · 현재 배정(조건 미달)</option>`);
+  }
+  recommendations.forEach((rec) => {
+    const mark = rec.category === 'fit' ? '적합' : rec.category === 'partial' ? '주의' : '긴급';
+    options.push(`<option value="${rec.employee.id}" ${selected === rec.employee.id ? 'selected' : ''}>${escapeHtml(rec.employee.name)} · ${mark} · ${escapeHtml(partName(rec.employee.partId))}</option>`);
+  });
+  if (options.length === 1) options.push('<option disabled>조건에 맞는 직원 없음</option>');
+  return options.join('');
+}
+
+function getDayRequirements(dayKey) {
+  return state.requirements
+    .filter((req) => req.dayOfWeek === dayKey)
+    .sort((a,b)=>toMinutes(a.startTime)-toMinutes(b.startTime));
+}
+
+function stationSortValue(stationId) {
+  return num(byId(state.stations, stationId)?.sortOrder, 999);
+}
+
+function partSortValue(partId) {
+  return num(byId(state.parts, partId)?.sortOrder, 999);
+}
+
+function getHorizontalRosterData(dayKey) {
+  const reqs = getDayRequirements(dayKey);
+  const rowMap = new Map();
+
+  reqs.forEach((req) => {
+    const localCounts = {};
+    (req.stationRequirements || [])
+      .slice()
+      .sort((a, b) =>
+        partSortValue(a.partId) - partSortValue(b.partId) ||
+        stationSortValue(a.stationId) - stationSortValue(b.stationId) ||
+        stationName(a.stationId).localeCompare(stationName(b.stationId))
+      )
+      .forEach((sreq) => {
+        const count = Math.max(1, Number(sreq.requiredCount || 1));
+        for (let slotIndex = 0; slotIndex < count; slotIndex += 1) {
+          const pairKey = `${sreq.partId}__${sreq.stationId}`;
+          const occurrence = localCounts[pairKey] || 0;
+          localCounts[pairKey] = occurrence + 1;
+          const rowId = `${pairKey}__${occurrence}`;
+          if (!rowMap.has(rowId)) {
+            rowMap.set(rowId, {
+              id: rowId,
+              partId: sreq.partId,
+              stationId: sreq.stationId,
+              occurrence,
+              cells: {},
+            });
+          }
+          rowMap.get(rowId).cells[req.id] = { req, sreq, slotIndex, key: assignmentKey(req.id, sreq.id, slotIndex) };
+        }
+      });
+  });
+
+  const rows = [...rowMap.values()].sort((a,b) =>
+    partSortValue(a.partId) - partSortValue(b.partId) ||
+    stationSortValue(a.stationId) - stationSortValue(b.stationId) ||
+    a.occurrence - b.occurrence
+  );
+  return { reqs, rows };
+}
+
+function renderRosterCell(cell) {
+  if (!cell) return '<td class="empty-cell"><span>—</span></td>';
+  const { req, sreq, slotIndex, key } = cell;
+  const selected = state.schedule[key] || '';
+  const status = getAssignmentStatus(req, sreq, key);
+  return `<td class="matrix-cell ${status.className}">
+    <select class="matrix-select" data-action="assign-schedule" data-key="${key}">${employeeOptionsForRequirement(req, sreq, selected, key)}</select>
+    <div class="cell-meta"><span class="badge ${status.className}">${status.label}</span></div>
+    <div class="matrix-actions">
+      <button class="link-btn" data-action="show-recommend" data-req="${req.id}" data-sreq="${sreq.id}" data-slot="${slotIndex}">추천</button>
+      <button class="link-btn" data-action="show-replace" data-req="${req.id}" data-sreq="${sreq.id}" data-slot="${slotIndex}" ${selected ? '' : 'disabled'}>대체</button>
+    </div>
+  </td>`;
+}
+
+function summarizeHorizontalRow(row, reqs) {
+  const statuses = reqs
+    .map((req) => row.cells[req.id])
+    .filter(Boolean)
+    .map((cell) => getAssignmentStatus(cell.req, cell.sreq, cell.key));
+  if (!statuses.length) return { label: '해당 없음', className: 'info', detail: '' };
+  const missing = statuses.filter((s) => s.label === '미배정').length;
+  const danger = statuses.filter((s) => s.className === 'danger').length;
+  const warn = statuses.filter((s) => s.className === 'warn').length;
+  const ok = statuses.filter((s) => s.className === 'ok').length;
+  const requirementSamples = reqs
+    .map((req) => row.cells[req.id])
+    .filter(Boolean)
+    .map((cell) => `${requiredSkillName(cell.sreq)} L${cell.sreq.minLevel}-S${cell.sreq.minStep}`);
+  const uniqueReqs = [...new Set(requirementSamples)];
+  if (missing || danger) return { label: `미배정/위험 ${missing || danger}`, className: 'danger', detail: uniqueReqs.join(' · ') };
+  if (warn) return { label: `주의 ${warn}`, className: 'warn', detail: uniqueReqs.join(' · ') };
+  return { label: `적합 ${ok}`, className: 'ok', detail: uniqueReqs.join(' · ') };
+}
+
+function renderRosterSheet() {
+  const { reqs, rows } = getHorizontalRosterData(selectedScheduleDay);
+  return `
+    <div class="card sheet-card horizontal-roster-card">
+      <div class="section-head">
+        <div>
+          <h3>${dayLabel(selectedScheduleDay)} Roster Sheet</h3>
+          <p class="small-text">시간을 가로축에 둔 배치표다. 왼쪽 Part/Station 행을 보고, 각 시간대 칸에서 조건에 맞는 직원만 선택한다.</p>
+        </div>
+        <button class="btn small secondary" data-action="export-roster-csv">CSV 내보내기</button>
+      </div>
+      <div class="table-wrap roster-wrap horizontal-roster-wrap">
+        <table class="horizontal-roster-table">
+          <thead>
+            <tr>
+              <th class="sticky-col col-part">Part</th>
+              <th class="sticky-col col-station">Station</th>
+              <th class="sticky-col col-seat">Seat</th>
+              ${reqs.map((req) => `<th class="time-col"><strong>${req.startTime}–${req.endTime}</strong><br><span>${escapeHtml(req.label)}</span>${req.isPeak ? '<br><span class="badge danger">Peak</span>' : ''}</th>`).join('')}
+              <th class="status-col">Status / Required</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map((row) => {
+              const summary = summarizeHorizontalRow(row, reqs);
+              return `<tr>
+                <td class="sticky-col col-part"><strong>${escapeHtml(partName(row.partId))}</strong></td>
+                <td class="sticky-col col-station">${escapeHtml(stationName(row.stationId))}</td>
+                <td class="sticky-col col-seat">#${row.occurrence + 1}</td>
+                ${reqs.map((req) => renderRosterCell(row.cells[req.id])).join('')}
+                <td class="status-col"><span class="badge ${summary.className}">${summary.label}</span><div class="status-detail wide">${escapeHtml(summary.detail)}</div></td>
+              </tr>`;
+            }).join('') || `<tr><td colspan="${4 + reqs.length}" class="muted">이 요일에는 Requirements에서 추가된 자리가 없다.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function partCategory(partId) {
+  const name = (partName(partId) || '').toLowerCase();
+  if (name.includes('kitchen') || name.includes('주방')) return 'kitchen';
+  if (name.includes('hall') || name.includes('홀') || name.includes('barista') || name.includes('바리스타') || name === 'bar' || name.includes(' bar') || name.includes('바')) return 'hallbarista';
+  return 'other';
+}
+
+
+function phaseKeyFromReq(req) {
+  return `${req.startTime}__${req.endTime}__${req.label || ''}`;
+}
+
+function getConfirmedRosterData() {
+  const requirements = state.requirements.slice().sort((a, b) =>
+    toMinutes(a.startTime) - toMinutes(b.startTime) ||
+    (a.label || '').localeCompare(b.label || '')
+  );
+  const phaseMap = new Map();
+  requirements.forEach((req) => {
+    const key = phaseKeyFromReq(req);
+    if (!phaseMap.has(key)) {
+      phaseMap.set(key, {
+        key,
+        startTime: req.startTime,
+        endTime: req.endTime,
+        label: req.label || '',
+      });
+    }
+  });
+  const phases = [...phaseMap.values()].sort((a, b) => toMinutes(a.startTime) - toMinutes(b.startTime) || a.label.localeCompare(b.label));
+  phases.forEach((phase, index) => { phase.phaseNo = index + 1; });
+
+  const reqByDayPhase = new Map();
+  state.requirements.forEach((req) => {
+    reqByDayPhase.set(`${req.dayOfWeek}__${phaseKeyFromReq(req)}`, req);
+  });
+
+  const activePartIds = new Set();
+  state.requirements.forEach((req) => {
+    (req.stationRequirements || []).forEach((sreq) => activePartIds.add(sreq.partId));
+  });
+
+  const partsForPrint = state.parts
+    .slice()
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .filter((part) => activePartIds.has(part.id));
+
+  const sections = partsForPrint.map((part) => {
+    const rows = [];
+    phases.forEach((phase) => {
+      const row = { phase, cells: {}, hasContent: false };
+      DAYS.forEach((day) => {
+        const req = reqByDayPhase.get(`${day.key}__${phase.key}`);
+        if (!req) {
+          row.cells[day.key] = null;
+          return;
+        }
+        const localCounts = {};
+        const items = [];
+        (req.stationRequirements || [])
+          .slice()
+          .sort((a, b) => stationSortValue(a.stationId) - stationSortValue(b.stationId) || stationName(a.stationId).localeCompare(stationName(b.stationId)))
+          .forEach((sreq) => {
+            if (sreq.partId !== part.id) return;
+            const count = Math.max(1, Number(sreq.requiredCount || 1));
+            for (let slotIndex = 0; slotIndex < count; slotIndex += 1) {
+              const pairKey = `${sreq.partId}__${sreq.stationId}`;
+              const occurrence = localCounts[pairKey] || 0;
+              localCounts[pairKey] = occurrence + 1;
+              const assignmentKeyValue = assignmentKey(req.id, sreq.id, slotIndex);
+              const employeeId = state.schedule[assignmentKeyValue] || '';
+              items.push({ req, sreq, slotIndex, occurrence, key: assignmentKeyValue, employeeId });
+              row.hasContent = true;
+            }
+          });
+        row.cells[day.key] = items;
+      });
+      if (row.hasContent) rows.push(row);
+    });
+    return { key: part.id, label: part.name, color: part.color, rows };
+  });
+
+  return { phases, sections };
+}
+
+function renderConfirmedCell(items) {
+  if (items === null) return '<td class="confirmed-empty"></td>';
+  if (!items || !items.length) return '<td class="confirmed-blank"></td>';
+  return `<td class="confirmed-phase-assignments">
+    <div class="confirmed-cell-list">
+      ${items.map((item) => {
+        const station = stationName(item.sreq.stationId);
+        const employee = item.employeeId ? employeeName(item.employeeId) : '';
+        const status = getAssignmentStatus(item.req, item.sreq, item.key);
+        const className = employee ? status.className : 'missing-name';
+        const occurrenceLabel = item.occurrence ? ` #${item.occurrence + 1}` : '';
+        return `<div class="confirmed-line ${className}"><span class="work-name">${escapeHtml(station)}${occurrenceLabel} :</span> <span class="employee-name">${escapeHtml(employee)}</span></div>`;
+      }).join('')}
+    </div>
+  </td>`;
+}
+
+function renderConfirmedRoster() {
+  const { sections } = getConfirmedRosterData();
+  return `
+    <div class="card sheet-card confirmed-print-card">
+      <div class="section-head no-print">
+        <div>
+          <h3>월–일 전체 확정 근무표</h3>
+          <p class="small-text">PDF 출력용 로스터다. 요일은 가로축, Phase는 세로축이며 Part별로 한 페이지씩 출력되도록 압축했다.</p>
+        </div>
+        <div class="inline-actions">
+          <button class="btn small secondary" data-action="export-roster-csv">CSV 내보내기</button>
+          <button class="btn small secondary" data-action="print-confirmed-roster">PDF용 인쇄</button>
+        </div>
+      </div>
+      <div class="confirmed-print-title print-only">
+        <h2>Weekly Roster</h2>
+        <p>SkillShift Planner</p>
+      </div>
+      <div class="confirmed-sections">
+        ${sections.map((section) => `
+          <div class="confirmed-section">
+            <div class="confirmed-category-title" style="background:${section.color || '#111827'}">${escapeHtml(section.label)}</div>
+            <div class="table-wrap roster-wrap confirmed-week-wrap">
+              <table class="confirmed-week-matrix compact-confirmed-matrix">
+                <thead>
+                  <tr>
+                    <th class="phase-column">Phase / Time</th>
+                    ${DAYS.map((day) => `<th>${day.label}</th>`).join('')}
+                  </tr>
+                </thead>
+                <tbody>
+                  ${section.rows.map((row) => `
+                    <tr>
+                      <td class="phase-cell"><strong>Phase ${row.phase.phaseNo}</strong><br><span>${row.phase.startTime}–${row.phase.endTime}</span><br><em>${escapeHtml(row.phase.label)}</em></td>
+                      ${DAYS.map((day) => renderConfirmedCell(row.cells[day.key])).join('')}
+                    </tr>
+                  `).join('') || '<tr><td colspan="8" class="muted">이 카테고리에 배정할 업무가 없다.</td></tr>'}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `).join('') || '<p class="muted">Requirements에 시간 블록이 없다.</p>'}
+      </div>
+    </div>
+  `;
+}
+function renderScheduleTimeView() {
+  return DAYS.map((day) => {
+    const reqs = state.requirements.filter((req) => req.dayOfWeek === day.key).sort((a,b)=>toMinutes(a.startTime)-toMinutes(b.startTime));
+    return `<div class="schedule-day"><h3 class="group-title">${day.label}</h3><div class="grid">${reqs.map(renderScheduleSlot).join('') || '<p class="muted">시간 블록 없음</p>'}</div></div>`;
+  }).join('');
+}
+
+function renderScheduleSlot(req) {
+  const slotIssues = calculateValidation().filter((issue) => issue.req?.id === req.id);
+  const status = slotIssues.some(i => i.severity === 'high') ? 'danger' : slotIssues.length ? 'warn' : 'ok';
+  return `
+    <div class="card slot-card ${status}">
+      <div class="section-head" style="margin-bottom:4px;">
+        <div><h3>${escapeHtml(req.label)} <span class="badge ${req.isPeak ? 'danger' : 'info'}">${req.startTime}–${req.endTime}</span></h3><p class="small-text">${dayLabel(req.dayOfWeek)} · ${req.isPeak ? 'Peak' : 'Normal'} · ${durationHours(req.startTime, req.endTime).toFixed(1)}h</p></div>
+        <span class="badge ${status === 'ok' ? 'ok' : status === 'warn' ? 'warn' : 'danger'}">${status === 'ok' ? '정상' : status === 'warn' ? '주의' : '위험'}</span>
+      </div>
+      ${req.stationRequirements.map((sreq) => renderStationAssignment(req, sreq)).join('')}
+    </div>
+  `;
+}
+
+function renderStationAssignment(req, sreq) {
+  const slots = Array.from({ length: Number(sreq.requiredCount || 1) }, (_, i) => i);
+  return `
+    <div class="station-row">
+      <div>
+        <strong>${escapeHtml(partName(sreq.partId))} / ${escapeHtml(stationName(sreq.stationId))}</strong>
+        <p class="small-text">${escapeHtml(requiredSkillName(sreq))} · Min L${sreq.minLevel}-S${sreq.minStep} · ${sreq.requiredCount || 1}명</p>
+      </div>
+      <div class="assignment-list">
+        ${slots.map((slotIndex) => {
+          const key = assignmentKey(req.id, sreq.id, slotIndex);
+          const assigned = state.schedule[key] || '';
+          return `<div class="assignment-box">
+            <select data-action="assign-schedule" data-key="${key}">${employeeOptionsForRequirement(req, sreq, assigned)}</select>
+            <button class="btn small secondary" data-action="show-recommend" data-req="${req.id}" data-sreq="${sreq.id}" data-slot="${slotIndex}">추천</button>
+            <button class="btn small ghost" data-action="show-replace" data-req="${req.id}" data-sreq="${sreq.id}" data-slot="${slotIndex}" ${assigned ? '' : 'disabled'}>대체</button>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderRecommendationPanel() {
+  const { reqId, sreqId, slotIndex } = recommendationContext;
+  const req = getReqById(reqId);
+  const sreq = getStationReq(reqId, sreqId);
+  if (!req || !sreq) return '';
+  const key = assignmentKey(reqId, sreqId, slotIndex);
+  const recs = getRecommendations(req, sreq, '', key);
+  return `<div class="card recommend-panel">
+    <div class="section-head"><div><h3>추천 직원 · ${dayLabel(req.dayOfWeek)} ${req.startTime}–${req.endTime} / ${partName(sreq.partId)} / ${stationName(sreq.stationId)}</h3><p class="small-text">필요: ${requiredSkillName(sreq)} L${sreq.minLevel}-S${sreq.minStep}</p></div><button class="btn small secondary" data-action="close-panels">닫기</button></div>
+    ${renderRecommendationGroups(recs, key)}
+  </div>`;
+}
+
+function renderReplacementPanel() {
+  const { reqId, sreqId, slotIndex } = replacementContext;
+  const req = getReqById(reqId);
+  const sreq = getStationReq(reqId, sreqId);
+  const key = assignmentKey(reqId, sreqId, slotIndex);
+  const original = state.schedule[key];
+  if (!req || !sreq || !original) return '';
+  const originalEmp = byId(state.employees, original);
+  const originalCost = originalEmp ? durationHours(req.startTime, req.endTime) * getRate(originalEmp, req.dayOfWeek) : 0;
+  const recs = getRecommendations(req, sreq, original, key).map((rec) => ({ ...rec, costDiff: rec.addedCost - originalCost }));
+  return `<div class="card recommend-panel">
+    <div class="section-head"><div><h3>대체근무자 추천 · ${employeeName(original)} 대체</h3><p class="small-text">${dayLabel(req.dayOfWeek)} ${req.startTime}–${req.endTime} / ${partName(sreq.partId)} / ${stationName(sreq.stationId)} · 기존 비용 ${money(originalCost)}</p></div><button class="btn small secondary" data-action="close-panels">닫기</button></div>
+    ${renderRecommendationGroups(recs, key, true)}
+  </div>`;
+}
+
+function renderRecommendationGroups(recs, key, isReplacement = false) {
+  const labels = { fit: '완전 적합', partial: '부분 적합', emergency: '긴급 대체 가능', bad: '부적합' };
+  return ['fit', 'partial', 'emergency', 'bad'].map((cat) => {
+    const group = recs.filter((r) => r.category === cat).slice(0, cat === 'bad' ? 5 : 8);
+    if (!group.length) return '';
+    const cls = cat === 'fit' ? 'ok' : cat === 'partial' ? 'warn' : cat === 'emergency' ? 'info' : 'danger';
+    return `<div style="margin-top:12px;"><h4><span class="badge ${cls}">${labels[cat]}</span></h4><div class="grid two">
+      ${group.map((rec) => `<div class="card soft">
+        <h4>${escapeHtml(rec.employee.name)} <span class="badge">Score ${rec.score.toFixed(0)}</span></h4>
+        <p class="small-text">${escapeHtml(partName(rec.employee.partId))} · ${money(rec.employee.baseRate)}/h · 주간 예상 ${rec.projectedHours.toFixed(1)}h</p>
+        ${isReplacement ? `<p class="small-text">기존 대비 비용 차이: <strong>${rec.costDiff >= 0 ? '+' : ''}${money(rec.costDiff)}</strong></p>` : ''}
+        <p class="small-text">${rec.reasons.map(escapeHtml).join('<br>')}</p>
+        ${cat !== 'bad' ? `<button class="btn small" data-action="apply-recommend" data-key="${key}" data-emp="${rec.employee.id}">이 직원 배치</button>` : ''}
+      </div>`).join('')}
+    </div></div>`;
+  }).join('');
+}
+
+function renderScheduleMemberView() {
+  return `<div class="grid">${state.employees.map((emp) => {
+    const assignments = getAssignments().filter((a) => a.employeeId === emp.id).sort((a,b) => {
+      const ra = getReqById(a.reqId); const rb = getReqById(b.reqId);
+      return DAYS.findIndex(d=>d.key===ra?.dayOfWeek) - DAYS.findIndex(d=>d.key===rb?.dayOfWeek) || toMinutes(ra?.startTime) - toMinutes(rb?.startTime);
+    });
+    return `<div class="card"><h3>${escapeHtml(emp.name)} <span class="badge info">${employeeWeeklyHours(emp.id).toFixed(1)}h</span> <span class="badge">${money(employeeWeeklyCost(emp.id))}</span></h3>
+      ${assignments.map((a) => {
+        const req = getReqById(a.reqId); const sreq = getStationReq(a.reqId, a.stationReqId);
+        return `<span class="badge ${req?.isPeak ? 'danger' : 'info'}">${dayLabel(req?.dayOfWeek)} ${req?.startTime}–${req?.endTime} · ${stationName(sreq?.stationId)}</span>`;
+      }).join('') || '<p class="muted">배정 없음</p>'}
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function renderSchedulePartView() {
+  return state.parts.map((part) => {
+    const partAssignments = getAssignments().filter((a) => {
+      const sreq = getStationReq(a.reqId, a.stationReqId);
+      return sreq?.partId === part.id;
+    });
+    const cost = partAssignments.reduce((sum, a) => {
+      const emp = byId(state.employees, a.employeeId); const req = getReqById(a.reqId);
+      return emp && req ? sum + durationHours(req.startTime, req.endTime) * getRate(emp, req.dayOfWeek) : sum;
+    }, 0);
+    return `<div class="card" style="margin-bottom:14px;"><h3><span class="badge dark" style="background:${part.color}">${escapeHtml(part.name)}</span> ${partAssignments.length} assignments · ${money(cost)}</h3>
+      ${partAssignments.map((a) => {
+        const req = getReqById(a.reqId); const sreq = getStationReq(a.reqId, a.stationReqId);
+        return `<span class="badge ${req?.isPeak ? 'danger' : 'info'}">${dayLabel(req?.dayOfWeek)} ${req?.startTime}–${req?.endTime} · ${stationName(sreq?.stationId)} · ${employeeName(a.employeeId)}</span>`;
+      }).join('') || '<p class="muted">배정 없음</p>'}
+    </div>`;
+  }).join('');
+}
+
+function renderLabor() {
+  const cost = totalLaborCost();
+  const budget = num(state.settings.laborBudget);
+  const ratio = budget ? (cost / budget) * 100 : 0;
+  const targetRatio = num(state.settings.targetLaborRatio) / 100;
+  const neededSales = targetRatio ? cost / targetRatio : 0;
+  const status = ratio > 100 ? 'danger' : ratio >= 90 ? 'warn' : '';
+
+  const employeeRows = state.employees.map((emp) => {
+    const bd = employeeWorkBreakdown(emp.id);
+    return `<tr>
+      <td>${escapeHtml(emp.name)}</td>
+      <td>${escapeHtml(partName(emp.partId))}</td>
+      <td>${bd.weekdayHours.toFixed(1)}h</td>
+      <td>${bd.saturdayHours.toFixed(1)}h</td>
+      <td>${bd.sundayHours.toFixed(1)}h</td>
+      <td><strong>${bd.totalHours.toFixed(1)}h</strong></td>
+      <td>${money(bd.totalCost)}</td>
+      <td>${emp.maxWeeklyHours}h</td>
+    </tr>`;
+  }).join('');
+  const partRows = state.parts.map((part) => {
+    const ids = state.employees.filter((e) => e.partId === part.id).map((e) => e.id);
+    const h = ids.reduce((sum, id) => sum + employeeWeeklyHours(id), 0);
+    const c = ids.reduce((sum, id) => sum + employeeWeeklyCost(id), 0);
+    return `<tr><td>${escapeHtml(part.name)}</td><td>${h.toFixed(1)}h</td><td>${money(c)}</td></tr>`;
+  }).join('');
+
+  el = document.getElementById('labor');
+  el.innerHTML = `
+    <div class="section-head"><div><h2>Labor Cost</h2><p>스케줄 배정 결과를 기준으로 직원별 평일/토/일 근무시간과 파트별 인건비를 계산한다.</p></div></div>
+    <div class="grid four">
+      ${metricCard('총 인건비', money(cost), '현재 스케줄 기준', status)}
+      ${metricCard('목표 인건비', money(budget), ratio > 100 ? `초과 ${money(cost-budget)}` : `여유 ${money(budget-cost)}`)}
+      ${metricCard('사용률', `${ratio.toFixed(1)}%`, '총 인건비 ÷ 목표 인건비', status)}
+      ${metricCard('필요 매출', money(neededSales), `${state.settings.targetLaborRatio}% 인건비율 기준`)}
+    </div>
+    <div class="card" style="margin-top:14px;"><h3>목표 대비 진행률</h3><div class="progress ${status}"><div style="width:${Math.min(ratio,120)}%"></div></div></div>
+    <div class="grid two" style="margin-top:14px;">
+      <div class="card wide-card"><h3>직원별</h3><div class="table-wrap"><table><thead><tr><th>직원</th><th>Part</th><th>평일</th><th>토</th><th>일</th><th>합계</th><th>예상 인건비</th><th>최대</th></tr></thead><tbody>${employeeRows}</tbody></table></div></div>
+      <div class="card"><h3>파트별</h3><div class="table-wrap"><table><thead><tr><th>Part</th><th>시간</th><th>예상 인건비</th></tr></thead><tbody>${partRows}</tbody></table></div></div>
+    </div>
+  `;
+}
+
+function renderValidation() {
+  const issues = calculateValidation();
+  const el = document.getElementById('validation');
+  el.innerHTML = `
+    <div class="section-head"><div><h2>Validation</h2><p>미배정, Skill/Level 부족, 가능 시간 위반, 중복 배치, 목표 인건비 초과를 검사한다.</p></div></div>
+    <div class="grid">
+      ${issues.map((issue) => `<div class="card issue ${issue.severity === 'high' ? 'high' : issue.severity === 'low' ? 'low' : ''}">
+        <h3>${escapeHtml(issue.type)} <span class="badge ${issue.severity === 'high' ? 'danger' : issue.severity === 'medium' ? 'warn' : 'info'}">${issue.severity}</span></h3>
+        <p>${escapeHtml(issue.message)}</p>
+        ${issue.req ? `<p class="small-text">${dayLabel(issue.req.dayOfWeek)} ${issue.req.startTime}–${issue.req.endTime} · ${escapeHtml(issue.req.label || '')}</p>` : ''}
+        ${issue.sreq ? `<p class="small-text">${escapeHtml(partName(issue.sreq.partId))} / ${escapeHtml(stationName(issue.sreq.stationId))} · 필요 ${escapeHtml(requiredSkillName(issue.sreq))} L${issue.sreq.minLevel}-S${issue.sreq.minStep}</p>` : ''}
+      </div>`).join('') || '<div class="card"><h3>검증 결과</h3><span class="badge ok">현재 주요 문제 없음</span></div>'}
+    </div>
+  `;
+}
+
+function renderRoadmap() {
+  const items = [
+    ['완전 자동 스케줄 생성', '현재는 추천 기반 배치다. 향후 Requirements, Members, Availability, Level/Step, Labor Budget을 기준으로 주간 스케줄을 자동 생성한다.'],
+    ['직원용 모바일 페이지', '직원이 가능 시간, 휴무 요청, 대체 가능 여부를 직접 제출하는 화면을 분리한다.'],
+    ['승인 시스템', '직원이 제출한 휴무/가능 시간은 관리자가 승인해야 스케줄 추천에 반영되도록 한다.'],
+    ['실제 출퇴근 기록', '예정 스케줄과 실제 출퇴근 시간을 비교해 차이 시간과 실제 인건비를 계산한다.'],
+    ['공휴일 / Penalty Rate / Super / Tax', '현재는 단순 배율 계산만 한다. 향후 호주 기준 penalty rate, allowance, super, tax를 설정값으로 확장한다.'],
+    ['매출 연동', '실제 매출 또는 기존 가게 운영 앱의 Sales 데이터와 연결해 실시간 인건비율을 계산한다.'],
+    ['직원 성장 관리', 'Level/Step을 교육 기록과 승급 체크리스트로 확장한다. 부족 Station을 기준으로 교육 대상자를 추천한다.'],
+    ['직원 의존도 분석', '특정 직원이 빠졌을 때 운영이 무너지는 구조를 감지하고 대체 가능자 부족을 경고한다.'],
+    ['알림 기능', '스케줄 확정, 변경, 대체 요청, 인건비 초과, 필수 인력 부족 알림을 구현한다.'],
+  ];
+  document.getElementById('roadmap').innerHTML = `
+    <div class="section-head"><div><h2>Roadmap</h2><p>지금 구현하지 않는 기능을 앱 내부에 남겨두는 개발 메모다.</p></div></div>
+    <div class="roadmap-list">${items.map(([title, text]) => `<div class="card"><h3>${escapeHtml(title)}</h3><p>${escapeHtml(text)}</p></div>`).join('')}</div>
+  `;
+}
+
+function handleClick(e) {
+  const target = e.target.closest('[data-action], [data-tab]');
+  if (!target) return;
+  const tab = target.dataset.tab;
+  if (tab) {
+    activeTab = tab;
+    render();
+    return;
+  }
+  const action = target.dataset.action;
+  if (!action) return;
+
+  if (action === 'add-part') addPart();
+  if (action === 'delete-part') deletePart(target.dataset.id);
+  if (action === 'add-station') addStation();
+  if (action === 'delete-station') deleteStation(target.dataset.id);
+  if (action === 'add-skill') addSkill();
+  if (action === 'select-skill') { selectedSkillId = target.dataset.id; render(); }
+  if (action === 'delete-skill') deleteSkill(target.dataset.id);
+  if (action === 'add-level') addLevel(target.dataset.skill);
+  if (action === 'delete-level') deleteLevel(target.dataset.id);
+  if (action === 'add-employee') addEmployee();
+  if (action === 'delete-employee') deleteEmployee(target.dataset.id);
+  if (action === 'toggle-employee') toggleEmployee(target.dataset.id);
+  if (action === 'assign-skill') assignSkillToEmployee(target.dataset.id);
+  if (action === 'remove-emp-skill') removeEmployeeSkill(target.dataset.emp, target.dataset.skill);
+  if (action === 'add-requirement') addRequirement();
+  if (action === 'delete-requirement') deleteRequirement(target.dataset.id);
+  if (action === 'add-station-req') addStationRequirement(target.dataset.id);
+  if (action === 'delete-station-req') deleteStationRequirement(target.dataset.req, target.dataset.id);
+  if (action === 'clone-station-req') cloneStationRequirement(target.dataset.req, target.dataset.id);
+  if (action === 'schedule-view') { scheduleView = target.dataset.view; render(); }
+  if (action === 'schedule-day') { selectedScheduleDay = target.dataset.day; recommendationContext = null; replacementContext = null; render(); }
+  if (action === 'req-day') { selectedRequirementDay = target.dataset.day; render(); }
+  if (action === 'export-roster-csv') exportRosterCsv();
+  if (action === 'print-confirmed-roster') window.print();
+  if (action === 'show-recommend') { recommendationContext = { reqId: target.dataset.req, sreqId: target.dataset.sreq, slotIndex: Number(target.dataset.slot) }; replacementContext = null; render(); }
+  if (action === 'show-replace') { replacementContext = { reqId: target.dataset.req, sreqId: target.dataset.sreq, slotIndex: Number(target.dataset.slot) }; recommendationContext = null; render(); }
+  if (action === 'close-panels') { recommendationContext = null; replacementContext = null; render(); }
+  if (action === 'apply-recommend') { state.schedule[target.dataset.key] = target.dataset.emp; saveState(false); recommendationContext = null; replacementContext = null; render(); toast('배정됨'); }
+}
+
+function handleChange(e) {
+  const el = e.target;
+  const action = el.dataset.action;
+  if (el.dataset.setting) {
+    state.settings[el.dataset.setting] = num(el.value);
+    saveState(false);
+    render();
+    return;
+  }
+  if (action === 'member-part-filter') {
+    selectedMemberPart = el.value || 'all';
+    render();
+    return;
+  }
+  if (action === 'new-skill-part') {
+    refreshNewSkillStationControl();
+    return;
+  }
+  if (action === 'member-skill-part') {
+    refreshMemberStationControl(el.dataset.emp);
+    return;
+  }
+  if (action === 'member-skill-station') {
+    refreshMemberSkillControls(el.dataset.emp);
+    return;
+  }
+  if (action === 'member-skill-select') {
+    refreshMemberLevelControl(el.dataset.emp);
+    return;
+  }
+  if (action === 'member-level-select') {
+    refreshMemberStepControl(el.dataset.emp);
+    return;
+  }
+  if (action === 'req-part-select') {
+    refreshRequirementStationControl(el.dataset.req);
+    return;
+  }
+  if (action === 'assign-schedule') {
+    if (el.value) state.schedule[el.dataset.key] = el.value;
+    else delete state.schedule[el.dataset.key];
+    saveState(false);
+    render();
+    return;
+  }
+  if (action?.startsWith('availability')) {
+    const emp = byId(state.employees, el.dataset.emp);
+    if (!emp) return;
+    emp.availability = emp.availability || defaultAvailability();
+    emp.availability[el.dataset.day] = emp.availability[el.dataset.day] || { available: false, startTime: '10:00', endTime: '22:00' };
+    if (action === 'availability-check') emp.availability[el.dataset.day].available = el.checked;
+    if (action === 'availability-start') emp.availability[el.dataset.day].startTime = el.value;
+    if (action === 'availability-end') emp.availability[el.dataset.day].endTime = el.value;
+    saveState(false);
+    render();
+  }
+}
+
+function addPart() {
+  const name = document.getElementById('newPartName').value.trim();
+  if (!name) return toast('Part 이름을 입력하세요');
+  state.parts.push({ id: uid('part'), name, description: document.getElementById('newPartDesc').value.trim(), color: document.getElementById('newPartColor').value, sortOrder: state.parts.length + 1, active: true });
+  saveState(false); render(); toast('Part 추가됨');
+}
+function deletePart(id) {
+  if (!confirm('Part를 삭제할까요? 관련 직원/스테이션 연결은 남을 수 있습니다.')) return;
+  state.parts = state.parts.filter((p) => p.id !== id);
+  if (selectedMemberPart === id) selectedMemberPart = 'all';
+  saveState(false); render();
+}
+function addStation() {
+  const name = document.getElementById('newStationName').value.trim();
+  if (!name) return toast('Station 이름을 입력하세요');
+  const partId = document.getElementById('newStationPart').value;
+  state.stations.push({ id: uid('st'), partId, name, description: document.getElementById('newStationDesc').value.trim(), requiredSkillIds: [], sortOrder: state.stations.length + 1, active: true });
+  saveState(false); render(); toast('Station 추가됨');
+}
+function deleteStation(id) {
+  if (!confirm('Station을 삭제할까요?')) return;
+  state.stations = state.stations.filter((s) => s.id !== id);
+  saveState(false); render();
+}
+function createStarterLevelsForSkill(skillId, stationId = '') {
+  const base = [
+    [1, 1, '기본 개념을 배우는 단계'],
+    [1, 2, '반복 업무와 기본 흐름을 일부 수행할 수 있는 단계'],
+    [1, 3, '대부분의 흐름을 알고 몇 가지 확인을 통해 업무 가능'],
+    [1, 4, 'Level 2 직전 단계. 약간의 어시스트를 제외하면 대부분 수행 가능'],
+    [2, 1, '일반 시간대 단독 업무가 가능한 단계'],
+    [3, 1, '피크타임 핵심 업무가 가능한 단계'],
+    [4, 1, '리더와 교육 담당이 가능한 단계'],
+  ];
+  return base.map(([levelNumber, stepNumber, description], index) => ({
+    id: uid('lvl'),
+    skillId,
+    levelNumber,
+    levelName: `Level ${levelNumber}`,
+    stepNumber,
+    stepName: `Step ${stepNumber}`,
+    description,
+    canDo: '',
+    cannotDoYet: '',
+    canWorkAlone: levelNumber >= 2,
+    canWorkPeakTime: levelNumber >= 3,
+    needsSupervisor: levelNumber < 2,
+    allowedStations: [stationId].filter(Boolean),
+    nextPromotionCriteria: '',
+    sortOrder: state.levelTemplates.length + index + 1,
+  }));
+}
+
+function addSkill() {
+  const name = document.getElementById('newSkillName').value.trim();
+  if (!name) return toast('Skill 이름을 입력하세요');
+  const partId = document.getElementById('newSkillPart').value;
+  const stationId = document.getElementById('newSkillStation').value;
+  const id = uid('sk');
+  state.skills.push({ id, name, partId, stationId, category: partName(partId), description: '', isCritical: true, usesLevelStep: true, active: true });
+  state.levelTemplates.push(...createStarterLevelsForSkill(id, stationId));
+  const station = byId(state.stations, stationId);
+  if (station) station.requiredSkillIds = Array.from(new Set([...(station.requiredSkillIds || []), id]));
+  selectedSkillId = id;
+  saveState(false); render(); toast('Skill 추가됨');
+}
+function deleteSkill(id) {
+  if (!confirm('Skill을 삭제할까요? 직원에게 부여된 해당 Skill도 제거됩니다.')) return;
+  state.skills = state.skills.filter((s) => s.id !== id);
+  state.levelTemplates = state.levelTemplates.filter((l) => l.skillId !== id);
+  state.employees.forEach((emp) => { if (emp.assignedSkills) delete emp.assignedSkills[id]; });
+  selectedSkillId = state.skills[0]?.id || '';
+  saveState(false); render();
+}
+function addLevel(skillId = '') {
+  const targetSkillId = skillId || selectedSkillId;
+  if (!targetSkillId) return;
+  const levelNumber = num(document.querySelector(`[data-level-skill="${targetSkillId}"][data-level-field="level"]`)?.value ?? document.getElementById('newLevelNumber')?.value, 1);
+  const stepNumber = num(document.querySelector(`[data-level-skill="${targetSkillId}"][data-level-field="step"]`)?.value ?? document.getElementById('newStepNumber')?.value, 1);
+  const description = (document.querySelector(`[data-level-skill="${targetSkillId}"][data-level-field="desc"]`)?.value || document.getElementById('newLevelDesc')?.value || '').trim() || '운영자가 설명을 작성하세요.';
+  const skill = byId(state.skills, targetSkillId);
+  const exists = state.levelTemplates.some((tpl) => tpl.skillId === targetSkillId && Number(tpl.levelNumber) === levelNumber && Number(tpl.stepNumber) === stepNumber);
+  if (exists && !confirm('같은 Skill 안에 동일한 Level / Step이 이미 있습니다. 그래도 추가할까요?')) return;
+  state.levelTemplates.push({
+    id: uid('lvl'),
+    skillId: targetSkillId,
+    levelNumber,
+    levelName: `Level ${levelNumber}`,
+    stepNumber,
+    stepName: `Step ${stepNumber}`,
+    description,
+    canDo: '',
+    cannotDoYet: '',
+    canWorkAlone: levelNumber >= 2,
+    canWorkPeakTime: levelNumber >= 3,
+    needsSupervisor: levelNumber < 2,
+    allowedStations: [skill?.stationId].filter(Boolean),
+    nextPromotionCriteria: '',
+    sortOrder: state.levelTemplates.length + 1
+  });
+  saveState(false); render(); toast('Skill 단계 추가됨');
+}
+function deleteLevel(id) {
+  state.levelTemplates = state.levelTemplates.filter((l) => l.id !== id);
+  saveState(false); render();
+}
+function addEmployee() {
+  const name = document.getElementById('newEmpName').value.trim();
+  if (!name) return toast('직원 이름을 입력하세요');
+  state.employees.push({
+    id: uid('emp'), name, partId: document.getElementById('newEmpPart').value, role: document.getElementById('newEmpRole').value.trim() || 'Staff', employmentType: 'Casual', baseRate: num(document.getElementById('newEmpRate').value, 28),
+    saturdayMultiplier: 1.25, sundayMultiplier: 1.5, publicHolidayMultiplier: 2.25, maxWeeklyHours: num(document.getElementById('newEmpMax').value, 38), preferredWeeklyHours: 0,
+    availability: defaultAvailability('10:00', '22:00'), active: true, notes: '', assignedSkills: {}
+  });
+  saveState(false); render(); toast('직원 추가됨');
+}
+function deleteEmployee(id) {
+  if (!confirm('직원을 삭제할까요? 해당 직원의 스케줄 배정도 제거됩니다.')) return;
+  state.employees = state.employees.filter((emp) => emp.id !== id);
+  Object.keys(state.schedule).forEach((key) => { if (state.schedule[key] === id) delete state.schedule[key]; });
+  saveState(false); render();
+}
+function toggleEmployee(id) {
+  const emp = byId(state.employees, id);
+  if (!emp) return;
+  emp.active = !emp.active;
+  saveState(false); render();
+}
+function refreshNewSkillStationControl() {
+  const partSelect = document.getElementById('newSkillPart');
+  const stationSelect = document.getElementById('newSkillStation');
+  if (!partSelect || !stationSelect) return;
+  stationSelect.innerHTML = stationOptions('', partSelect.value, true);
+}
+function refreshRequirementStationControl(reqId) {
+  const partSelect = document.querySelector(`[data-req-field="part"][data-req="${reqId}"]`);
+  const stationSelect = document.querySelector(`[data-req-field="station"][data-req="${reqId}"]`);
+  if (!partSelect || !stationSelect) return;
+  stationSelect.innerHTML = stationOptions('', partSelect.value, true);
+}
+function refreshMemberStationControl(empId) {
+  const partSelect = document.querySelector(`[data-field="memberSkillPart"][data-emp="${empId}"]`);
+  const stationSelect = document.querySelector(`[data-field="memberSkillStation"][data-emp="${empId}"]`);
+  if (!partSelect || !stationSelect) return;
+  const firstStation = firstStationForPart(partSelect.value);
+  stationSelect.innerHTML = stationOptions(firstStation, partSelect.value, true);
+  stationSelect.value = firstStation;
+  refreshMemberSkillControls(empId);
+}
+function refreshMemberSkillControls(empId) {
+  const stationSelect = document.querySelector(`[data-field="memberSkillStation"][data-emp="${empId}"]`);
+  const skillSelect = document.querySelector(`[data-field="memberSkillSelect"][data-emp="${empId}"]`);
+  if (!stationSelect || !skillSelect) return;
+  const firstSkill = firstSkillForStation(stationSelect.value);
+  skillSelect.innerHTML = memberSkillSelectOptions(firstSkill, stationSelect.value);
+  skillSelect.value = firstSkill;
+  refreshMemberLevelControl(empId);
+}
+function refreshMemberLevelControl(empId) {
+  const skillSelect = document.querySelector(`[data-field="memberSkillSelect"][data-emp="${empId}"]`);
+  const levelSelect = document.querySelector(`[data-field="memberLevelSelect"][data-emp="${empId}"]`);
+  if (!skillSelect || !levelSelect) return;
+  const skillId = skillSelect.value;
+  const firstLevel = levelsForSkill(skillId)[0] || 1;
+  levelSelect.innerHTML = memberLevelOptions(skillId, firstLevel);
+  levelSelect.value = String(firstLevel);
+  refreshMemberStepControl(empId);
+}
+function refreshMemberStepControl(empId) {
+  const skillSelect = document.querySelector(`[data-field="memberSkillSelect"][data-emp="${empId}"]`);
+  const levelSelect = document.querySelector(`[data-field="memberLevelSelect"][data-emp="${empId}"]`);
+  const stepSelect = document.querySelector(`[data-field="memberStepSelect"][data-emp="${empId}"]`);
+  if (!skillSelect || !levelSelect || !stepSelect) return;
+  const skillId = skillSelect.value;
+  const level = levelSelect.value || levelsForSkill(skillId)[0] || 1;
+  const firstStep = stepsForSkill(skillId, level)[0] || 1;
+  stepSelect.innerHTML = memberStepOptions(skillId, level, firstStep);
+  stepSelect.value = String(firstStep);
+}
+function assignSkillToEmployee(empId) {
+  const emp = byId(state.employees, empId);
+  if (!emp) return;
+  const skillSelect = document.querySelector(`[data-field="memberSkillSelect"][data-emp="${empId}"]`);
+  const levelSelect = document.querySelector(`[data-field="memberLevelSelect"][data-emp="${empId}"]`);
+  const stepSelect = document.querySelector(`[data-field="memberStepSelect"][data-emp="${empId}"]`);
+  const skillId = skillSelect?.value;
+  const levelRaw = levelSelect?.value;
+  const stepRaw = stepSelect?.value;
+  if (!skillId) return toast('Skill을 선택하세요');
+  if (!levelRaw) return toast('Level을 선택하세요');
+  if (!stepRaw) return toast('Step을 선택하세요');
+  const skill = byId(state.skills, skillId);
+  if (!skill) return toast('Skill을 찾을 수 없습니다.');
+  emp.assignedSkills = emp.assignedSkills || {};
+  emp.assignedSkills[skillId] = { level: num(levelRaw), step: num(stepRaw), note: '' };
+  saveState(false); render(); toast(`${skill.name} Level ${levelRaw} / Step ${stepRaw} 저장됨`);
+}
+function removeEmployeeSkill(empId, skillId) {
+  const emp = byId(state.employees, empId);
+  if (!emp?.assignedSkills) return;
+  delete emp.assignedSkills[skillId];
+  saveState(false); render();
+}
+function addRequirement() {
+  const label = document.getElementById('newReqLabel').value.trim() || 'New Block';
+  const dayOfWeek = document.getElementById('newReqDay').value;
+  selectedRequirementDay = dayOfWeek;
+  state.requirements.push({ id: uid('req'), dayOfWeek, startTime: document.getElementById('newReqStart').value, endTime: document.getElementById('newReqEnd').value, label, minTotalStaff: 0, recommendedTotalStaff: 0, isPeak: document.getElementById('newReqPeak').value === 'true', needsHandover: false, handoverMinutes: 0, notes: '', stationRequirements: [] });
+  saveState(false); render(); toast('시간 블록 추가됨');
+}
+function deleteRequirement(id) {
+  if (!confirm('시간 블록을 삭제할까요? 관련 스케줄 배정도 제거됩니다.')) return;
+  state.requirements = state.requirements.filter((req) => req.id !== id);
+  Object.keys(state.schedule).forEach((key) => { if (parseAssignmentKey(key).reqId === id) delete state.schedule[key]; });
+  saveState(false); render();
+}
+function addStationRequirement(reqId) {
+  const req = getReqById(reqId);
+  if (!req) return;
+  const selectedPart = document.querySelector(`[data-req-field="part"][data-req="${reqId}"]`).value;
+  const station = document.querySelector(`[data-req-field="station"][data-req="${reqId}"]`).value;
+  const part = byId(state.stations, station)?.partId || selectedPart;
+  const level = num(document.querySelector(`[data-req-field="level"][data-req="${reqId}"]`).value, 1);
+  const step = num(document.querySelector(`[data-req-field="step"][data-req="${reqId}"]`).value, 1);
+  const skill = getRequiredSkillId({ stationId: station }) || '';
+  req.stationRequirements.push({ id: uid('sreq'), partId: part, stationId: station, requiredSkillId: skill, requiredCount: 1, minLevel: level, minStep: step, needsLeader: false, canUseLowerStepAsEmergency: true });
+  req.minTotalStaff = req.stationRequirements.length;
+  req.recommendedTotalStaff = req.minTotalStaff;
+  saveState(false); render(); toast('필요 자리 1개 추가됨');
+}
+
+function cloneStationRequirement(reqId, sreqId) {
+  const req = getReqById(reqId);
+  const source = req?.stationRequirements.find((r) => r.id === sreqId);
+  if (!req || !source) return;
+  req.stationRequirements.push({ ...source, id: uid('sreq'), requiredCount: 1 });
+  req.minTotalStaff = req.stationRequirements.length;
+  req.recommendedTotalStaff = req.minTotalStaff;
+  saveState(false); render(); toast('같은 자리 1개 추가됨');
+}
+
+function deleteStationRequirement(reqId, sreqId) {
+  const req = getReqById(reqId);
+  if (!req) return;
+  req.stationRequirements = req.stationRequirements.filter((r) => r.id !== sreqId);
+  req.minTotalStaff = req.stationRequirements.length;
+  req.recommendedTotalStaff = req.minTotalStaff;
+  Object.keys(state.schedule).forEach((key) => { const parsed = parseAssignmentKey(key); if (parsed.reqId === reqId && parsed.stationReqId === sreqId) delete state.schedule[key]; });
+  saveState(false); render();
+}
+
+function exportRosterCsv() {
+  const rows = [['Day','Time','Block','Part','Station','Required Skill','Min Level','Min Step','Employee','Status']];
+  getRequirementSeatRows().forEach(({ req, sreq, key }) => {
+    const status = getAssignmentStatus(req, sreq, key);
+    rows.push([
+      dayLabel(req.dayOfWeek),
+      `${req.startTime}-${req.endTime}`,
+      req.label,
+      partName(sreq.partId),
+      stationName(sreq.stationId),
+      requiredSkillName(sreq),
+      `Level ${sreq.minLevel}`,
+      `Step ${sreq.minStep}`,
+      state.schedule[key] ? employeeName(state.schedule[key]) : '',
+      status.label,
+    ]);
+  });
+  const csv = rows.map((row) => row.map((cell) => `"${String(cell ?? '').replaceAll('"', '""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'skillshift-roster.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportJson() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'skillshift-planner-data.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importJson(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const parsed = JSON.parse(reader.result);
+      state = { ...createDefaultState(), ...parsed };
+      saveState(false);
+      render();
+      toast('JSON 가져오기 완료');
+    } catch (err) {
+      alert('JSON 파일을 읽을 수 없습니다.');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  if (!['http:', 'https:'].includes(location.protocol)) return;
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch((err) => {
+      console.warn('Service worker registration failed:', err);
+    });
+  });
+}
+
+function init() {
+  document.addEventListener('click', handleClick);
+  document.addEventListener('change', handleChange);
+  document.getElementById('saveBtn').addEventListener('click', () => saveState(true));
+  document.getElementById('resetBtn').addEventListener('click', resetState);
+  document.getElementById('exportBtn').addEventListener('click', exportJson);
+  document.getElementById('importFile').addEventListener('change', (e) => importJson(e.target.files[0]));
+  registerServiceWorker();
+  render();
+}
+
+init();
