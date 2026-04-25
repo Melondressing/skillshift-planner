@@ -9,6 +9,7 @@ This repository now has two layers:
 
 The live web app is here:
 
+- [Cloudflare Pages](https://skillshift-planner.pages.dev/)
 - [GitHub Pages](https://melondressing.github.io/skillshift-planner/)
 
 ## Main updates in v9
