@@ -1,4 +1,6 @@
-const STORE_KEY = 'skillshift_planner_v13';
+const STORE_KEY = 'skillshift_planner_v14';
+const STORE_PREFIX = 'skillshift_planner_';
+const APP_STATE_VERSION = 4;
 
 const DAYS = [
   { key: 'monday', ko: { label: '월요일', short: '월' }, en: { label: 'Monday', short: 'Mon' } },
@@ -64,8 +66,8 @@ const I18N = {
     },
     messages: {
       saved: '저장됨',
-      resetConfirm: '모든 데이터를 샘플 데이터로 초기화할까요? 현재 데이터는 삭제됩니다.',
-      resetDone: '샘플 데이터로 초기화됨',
+      resetConfirm: '모든 데이터를 주방/홀 기본 스케줄로 초기화할까요? 현재 데이터는 삭제됩니다.',
+      resetDone: '주방/홀 기본 스케줄로 초기화됨',
       jsonImported: 'JSON 가져오기 완료',
       invalidJson: 'JSON 파일을 읽을 수 없습니다.',
       copied: '복사됨',
@@ -157,7 +159,7 @@ const I18N = {
     },
     parts: {
       title: 'Parts / Stations',
-      subtitle: 'Part는 큰 부서, Station은 실제 배치 위치다. 예: Kitchen → Hot, Fry, Cold, Pass.',
+      subtitle: 'Part는 큰 부서, Station은 실제 배치 위치다. 예: 주방 → 준비, 화구, 프라이, 패스, 세척 / 홀 → 플로어, 캐셔, 러너.',
       partAddTitle: 'Part 추가',
       stationAddTitle: 'Station 추가',
       partName: 'Part 이름',
@@ -358,8 +360,8 @@ const I18N = {
     },
     messages: {
       saved: 'Saved',
-      resetConfirm: 'Reset everything to sample data? Your current data will be deleted.',
-      resetDone: 'Reset to sample data',
+      resetConfirm: 'Reset everything to the kitchen/hall roster? Your current data will be deleted.',
+      resetDone: 'Reset to the kitchen/hall roster',
       jsonImported: 'JSON import complete',
       invalidJson: 'Could not read the JSON file.',
       copied: 'Copied',
@@ -451,7 +453,7 @@ const I18N = {
     },
     parts: {
       title: 'Parts / Stations',
-      subtitle: 'A Part is a larger department. A Station is the actual work location. Example: Kitchen → Hot, Fry, Cold, Pass.',
+      subtitle: 'A Part is a larger department. A Station is the actual work location. Example: Kitchen → Prep, Hot, Fry, Pass, Dish.',
       partAddTitle: 'Add Part',
       stationAddTitle: 'Add Station',
       partName: 'Part name',
@@ -679,41 +681,30 @@ function defaultAvailability(start = '10:00', end = '22:00', weekdaysOnly = fals
 
 function createDefaultState() {
   const parts = [
-    { id: 'part_kitchen', name: 'Kitchen', description: '주방 파트', color: '#ef4444', sortOrder: 1, active: true },
-    { id: 'part_hall', name: 'Hall', description: '홀 파트', color: '#3b82f6', sortOrder: 2, active: true },
-    { id: 'part_barista', name: 'Barista', description: '커피/음료 파트', color: '#8b5cf6', sortOrder: 3, active: true },
-    { id: 'part_manager', name: 'Manager', description: '관리자/리더 파트', color: '#111827', sortOrder: 4, active: true },
-    { id: 'part_other', name: 'Other', description: '기타', color: '#64748b', sortOrder: 99, active: true },
+    { id: 'part_kitchen', name: '주방', description: '조리와 마감이 이루어지는 파트', color: '#ef4444', sortOrder: 1, active: true },
+    { id: 'part_hall', name: '홀', description: '고객 응대와 서빙이 이루어지는 파트', color: '#3b82f6', sortOrder: 2, active: true },
   ];
 
   const stations = [
-    { id: 'st_hot', partId: 'part_kitchen', name: 'Hot', description: '핫 섹션', requiredSkillIds: ['sk_hot'], sortOrder: 1, active: true },
-    { id: 'st_fry', partId: 'part_kitchen', name: 'Fry', description: '프라이 섹션', requiredSkillIds: ['sk_fry'], sortOrder: 2, active: true },
-    { id: 'st_cold', partId: 'part_kitchen', name: 'Cold', description: '콜드 섹션', requiredSkillIds: ['sk_cold'], sortOrder: 3, active: true },
-    { id: 'st_pass', partId: 'part_kitchen', name: 'Pass', description: '패스/퀄리티 컨트롤', requiredSkillIds: ['sk_pass'], sortOrder: 4, active: true },
-    { id: 'st_prep', partId: 'part_kitchen', name: 'Prep', description: '준비/미장', requiredSkillIds: ['sk_prep'], sortOrder: 5, active: true },
-    { id: 'st_dish', partId: 'part_kitchen', name: 'Dish', description: '디시/세척', requiredSkillIds: ['sk_dish'], sortOrder: 6, active: true },
-    { id: 'st_floor', partId: 'part_hall', name: 'Floor', description: '홀 플로어', requiredSkillIds: ['sk_floor'], sortOrder: 1, active: true },
-    { id: 'st_cashier', partId: 'part_hall', name: 'Cashier', description: '포스/캐셔', requiredSkillIds: ['sk_cashier'], sortOrder: 2, active: true },
-    { id: 'st_runner', partId: 'part_hall', name: 'Runner', description: '러너', requiredSkillIds: ['sk_runner'], sortOrder: 3, active: true },
-    { id: 'st_barista', partId: 'part_barista', name: 'Coffee', description: '커피/음료 제조', requiredSkillIds: ['sk_barista'], sortOrder: 1, active: true },
-    { id: 'st_leader', partId: 'part_manager', name: 'Leader', description: '리더/운영 판단', requiredSkillIds: ['sk_leader'], sortOrder: 1, active: true },
-    { id: 'st_close', partId: 'part_manager', name: 'Closing', description: '마감/정산', requiredSkillIds: ['sk_closing'], sortOrder: 2, active: true },
+    { id: 'st_prep', partId: 'part_kitchen', name: '준비', description: '재료 준비 / 미장', requiredSkillIds: ['sk_prep'], sortOrder: 1, active: true },
+    { id: 'st_hot', partId: 'part_kitchen', name: '화구', description: '메인 조리', requiredSkillIds: ['sk_hot'], sortOrder: 2, active: true },
+    { id: 'st_fry', partId: 'part_kitchen', name: '프라이', description: '튀김 / 소분', requiredSkillIds: ['sk_fry'], sortOrder: 3, active: true },
+    { id: 'st_pass', partId: 'part_kitchen', name: '패스', description: '플레이트 / 출고', requiredSkillIds: ['sk_pass'], sortOrder: 4, active: true },
+    { id: 'st_dish', partId: 'part_kitchen', name: '세척', description: '설거지 / 정리', requiredSkillIds: ['sk_dish'], sortOrder: 5, active: true },
+    { id: 'st_floor', partId: 'part_hall', name: '플로어', description: '홀 서비스', requiredSkillIds: ['sk_floor'], sortOrder: 1, active: true },
+    { id: 'st_cashier', partId: 'part_hall', name: '캐셔', description: '주문 / 계산', requiredSkillIds: ['sk_cashier'], sortOrder: 2, active: true },
+    { id: 'st_runner', partId: 'part_hall', name: '러너', description: '서빙 보조', requiredSkillIds: ['sk_runner'], sortOrder: 3, active: true },
   ];
 
   const skills = [
-    { id: 'sk_hot', name: 'Hot section', partId: 'part_kitchen', stationId: 'st_hot', category: 'Kitchen', description: '핫 섹션 조리 가능', isCritical: true, usesLevelStep: true, active: true },
-    { id: 'sk_fry', name: 'Fry section', partId: 'part_kitchen', stationId: 'st_fry', category: 'Kitchen', description: '프라이 섹션 가능', isCritical: true, usesLevelStep: true, active: true },
-    { id: 'sk_cold', name: 'Cold section', partId: 'part_kitchen', stationId: 'st_cold', category: 'Kitchen', description: '콜드 섹션 가능', isCritical: false, usesLevelStep: true, active: true },
-    { id: 'sk_pass', name: 'Pass control', partId: 'part_kitchen', stationId: 'st_pass', category: 'Kitchen', description: '패스/품질/타이밍 관리', isCritical: true, usesLevelStep: true, active: true },
-    { id: 'sk_prep', name: 'Prep', partId: 'part_kitchen', stationId: 'st_prep', category: 'Kitchen', description: '프렙/미장 가능', isCritical: false, usesLevelStep: true, active: true },
-    { id: 'sk_dish', name: 'Dish', partId: 'part_kitchen', stationId: 'st_dish', category: 'Kitchen', description: '디시/세척 가능', isCritical: false, usesLevelStep: true, active: true },
-    { id: 'sk_floor', name: 'Floor service', partId: 'part_hall', stationId: 'st_floor', category: 'Hall', description: '홀 플로어 가능', isCritical: true, usesLevelStep: true, active: true },
-    { id: 'sk_cashier', name: 'Cashier', partId: 'part_hall', stationId: 'st_cashier', category: 'Hall', description: '포스/캐셔 가능', isCritical: true, usesLevelStep: true, active: true },
-    { id: 'sk_runner', name: 'Runner', partId: 'part_hall', stationId: 'st_runner', category: 'Hall', description: '러너 가능', isCritical: false, usesLevelStep: true, active: true },
-    { id: 'sk_barista', name: 'Barista', partId: 'part_barista', stationId: 'st_barista', category: 'Barista', description: '커피/음료 제조', isCritical: true, usesLevelStep: true, active: true },
-    { id: 'sk_leader', name: 'Leader', partId: 'part_manager', stationId: 'st_leader', category: 'Manager', description: '리더/현장 판단 가능', isCritical: true, usesLevelStep: true, active: true },
-    { id: 'sk_closing', name: 'Closing', partId: 'part_manager', stationId: 'st_close', category: 'Manager', description: '마감/정산 가능', isCritical: true, usesLevelStep: true, active: true },
+    { id: 'sk_prep', name: '주방 준비', partId: 'part_kitchen', stationId: 'st_prep', category: 'Kitchen', description: '재료 준비와 미장 가능', isCritical: true, usesLevelStep: true, active: true },
+    { id: 'sk_hot', name: '주방 화구', partId: 'part_kitchen', stationId: 'st_hot', category: 'Kitchen', description: '메인 화구 조리 가능', isCritical: true, usesLevelStep: true, active: true },
+    { id: 'sk_fry', name: '주방 프라이', partId: 'part_kitchen', stationId: 'st_fry', category: 'Kitchen', description: '프라이와 튀김 작업 가능', isCritical: true, usesLevelStep: true, active: true },
+    { id: 'sk_pass', name: '주방 패스', partId: 'part_kitchen', stationId: 'st_pass', category: 'Kitchen', description: '패스와 플레이트 출고 가능', isCritical: true, usesLevelStep: true, active: true },
+    { id: 'sk_dish', name: '주방 세척', partId: 'part_kitchen', stationId: 'st_dish', category: 'Kitchen', description: '설거지와 마감 정리 가능', isCritical: false, usesLevelStep: true, active: true },
+    { id: 'sk_floor', name: '홀 플로어', partId: 'part_hall', stationId: 'st_floor', category: 'Hall', description: '홀 서빙과 테이블 정리 가능', isCritical: true, usesLevelStep: true, active: true },
+    { id: 'sk_cashier', name: '홀 캐셔', partId: 'part_hall', stationId: 'st_cashier', category: 'Hall', description: '주문 접수와 계산 가능', isCritical: true, usesLevelStep: true, active: true },
+    { id: 'sk_runner', name: '홀 러너', partId: 'part_hall', stationId: 'st_runner', category: 'Hall', description: '서빙 보조와 전달 가능', isCritical: false, usesLevelStep: true, active: true },
   ];
 
   const levelTemplates = [];
@@ -751,45 +742,52 @@ function createDefaultState() {
 
   const employees = [
     {
-      id: 'emp_alex', name: 'Alex', partId: 'part_kitchen', role: 'Kitchen Staff', employmentType: 'Casual', baseRate: 30,
-      saturdayMultiplier: 1.25, sundayMultiplier: 1.5, publicHolidayMultiplier: 2.25, maxWeeklyHours: 38, preferredWeeklyHours: 32,
-      availability: defaultAvailability('10:00', '22:00'), active: true, notes: '', assignedSkills: {
-        sk_hot: { level: 2, step: 2, note: '' }, sk_fry: { level: 3, step: 1, note: '' }, sk_closing: { level: 2, step: 1, note: '' }, sk_prep: { level: 2, step: 1, note: '' }
-      }
-    },
-    {
-      id: 'emp_jay', name: 'Jay', partId: 'part_kitchen', role: 'Kitchen Assistant', employmentType: 'Part-time', baseRate: 26,
-      saturdayMultiplier: 1.25, sundayMultiplier: 1.5, publicHolidayMultiplier: 2.25, maxWeeklyHours: 30, preferredWeeklyHours: 24,
-      availability: defaultAvailability('09:00', '21:00'), active: true, notes: '', assignedSkills: {
-        sk_prep: { level: 2, step: 1, note: '' }, sk_fry: { level: 1, step: 4, note: '' }, sk_dish: { level: 3, step: 1, note: '' }
-      }
-    },
-    {
-      id: 'emp_mina', name: 'Mina', partId: 'part_hall', role: 'Hall Staff', employmentType: 'Casual', baseRate: 28,
-      saturdayMultiplier: 1.25, sundayMultiplier: 1.5, publicHolidayMultiplier: 2.25, maxWeeklyHours: 35, preferredWeeklyHours: 28,
-      availability: defaultAvailability('10:00', '22:00'), active: true, notes: '', assignedSkills: {
-        sk_floor: { level: 2, step: 2, note: '' }, sk_cashier: { level: 1, step: 4, note: '' }, sk_runner: { level: 2, step: 1, note: '' }
-      }
-    },
-    {
-      id: 'emp_sara', name: 'Sara', partId: 'part_hall', role: 'Senior Hall Staff', employmentType: 'Casual', baseRate: 29,
-      saturdayMultiplier: 1.25, sundayMultiplier: 1.5, publicHolidayMultiplier: 2.25, maxWeeklyHours: 38, preferredWeeklyHours: 30,
-      availability: defaultAvailability('10:00', '23:00'), active: true, notes: '', assignedSkills: {
-        sk_floor: { level: 3, step: 1, note: '' }, sk_cashier: { level: 2, step: 2, note: '' }, sk_runner: { level: 2, step: 2, note: '' }
-      }
-    },
-    {
-      id: 'emp_james', name: 'James', partId: 'part_manager', role: 'Shift Manager', employmentType: 'Full-time', baseRate: 35,
+      id: 'emp_minjun', name: '민준', partId: 'part_kitchen', role: '주방 메인', employmentType: 'Full-time', baseRate: 31,
       saturdayMultiplier: 1.25, sundayMultiplier: 1.5, publicHolidayMultiplier: 2.25, maxWeeklyHours: 40, preferredWeeklyHours: 38,
-      availability: defaultAvailability('09:00', '22:30'), active: true, notes: '', assignedSkills: {
-        sk_pass: { level: 3, step: 1, note: '' }, sk_closing: { level: 4, step: 1, note: '' }, sk_cashier: { level: 3, step: 1, note: '' }, sk_leader: { level: 3, step: 1, note: '' }
+      availability: defaultAvailability('09:00', '22:00'), active: true, notes: '', assignedSkills: {
+        sk_prep: { level: 2, step: 1, note: '' }, sk_hot: { level: 3, step: 1, note: '' }, sk_fry: { level: 2, step: 2, note: '' }, sk_pass: { level: 2, step: 1, note: '' }
       }
     },
     {
-      id: 'emp_emma', name: 'Emma', partId: 'part_manager', role: 'Operations Lead', employmentType: 'Full-time', baseRate: 36,
-      saturdayMultiplier: 1.25, sundayMultiplier: 1.5, publicHolidayMultiplier: 2.25, maxWeeklyHours: 40, preferredWeeklyHours: 36,
-      availability: defaultAvailability('09:00', '22:30'), active: true, notes: '', assignedSkills: {
-        sk_leader: { level: 4, step: 1, note: '' }, sk_closing: { level: 3, step: 1, note: '' }, sk_floor: { level: 3, step: 1, note: '' }, sk_cashier: { level: 3, step: 1, note: '' }
+      id: 'emp_yuri', name: '유리', partId: 'part_kitchen', role: '주방 프렙', employmentType: 'Part-time', baseRate: 27,
+      saturdayMultiplier: 1.25, sundayMultiplier: 1.5, publicHolidayMultiplier: 2.25, maxWeeklyHours: 30, preferredWeeklyHours: 24,
+      availability: defaultAvailability('09:00', '18:00'), active: true, notes: '', assignedSkills: {
+        sk_prep: { level: 3, step: 1, note: '' }, sk_dish: { level: 3, step: 1, note: '' }, sk_hot: { level: 1, step: 4, note: '' }
+      }
+    },
+    {
+      id: 'emp_joon', name: '준', partId: 'part_kitchen', role: '주방 라인', employmentType: 'Casual', baseRate: 29,
+      saturdayMultiplier: 1.25, sundayMultiplier: 1.5, publicHolidayMultiplier: 2.25, maxWeeklyHours: 35, preferredWeeklyHours: 30,
+      availability: defaultAvailability('10:00', '22:00'), active: true, notes: '', assignedSkills: {
+        sk_hot: { level: 2, step: 2, note: '' }, sk_fry: { level: 3, step: 1, note: '' }, sk_pass: { level: 2, step: 2, note: '' }
+      }
+    },
+    {
+      id: 'emp_soo', name: '수', partId: 'part_kitchen', role: '주방 디시', employmentType: 'Part-time', baseRate: 26,
+      saturdayMultiplier: 1.25, sundayMultiplier: 1.5, publicHolidayMultiplier: 2.25, maxWeeklyHours: 28, preferredWeeklyHours: 22,
+      availability: defaultAvailability('11:00', '22:00'), active: true, notes: '', assignedSkills: {
+        sk_dish: { level: 3, step: 1, note: '' }, sk_prep: { level: 2, step: 1, note: '' }, sk_fry: { level: 1, step: 4, note: '' }
+      }
+    },
+    {
+      id: 'emp_haeun', name: '하은', partId: 'part_hall', role: '홀 플로어', employmentType: 'Casual', baseRate: 27,
+      saturdayMultiplier: 1.25, sundayMultiplier: 1.5, publicHolidayMultiplier: 2.25, maxWeeklyHours: 35, preferredWeeklyHours: 28,
+      availability: defaultAvailability('10:00', '22:30'), active: true, notes: '', assignedSkills: {
+        sk_floor: { level: 3, step: 1, note: '' }, sk_runner: { level: 2, step: 2, note: '' }, sk_cashier: { level: 1, step: 4, note: '' }
+      }
+    },
+    {
+      id: 'emp_jiho', name: '지호', partId: 'part_hall', role: '홀 캐셔', employmentType: 'Full-time', baseRate: 28,
+      saturdayMultiplier: 1.25, sundayMultiplier: 1.5, publicHolidayMultiplier: 2.25, maxWeeklyHours: 40, preferredWeeklyHours: 38,
+      availability: defaultAvailability('10:00', '23:00'), active: true, notes: '', assignedSkills: {
+        sk_cashier: { level: 3, step: 1, note: '' }, sk_floor: { level: 2, step: 2, note: '' }, sk_runner: { level: 2, step: 1, note: '' }
+      }
+    },
+    {
+      id: 'emp_sora', name: '소라', partId: 'part_hall', role: '홀 러너', employmentType: 'Part-time', baseRate: 26,
+      saturdayMultiplier: 1.25, sundayMultiplier: 1.5, publicHolidayMultiplier: 2.25, maxWeeklyHours: 32, preferredWeeklyHours: 26,
+      availability: defaultAvailability('11:00', '22:30'), active: true, notes: '', assignedSkills: {
+        sk_runner: { level: 3, step: 1, note: '' }, sk_floor: { level: 2, step: 2, note: '' }, sk_cashier: { level: 1, step: 4, note: '' }
       }
     },
   ];
@@ -797,12 +795,12 @@ function createDefaultState() {
   const requirements = [];
   DAYS.forEach((day) => {
     const slots = [
-      { label: 'Opening', startTime: '09:00', endTime: '10:00', isPeak: false, reqs: [['part_manager', 'st_leader', 'sk_leader', 1, 2, 1], ['part_kitchen', 'st_prep', 'sk_prep', 1, 1, 3]] },
-      { label: 'Normal Service', startTime: '10:00', endTime: '12:00', isPeak: false, reqs: [['part_kitchen', 'st_hot', 'sk_hot', 1, 1, 4], ['part_hall', 'st_floor', 'sk_floor', 1, 1, 3], ['part_hall', 'st_cashier', 'sk_cashier', 1, 1, 3]] },
-      { label: 'Lunch Peak', startTime: '12:00', endTime: '14:30', isPeak: true, reqs: [['part_kitchen', 'st_hot', 'sk_hot', 1, 2, 1], ['part_kitchen', 'st_fry', 'sk_fry', 1, 1, 4], ['part_hall', 'st_floor', 'sk_floor', 2, 1, 3], ['part_hall', 'st_cashier', 'sk_cashier', 1, 2, 1]] },
-      { label: 'Low Service', startTime: '14:30', endTime: '17:00', isPeak: false, reqs: [['part_kitchen', 'st_prep', 'sk_prep', 1, 1, 3], ['part_hall', 'st_floor', 'sk_floor', 1, 1, 3]] },
-      { label: 'Dinner Peak', startTime: '17:00', endTime: '20:30', isPeak: true, reqs: [['part_kitchen', 'st_hot', 'sk_hot', 1, 2, 1], ['part_kitchen', 'st_fry', 'sk_fry', 1, 2, 1], ['part_kitchen', 'st_pass', 'sk_pass', 1, 3, 1], ['part_hall', 'st_floor', 'sk_floor', 2, 2, 1], ['part_hall', 'st_cashier', 'sk_cashier', 1, 2, 1], ['part_manager', 'st_leader', 'sk_leader', 1, 3, 1]] },
-      { label: 'Closing', startTime: '20:30', endTime: '22:00', isPeak: false, reqs: [['part_manager', 'st_close', 'sk_closing', 1, 2, 1], ['part_kitchen', 'st_dish', 'sk_dish', 1, 1, 3], ['part_hall', 'st_floor', 'sk_floor', 1, 1, 4]] },
+      { label: 'Opening', startTime: '09:00', endTime: '10:30', isPeak: false, reqs: [['part_kitchen', 'st_prep', 'sk_prep', 1, 1, 3], ['part_hall', 'st_floor', 'sk_floor', 1, 1, 3], ['part_hall', 'st_cashier', 'sk_cashier', 1, 1, 3]] },
+      { label: 'Lunch Prep', startTime: '10:30', endTime: '11:30', isPeak: false, reqs: [['part_kitchen', 'st_prep', 'sk_prep', 1, 1, 3], ['part_kitchen', 'st_hot', 'sk_hot', 1, 1, 3], ['part_hall', 'st_floor', 'sk_floor', 1, 1, 3]] },
+      { label: 'Lunch Peak', startTime: '11:30', endTime: '14:30', isPeak: true, reqs: [['part_kitchen', 'st_hot', 'sk_hot', 1, 2, 1], ['part_kitchen', 'st_fry', 'sk_fry', 1, 2, 1], ['part_kitchen', 'st_pass', 'sk_pass', 1, 2, 1], ['part_hall', 'st_floor', 'sk_floor', 2, 1, 3], ['part_hall', 'st_cashier', 'sk_cashier', 1, 2, 1], ['part_hall', 'st_runner', 'sk_runner', 1, 1, 3]] },
+      { label: 'Afternoon', startTime: '14:30', endTime: '17:00', isPeak: false, reqs: [['part_kitchen', 'st_prep', 'sk_prep', 1, 1, 3], ['part_kitchen', 'st_dish', 'sk_dish', 1, 1, 3], ['part_hall', 'st_floor', 'sk_floor', 1, 1, 3]] },
+      { label: 'Dinner Peak', startTime: '17:00', endTime: '20:30', isPeak: true, reqs: [['part_kitchen', 'st_hot', 'sk_hot', 1, 2, 1], ['part_kitchen', 'st_fry', 'sk_fry', 1, 2, 1], ['part_kitchen', 'st_pass', 'sk_pass', 1, 2, 1], ['part_kitchen', 'st_dish', 'sk_dish', 1, 1, 3], ['part_hall', 'st_floor', 'sk_floor', 2, 1, 3], ['part_hall', 'st_cashier', 'sk_cashier', 1, 2, 1], ['part_hall', 'st_runner', 'sk_runner', 1, 1, 3]] },
+      { label: 'Closing', startTime: '20:30', endTime: '22:00', isPeak: false, reqs: [['part_kitchen', 'st_dish', 'sk_dish', 1, 1, 3], ['part_hall', 'st_floor', 'sk_floor', 1, 1, 3], ['part_hall', 'st_cashier', 'sk_cashier', 1, 1, 3]] },
     ];
     slots.forEach((slot, index) => {
       requirements.push({
@@ -835,13 +833,13 @@ function createDefaultState() {
   });
 
   return {
-    appVersion: 3,
+    appVersion: APP_STATE_VERSION,
     settings: {
       language: 'ko',
       laborBudget: 4000,
       targetLaborRatio: 28,
       currency: '$',
-      weekLabel: 'Sample Week',
+      weekLabel: '주방/홀 기본 스케줄',
       feedbackEmail: 'kitchenworklog@gmail.com',
       feedbackUrl: '',
     },
@@ -871,15 +869,30 @@ function mergeState(parsed = {}) {
   };
 }
 
+function clearStoredState() {
+  for (let i = localStorage.length - 1; i >= 0; i -= 1) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith(STORE_PREFIX)) localStorage.removeItem(key);
+  }
+}
+
+function makeFreshState() {
+  const fresh = createDefaultState();
+  clearStoredState();
+  localStorage.setItem(STORE_KEY, JSON.stringify(fresh));
+  return fresh;
+}
+
 function loadState() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
-    if (!raw) return createDefaultState();
+    if (!raw) return makeFreshState();
     const parsed = JSON.parse(raw);
+    if (Number(parsed?.appVersion || 0) < APP_STATE_VERSION) return makeFreshState();
     return mergeState(parsed);
   } catch (err) {
     console.error(err);
-    return createDefaultState();
+    return makeFreshState();
   }
 }
 
@@ -890,11 +903,10 @@ function saveState(show = true) {
 
 function resetState() {
   if (!confirm(t('messages.resetConfirm'))) return;
-  state = createDefaultState();
+  state = makeFreshState();
   selectedSkillId = state.skills[0]?.id || '';
   recommendationContext = null;
   replacementContext = null;
-  saveState(false);
   render();
   toast(t('messages.resetDone'));
 }
