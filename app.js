@@ -109,15 +109,15 @@ const I18N = {
       supportTitle: '광고 / 피드백',
       supportSubtitle: '광고가 들어갈 자리와 사용자 문의 채널을 따로 분리해 둔다.',
       adTitle: '광고 영역',
-      adHelp: '나중에 광고 코드나 배너 링크를 넣을 예약 구역이다.',
+      adHelp: 'AdSense, 배너, 제휴 링크처럼 외부 광고를 붙일 수 있는 고정 구역이다.',
       adPlaceholder: '광고가 표시될 자리',
-      adNote: '아직 비워두면 된다. 나중에 링크를 넣으면 된다.',
+      adNote: '실제 광고 코드는 나중에 이 구역에 연결하면 된다.',
       feedbackTitle: '질문 / 피드백',
       feedbackHelp: '질문을 보낼 메일과 질문 링크를 따로 관리한다.',
       feedbackEmailLabel: '문의 메일',
       feedbackUrlLabel: '질문 링크',
       feedbackEmailHelp: '수정은 막고 복사만 가능하다.',
-      feedbackUrlHelp: '질문을 보내는 링크나 설문 주소를 넣을 수 있다.',
+      feedbackUrlHelp: '아직 공백으로 두고, 나중에 질문 링크를 넣으면 된다.',
       feedbackOpenEmail: '질문 보내기',
       feedbackOpenLink: '질문 링크 열기',
       current: '현재 언어',
@@ -403,15 +403,15 @@ const I18N = {
       supportTitle: 'Ads / Feedback',
       supportSubtitle: 'Keep ad space and contact channels separate from the core scheduler.',
       adTitle: 'Ad space',
-      adHelp: 'A reserved slot for ad code or banner links later.',
+      adHelp: 'A reserved slot for AdSense, banners, or sponsor links.',
       adPlaceholder: 'Ad will appear here',
-      adNote: 'Leave it empty for now. You can add a link later.',
+      adNote: 'You can wire real ad code into this space later.',
       feedbackTitle: 'Questions / Feedback',
       feedbackHelp: 'Manage the email and question link people can use to contact you.',
       feedbackEmailLabel: 'Contact email',
       feedbackUrlLabel: 'Question link',
       feedbackEmailHelp: 'Read-only, but easy to copy.',
-      feedbackUrlHelp: 'Use a question link or survey form URL.',
+      feedbackUrlHelp: 'Leave it blank for now, and add a question link later.',
       feedbackOpenEmail: 'Send question',
       feedbackOpenLink: 'Open question link',
       current: 'Current language',
@@ -835,7 +835,7 @@ function createDefaultState() {
   });
 
   return {
-    appVersion: 2,
+    appVersion: 3,
     settings: {
       language: 'ko',
       laborBudget: 4000,
@@ -843,7 +843,7 @@ function createDefaultState() {
       currency: '$',
       weekLabel: 'Sample Week',
       feedbackEmail: 'kitchenworklog@gmail.com',
-      feedbackUrl: questionMailtoLink('kitchenworklog@gmail.com'),
+      feedbackUrl: '',
     },
     parts,
     stations,
@@ -857,19 +857,16 @@ function createDefaultState() {
 
 function mergeState(parsed = {}) {
   const defaults = createDefaultState();
-  const parsedVersion = Number(parsed.appVersion || 0);
   const settings = {
     ...defaults.settings,
     ...(parsed.settings || {}),
   };
-  if (parsedVersion < 2) {
-    if (!String(settings.feedbackEmail || '').trim()) settings.feedbackEmail = 'kitchenworklog@gmail.com';
-    if (!String(settings.feedbackUrl || '').trim()) settings.feedbackUrl = questionMailtoLink(settings.feedbackEmail);
-  }
+  settings.feedbackEmail = 'kitchenworklog@gmail.com';
+  settings.feedbackUrl = '';
   return {
     ...defaults,
     ...parsed,
-    appVersion: Math.max(parsedVersion, defaults.appVersion),
+    appVersion: Math.max(Number(parsed.appVersion || 0), defaults.appVersion),
     settings,
   };
 }
@@ -919,11 +916,6 @@ function dayLabel(key) { return DAYS.find((d) => d.key === key)?.[currentLanguag
 function dayShort(key) { return DAYS.find((d) => d.key === key)?.[currentLanguage()]?.short || key; }
 function money(value) { return `${state.settings.currency}${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`; }
 function num(value, fallback = 0) { const n = Number(value); return Number.isFinite(n) ? n : fallback; }
-function questionMailtoLink(email) {
-  const raw = String(email ?? '').trim();
-  if (!raw) return '';
-  return `mailto:${raw}?subject=${encodeURIComponent('SkillShift Planner 질문')}`;
-}
 function normalizeExternalUrl(value) {
   const raw = String(value ?? '').trim();
   if (!raw) return '';
@@ -2434,7 +2426,7 @@ function renderSettings() {
             ${t('settings.feedbackUrlLabel')}
             <div class="copy-field">
               <input type="text" readonly value="${escapeHtml(feedbackUrl)}" aria-readonly="true" />
-              <button class="btn secondary small" type="button" data-action="copy-feedback-link">${t('common.copy')}</button>
+              ${feedbackUrl ? `<button class="btn secondary small" type="button" data-action="copy-feedback-link">${t('common.copy')}</button>` : `<button class="btn secondary small" type="button" disabled>${t('common.copy')}</button>`}
             </div>
             <span class="small-text">${t('settings.feedbackUrlHelp')}</span>
           </label>
