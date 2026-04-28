@@ -109,14 +109,14 @@ const I18N = {
       adHelp: 'AdSense, 배너, 제휴 링크처럼 외부 광고를 붙일 수 있는 고정 구역이다.',
       adPlaceholder: '광고가 표시될 자리',
       adNote: '실제 광고 코드는 나중에 이 구역에 연결하면 된다.',
-      feedbackTitle: '메일 / 피드백',
-      feedbackHelp: '사용자가 메일을 보내거나 피드백 폼으로 이동할 수 있는 링크를 관리한다.',
-      feedbackEmailLabel: '피드백 받을 메일',
-      feedbackUrlLabel: '피드백 링크',
-      feedbackEmailHelp: 'mailto: 링크로 연결된다.',
-      feedbackUrlHelp: 'Google Form, Typeform, 설문 링크 등을 넣을 수 있다.',
-      feedbackOpenEmail: '메일 보내기',
-      feedbackOpenLink: '피드백 링크 열기',
+      feedbackTitle: '질문 / 피드백',
+      feedbackHelp: '질문을 보낼 메일과 질문 링크를 따로 관리한다.',
+      feedbackEmailLabel: '질문 받을 메일',
+      feedbackUrlLabel: '질문 링크',
+      feedbackEmailHelp: '메일 앱으로 바로 연결된다.',
+      feedbackUrlHelp: '질문을 보내는 링크나 설문 주소를 넣을 수 있다.',
+      feedbackOpenEmail: '질문 보내기',
+      feedbackOpenLink: '질문 링크 열기',
       current: '현재 언어',
       koreanLabel: '한국어',
       englishLabel: '영어',
@@ -400,14 +400,14 @@ const I18N = {
       adHelp: 'A reserved slot for AdSense, banners, or sponsor links.',
       adPlaceholder: 'Ad will appear here',
       adNote: 'You can wire real ad code into this space later.',
-      feedbackTitle: 'Mail / Feedback',
-      feedbackHelp: 'Manage the email and form links users can use to reach you.',
-      feedbackEmailLabel: 'Feedback email',
-      feedbackUrlLabel: 'Feedback link',
-      feedbackEmailHelp: 'Turns into a mailto: link.',
-      feedbackUrlHelp: 'Paste a Google Form, Typeform, or survey link.',
-      feedbackOpenEmail: 'Send email',
-      feedbackOpenLink: 'Open feedback link',
+      feedbackTitle: 'Questions / Feedback',
+      feedbackHelp: 'Manage the email and question link people can use to contact you.',
+      feedbackEmailLabel: 'Questions email',
+      feedbackUrlLabel: 'Question link',
+      feedbackEmailHelp: 'Opens your mail app directly.',
+      feedbackUrlHelp: 'Use a question link or survey form URL.',
+      feedbackOpenEmail: 'Send question',
+      feedbackOpenLink: 'Open question link',
       current: 'Current language',
       koreanLabel: 'Korean',
       englishLabel: 'English',
@@ -829,15 +829,15 @@ function createDefaultState() {
   });
 
   return {
-    appVersion: 1,
+    appVersion: 2,
     settings: {
       language: 'ko',
       laborBudget: 4000,
       targetLaborRatio: 28,
       currency: '$',
       weekLabel: 'Sample Week',
-      feedbackEmail: '',
-      feedbackUrl: '',
+      feedbackEmail: 'kitchenworklog@gmail.com',
+      feedbackUrl: questionMailtoLink('kitchenworklog@gmail.com'),
     },
     parts,
     stations,
@@ -851,13 +851,20 @@ function createDefaultState() {
 
 function mergeState(parsed = {}) {
   const defaults = createDefaultState();
+  const parsedVersion = Number(parsed.appVersion || 0);
+  const settings = {
+    ...defaults.settings,
+    ...(parsed.settings || {}),
+  };
+  if (parsedVersion < 2) {
+    if (!String(settings.feedbackEmail || '').trim()) settings.feedbackEmail = 'kitchenworklog@gmail.com';
+    if (!String(settings.feedbackUrl || '').trim()) settings.feedbackUrl = questionMailtoLink(settings.feedbackEmail);
+  }
   return {
     ...defaults,
     ...parsed,
-    settings: {
-      ...defaults.settings,
-      ...(parsed.settings || {}),
-    },
+    appVersion: Math.max(parsedVersion, defaults.appVersion),
+    settings,
   };
 }
 
@@ -906,6 +913,11 @@ function dayLabel(key) { return DAYS.find((d) => d.key === key)?.[currentLanguag
 function dayShort(key) { return DAYS.find((d) => d.key === key)?.[currentLanguage()]?.short || key; }
 function money(value) { return `${state.settings.currency}${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`; }
 function num(value, fallback = 0) { const n = Number(value); return Number.isFinite(n) ? n : fallback; }
+function questionMailtoLink(email) {
+  const raw = String(email ?? '').trim();
+  if (!raw) return '';
+  return `mailto:${raw}?subject=${encodeURIComponent('SkillShift Planner 질문')}`;
+}
 function normalizeExternalUrl(value) {
   const raw = String(value ?? '').trim();
   if (!raw) return '';
@@ -914,7 +926,7 @@ function normalizeExternalUrl(value) {
 }
 function mailtoLink(email) {
   const raw = String(email ?? '').trim();
-  return raw ? `mailto:${encodeURIComponent(raw)}` : '';
+  return raw ? `mailto:${raw}` : '';
 }
 
 function escapeHtml(value) {
