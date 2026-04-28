@@ -106,6 +106,18 @@ body {
 .card h4 { margin: 0 0 8px; font-size: 14px; }
 .card p { color: var(--muted); line-height: 1.55; }
 
+.copy-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.copy-field input[readonly] {
+  background: #f8fafc;
+  cursor: text;
+}
+
 .ad-slot {
   margin: 14px 0 10px;
   min-height: 140px;
@@ -312,6 +324,7 @@ tr:last-child td { border-bottom: 0; }
 @media (max-width: 620px) {
   .app-main, .tabs, .app-header { padding-left: 14px; padding-right: 14px; }
   .form-row, .form-row.compact { grid-template-columns: 1fr; }
+  .copy-field { grid-template-columns: 1fr; }
   .assignment-box { grid-template-columns: 1fr; }
   .day-pills { gap: 6px; }
   .day-pill { flex: 1 1 calc(33.333% - 6px); }

@@ -45,6 +45,7 @@ const I18N = {
       exportJson: 'JSON 내보내기',
       importJson: 'JSON 가져오기',
       resetSample: '샘플 초기화',
+      copy: '복사',
       add: '추가',
       delete: '삭제',
       close: '닫기',
@@ -67,6 +68,8 @@ const I18N = {
       resetDone: '샘플 데이터로 초기화됨',
       jsonImported: 'JSON 가져오기 완료',
       invalidJson: 'JSON 파일을 읽을 수 없습니다.',
+      copied: '복사됨',
+      copyFailed: '복사에 실패했습니다',
       partNameRequired: 'Part 이름을 입력하세요',
       partAdded: 'Part 추가됨',
       partDeleteConfirm: 'Part를 삭제할까요? 관련 직원/스테이션 연결은 남을 수 있습니다.',
@@ -106,14 +109,14 @@ const I18N = {
       supportTitle: '광고 / 피드백',
       supportSubtitle: '광고가 들어갈 자리와 사용자 문의 채널을 따로 분리해 둔다.',
       adTitle: '광고 영역',
-      adHelp: 'AdSense, 배너, 제휴 링크처럼 외부 광고를 붙일 수 있는 고정 구역이다.',
+      adHelp: '나중에 광고 코드나 배너 링크를 넣을 예약 구역이다.',
       adPlaceholder: '광고가 표시될 자리',
-      adNote: '실제 광고 코드는 나중에 이 구역에 연결하면 된다.',
+      adNote: '아직 비워두면 된다. 나중에 링크를 넣으면 된다.',
       feedbackTitle: '질문 / 피드백',
       feedbackHelp: '질문을 보낼 메일과 질문 링크를 따로 관리한다.',
-      feedbackEmailLabel: '질문 받을 메일',
+      feedbackEmailLabel: '문의 메일',
       feedbackUrlLabel: '질문 링크',
-      feedbackEmailHelp: '메일 앱으로 바로 연결된다.',
+      feedbackEmailHelp: '수정은 막고 복사만 가능하다.',
       feedbackUrlHelp: '질문을 보내는 링크나 설문 주소를 넣을 수 있다.',
       feedbackOpenEmail: '질문 보내기',
       feedbackOpenLink: '질문 링크 열기',
@@ -336,6 +339,7 @@ const I18N = {
       exportJson: 'Export JSON',
       importJson: 'Import JSON',
       resetSample: 'Reset Sample',
+      copy: 'Copy',
       add: 'Add',
       delete: 'Delete',
       close: 'Close',
@@ -358,6 +362,8 @@ const I18N = {
       resetDone: 'Reset to sample data',
       jsonImported: 'JSON import complete',
       invalidJson: 'Could not read the JSON file.',
+      copied: 'Copied',
+      copyFailed: 'Copy failed',
       partNameRequired: 'Enter a Part name',
       partAdded: 'Part added',
       partDeleteConfirm: 'Delete this Part? Related employees/stations may remain connected.',
@@ -397,14 +403,14 @@ const I18N = {
       supportTitle: 'Ads / Feedback',
       supportSubtitle: 'Keep ad space and contact channels separate from the core scheduler.',
       adTitle: 'Ad space',
-      adHelp: 'A reserved slot for AdSense, banners, or sponsor links.',
+      adHelp: 'A reserved slot for ad code or banner links later.',
       adPlaceholder: 'Ad will appear here',
-      adNote: 'You can wire real ad code into this space later.',
+      adNote: 'Leave it empty for now. You can add a link later.',
       feedbackTitle: 'Questions / Feedback',
       feedbackHelp: 'Manage the email and question link people can use to contact you.',
-      feedbackEmailLabel: 'Questions email',
+      feedbackEmailLabel: 'Contact email',
       feedbackUrlLabel: 'Question link',
-      feedbackEmailHelp: 'Opens your mail app directly.',
+      feedbackEmailHelp: 'Read-only, but easy to copy.',
       feedbackUrlHelp: 'Use a question link or survey form URL.',
       feedbackOpenEmail: 'Send question',
       feedbackOpenLink: 'Open question link',
@@ -927,6 +933,33 @@ function normalizeExternalUrl(value) {
 function mailtoLink(email) {
   const raw = String(email ?? '').trim();
   return raw ? `mailto:${raw}` : '';
+}
+async function copyToClipboard(text) {
+  const value = String(text ?? '').trim();
+  if (!value) {
+    toast(t('messages.copyFailed'));
+    return;
+  }
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+    } else {
+      const textarea = document.createElement('textarea');
+      textarea.value = value;
+      textarea.setAttribute('readonly', 'true');
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(textarea);
+      if (!ok) throw new Error('copy failed');
+    }
+    toast(t('messages.copied'));
+  } catch (err) {
+    console.error(err);
+    toast(t('messages.copyFailed'));
+  }
 }
 
 function escapeHtml(value) {
@@ -2388,15 +2421,21 @@ function renderSettings() {
       <div class="card">
         <h3>${t('settings.feedbackTitle')}</h3>
         <p class="small-text">${t('settings.feedbackHelp')}</p>
-        <div class="form-row compact" style="grid-template-columns: 1fr; margin-top: 8px;">
+        <div class="feedback-block" style="margin-top: 8px;">
           <label class="small-text" style="display:grid; gap:6px;">
             ${t('settings.feedbackEmailLabel')}
-            <input type="email" placeholder="you@example.com" value="${escapeHtml(state.settings.feedbackEmail || '')}" data-setting="feedbackEmail" />
+            <div class="copy-field">
+              <input type="text" readonly value="${escapeHtml(feedbackEmail)}" aria-readonly="true" />
+              <button class="btn secondary small" type="button" data-action="copy-feedback-email">${t('common.copy')}</button>
+            </div>
             <span class="small-text">${t('settings.feedbackEmailHelp')}</span>
           </label>
-          <label class="small-text" style="display:grid; gap:6px;">
+          <label class="small-text" style="display:grid; gap:6px; margin-top: 12px;">
             ${t('settings.feedbackUrlLabel')}
-            <input type="url" placeholder="https://..." value="${escapeHtml(state.settings.feedbackUrl || '')}" data-setting="feedbackUrl" />
+            <div class="copy-field">
+              <input type="text" readonly value="${escapeHtml(feedbackUrl)}" aria-readonly="true" />
+              <button class="btn secondary small" type="button" data-action="copy-feedback-link">${t('common.copy')}</button>
+            </div>
             <span class="small-text">${t('settings.feedbackUrlHelp')}</span>
           </label>
         </div>
@@ -2449,6 +2488,8 @@ function handleClick(e) {
   if (action === 'show-replace') { replacementContext = { reqId: target.dataset.req, sreqId: target.dataset.sreq, slotIndex: Number(target.dataset.slot) }; recommendationContext = null; render(); }
   if (action === 'close-panels') { recommendationContext = null; replacementContext = null; render(); }
   if (action === 'apply-recommend') { state.schedule[target.dataset.key] = target.dataset.emp; saveState(false); recommendationContext = null; replacementContext = null; render(); toast(t('messages.scheduled')); }
+  if (action === 'copy-feedback-email') { copyToClipboard(state.settings.feedbackEmail || ''); }
+  if (action === 'copy-feedback-link') { copyToClipboard(normalizeExternalUrl(state.settings.feedbackUrl) || ''); }
 }
 
 function handleChange(e) {
