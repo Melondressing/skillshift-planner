@@ -46,7 +46,7 @@ const I18N = {
       save: '저장',
       exportJson: 'JSON 내보내기',
       importJson: 'JSON 가져오기',
-      resetSample: '샘플 초기화',
+      resetAll: '전체 초기화',
       copy: '복사',
       add: '추가',
       delete: '삭제',
@@ -66,16 +66,18 @@ const I18N = {
     },
     messages: {
       saved: '저장됨',
-      resetConfirm: '모든 데이터를 주방/홀 기본 스케줄로 초기화할까요? 현재 데이터는 삭제됩니다.',
-      resetDone: '주방/홀 기본 스케줄로 초기화됨',
+      resetConfirm: '모든 입력 데이터를 삭제하고 빈 상태로 되돌릴까요? 현재 데이터는 삭제됩니다.',
+      resetDone: '모든 입력 데이터가 삭제되었습니다',
       jsonImported: 'JSON 가져오기 완료',
       invalidJson: 'JSON 파일을 읽을 수 없습니다.',
       copied: '복사됨',
       copyFailed: '복사에 실패했습니다',
       partNameRequired: 'Part 이름을 입력하세요',
+      partSelectRequired: 'Part를 먼저 선택하세요',
       partAdded: 'Part 추가됨',
       partDeleteConfirm: 'Part를 삭제할까요? 관련 직원/스테이션 연결은 남을 수 있습니다.',
       stationNameRequired: 'Station 이름을 입력하세요',
+      stationSelectRequired: 'Station을 먼저 선택하세요',
       stationAdded: 'Station 추가됨',
       stationDeleteConfirm: 'Station을 삭제할까요?',
       skillNameRequired: 'Skill 이름을 입력하세요',
@@ -340,7 +342,7 @@ const I18N = {
       save: 'Save',
       exportJson: 'Export JSON',
       importJson: 'Import JSON',
-      resetSample: 'Reset Sample',
+      resetAll: 'Reset All',
       copy: 'Copy',
       add: 'Add',
       delete: 'Delete',
@@ -360,16 +362,18 @@ const I18N = {
     },
     messages: {
       saved: 'Saved',
-      resetConfirm: 'Reset everything to the kitchen/hall roster? Your current data will be deleted.',
-      resetDone: 'Reset to the kitchen/hall roster',
+      resetConfirm: 'Clear all input data and return to a blank state? Your current data will be deleted.',
+      resetDone: 'All input data has been cleared',
       jsonImported: 'JSON import complete',
       invalidJson: 'Could not read the JSON file.',
       copied: 'Copied',
       copyFailed: 'Copy failed',
       partNameRequired: 'Enter a Part name',
+      partSelectRequired: 'Select a Part first',
       partAdded: 'Part added',
       partDeleteConfirm: 'Delete this Part? Related employees/stations may remain connected.',
       stationNameRequired: 'Enter a Station name',
+      stationSelectRequired: 'Select a Station first',
       stationAdded: 'Station added',
       stationDeleteConfirm: 'Delete this Station?',
       skillNameRequired: 'Enter a Skill name',
@@ -650,7 +654,7 @@ function syncDocumentLanguage() {
   const exportBtn = document.getElementById('exportBtn');
   if (exportBtn) exportBtn.textContent = t('common.exportJson');
   const resetBtn = document.getElementById('resetBtn');
-  if (resetBtn) resetBtn.textContent = t('common.resetSample');
+  if (resetBtn) resetBtn.textContent = t('common.resetAll');
 }
 
 let state = loadState();
@@ -853,6 +857,24 @@ function createDefaultState() {
   };
 }
 
+function createBlankState(settings = createDefaultState().settings) {
+  return {
+    appVersion: APP_STATE_VERSION,
+    settings: {
+      ...settings,
+      feedbackEmail: 'kitchenworklog@gmail.com',
+      feedbackUrl: '',
+    },
+    parts: [],
+    stations: [],
+    skills: [],
+    levelTemplates: [],
+    employees: [],
+    requirements: [],
+    schedule: {},
+  };
+}
+
 function mergeState(parsed = {}) {
   const defaults = createDefaultState();
   const settings = {
@@ -903,10 +925,17 @@ function saveState(show = true) {
 
 function resetState() {
   if (!confirm(t('messages.resetConfirm'))) return;
-  state = makeFreshState();
+  const preservedSettings = { ...state.settings };
+  clearStoredState();
+  state = createBlankState(preservedSettings);
   selectedSkillId = state.skills[0]?.id || '';
+  selectedMemberPart = 'all';
+  selectedScheduleDay = 'monday';
+  selectedRequirementDay = 'monday';
+  scheduleView = 'sheet';
   recommendationContext = null;
   replacementContext = null;
+  saveState(false);
   render();
   toast(t('messages.resetDone'));
 }
@@ -2578,6 +2607,7 @@ function addStation() {
   const name = document.getElementById('newStationName').value.trim();
   if (!name) return toast(t('messages.stationNameRequired'));
   const partId = document.getElementById('newStationPart').value;
+  if (!partId) return toast(t('messages.partSelectRequired'));
   state.stations.push({ id: uid('st'), partId, name, description: document.getElementById('newStationDesc').value.trim(), requiredSkillIds: [], sortOrder: state.stations.length + 1, active: true });
   saveState(false); render(); toast(t('messages.stationAdded'));
 }
@@ -2620,6 +2650,8 @@ function addSkill() {
   if (!name) return toast(t('messages.skillNameRequired'));
   const partId = document.getElementById('newSkillPart').value;
   const stationId = document.getElementById('newSkillStation').value;
+  if (!partId) return toast(t('messages.partSelectRequired'));
+  if (!stationId) return toast(t('messages.stationSelectRequired'));
   const id = uid('sk');
   state.skills.push({ id, name, partId, stationId, category: partName(partId), description: '', isCritical: true, usesLevelStep: true, active: true });
   state.levelTemplates.push(...createStarterLevelsForSkill(id, stationId));
@@ -2671,8 +2703,10 @@ function deleteLevel(id) {
 function addEmployee() {
   const name = document.getElementById('newEmpName').value.trim();
   if (!name) return toast(t('messages.employeeNameRequired'));
+  const partId = document.getElementById('newEmpPart').value;
+  if (!partId) return toast(t('messages.partSelectRequired'));
   state.employees.push({
-    id: uid('emp'), name, partId: document.getElementById('newEmpPart').value, role: document.getElementById('newEmpRole').value.trim() || 'Staff', employmentType: 'Casual', baseRate: num(document.getElementById('newEmpRate').value, 28),
+    id: uid('emp'), name, partId, role: document.getElementById('newEmpRole').value.trim() || 'Staff', employmentType: 'Casual', baseRate: num(document.getElementById('newEmpRate').value, 28),
     saturdayMultiplier: 1.25, sundayMultiplier: 1.5, publicHolidayMultiplier: 2.25, maxWeeklyHours: num(document.getElementById('newEmpMax').value, 38), preferredWeeklyHours: 0,
     availability: defaultAvailability('10:00', '22:00'), active: true, notes: '', assignedSkills: {}
   });
@@ -2783,6 +2817,7 @@ function addStationRequirement(reqId) {
   if (!req) return;
   const selectedPart = document.querySelector(`[data-req-field="part"][data-req="${reqId}"]`).value;
   const station = document.querySelector(`[data-req-field="station"][data-req="${reqId}"]`).value;
+  if (!station) return toast(t('messages.stationSelectRequired'));
   const part = byId(state.stations, station)?.partId || selectedPart;
   const level = num(document.querySelector(`[data-req-field="level"][data-req="${reqId}"]`).value, 1);
   const step = num(document.querySelector(`[data-req-field="step"][data-req="${reqId}"]`).value, 1);
