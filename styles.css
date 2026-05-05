@@ -106,6 +106,38 @@ body {
 .card h4 { margin: 0 0 8px; font-size: 14px; }
 .card p { color: var(--muted); line-height: 1.55; }
 
+.copy-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.copy-field input[readonly] {
+  background: #f8fafc;
+  cursor: text;
+}
+
+.ad-slot {
+  margin: 14px 0 10px;
+  min-height: 140px;
+  border: 1px dashed rgba(37, 99, 235, 0.32);
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background:
+    linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(17, 24, 39, 0.03));
+}
+
+.ad-slot strong {
+  display: inline-block;
+  font-size: 15px;
+  color: var(--text);
+}
+
 .metric { min-height: 110px; }
 .metric .label { color: var(--muted); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
 .metric .value { margin-top: 8px; font-size: 28px; font-weight: 900; letter-spacing: -.04em; }
@@ -292,6 +324,7 @@ tr:last-child td { border-bottom: 0; }
 @media (max-width: 620px) {
   .app-main, .tabs, .app-header { padding-left: 14px; padding-right: 14px; }
   .form-row, .form-row.compact { grid-template-columns: 1fr; }
+  .copy-field { grid-template-columns: 1fr; }
   .assignment-box { grid-template-columns: 1fr; }
   .day-pills { gap: 6px; }
   .day-pill { flex: 1 1 calc(33.333% - 6px); }

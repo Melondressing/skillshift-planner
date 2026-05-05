@@ -1,0 +1,4903 @@
+{
+  "appVersion": 1,
+  "settings": {
+    "laborBudget": 4000,
+    "targetLaborRatio": 28,
+    "currency": "$",
+    "weekLabel": "Sample Week"
+  },
+  "parts": [
+    {
+      "id": "part_kitchen",
+      "name": "Kitchen",
+      "description": "주방 파트",
+      "color": "#ef4444",
+      "sortOrder": 1,
+      "active": true
+    },
+    {
+      "id": "part_hall",
+      "name": "Hall",
+      "description": "홀 파트",
+      "color": "#3b82f6",
+      "sortOrder": 2,
+      "active": true
+    },
+    {
+      "id": "part_barista",
+      "name": "Barista",
+      "description": "커피/음료 파트",
+      "color": "#8b5cf6",
+      "sortOrder": 3,
+      "active": true
+    },
+    {
+      "id": "part_manager",
+      "name": "Manager",
+      "description": "관리자/리더 파트",
+      "color": "#111827",
+      "sortOrder": 4,
+      "active": true
+    },
+    {
+      "id": "part_other",
+      "name": "Other",
+      "description": "기타",
+      "color": "#64748b",
+      "sortOrder": 99,
+      "active": true
+    }
+  ],
+  "stations": [
+    {
+      "id": "st_hot",
+      "partId": "part_kitchen",
+      "name": "Hot",
+      "description": "핫 섹션",
+      "requiredSkillIds": [
+        "sk_hot"
+      ],
+      "sortOrder": 1,
+      "active": true
+    },
+    {
+      "id": "st_fry",
+      "partId": "part_kitchen",
+      "name": "Fry",
+      "description": "프라이 섹션",
+      "requiredSkillIds": [
+        "sk_fry"
+      ],
+      "sortOrder": 2,
+      "active": true
+    },
+    {
+      "id": "st_cold",
+      "partId": "part_kitchen",
+      "name": "Cold",
+      "description": "콜드 섹션",
+      "requiredSkillIds": [
+        "sk_cold"
+      ],
+      "sortOrder": 3,
+      "active": true
+    },
+    {
+      "id": "st_pass",
+      "partId": "part_kitchen",
+      "name": "Pass",
+      "description": "패스/퀄리티 컨트롤",
+      "requiredSkillIds": [
+        "sk_pass"
+      ],
+      "sortOrder": 4,
+      "active": true
+    },
+    {
+      "id": "st_prep",
+      "partId": "part_kitchen",
+      "name": "Prep",
+      "description": "준비/미장",
+      "requiredSkillIds": [
+        "sk_prep"
+      ],
+      "sortOrder": 5,
+      "active": true
+    },
+    {
+      "id": "st_dish",
+      "partId": "part_kitchen",
+      "name": "Dish",
+      "description": "디시/세척",
+      "requiredSkillIds": [
+        "sk_dish"
+      ],
+      "sortOrder": 6,
+      "active": true
+    },
+    {
+      "id": "st_floor",
+      "partId": "part_hall",
+      "name": "Floor",
+      "description": "홀 플로어",
+      "requiredSkillIds": [
+        "sk_floor"
+      ],
+      "sortOrder": 1,
+      "active": true
+    },
+    {
+      "id": "st_cashier",
+      "partId": "part_hall",
+      "name": "Cashier",
+      "description": "포스/캐셔",
+      "requiredSkillIds": [
+        "sk_cashier"
+      ],
+      "sortOrder": 2,
+      "active": true
+    },
+    {
+      "id": "st_runner",
+      "partId": "part_hall",
+      "name": "Runner",
+      "description": "러너",
+      "requiredSkillIds": [
+        "sk_runner"
+      ],
+      "sortOrder": 3,
+      "active": true
+    },
+    {
+      "id": "st_barista",
+      "partId": "part_barista",
+      "name": "Coffee",
+      "description": "커피/음료 제조",
+      "requiredSkillIds": [
+        "sk_barista"
+      ],
+      "sortOrder": 1,
+      "active": true
+    },
+    {
+      "id": "st_leader",
+      "partId": "part_manager",
+      "name": "Leader",
+      "description": "리더/운영 판단",
+      "requiredSkillIds": [
+        "sk_leader"
+      ],
+      "sortOrder": 1,
+      "active": true
+    },
+    {
+      "id": "st_close",
+      "partId": "part_manager",
+      "name": "Closing",
+      "description": "마감/정산",
+      "requiredSkillIds": [
+        "sk_closing"
+      ],
+      "sortOrder": 2,
+      "active": true
+    }
+  ],
+  "skills": [
+    {
+      "id": "sk_hot",
+      "name": "Hot section",
+      "partId": "part_kitchen",
+      "stationId": "st_hot",
+      "category": "Kitchen",
+      "description": "핫 섹션 조리 가능",
+      "isCritical": true,
+      "usesLevelStep": true,
+      "active": true
+    },
+    {
+      "id": "sk_fry",
+      "name": "Fry section",
+      "partId": "part_kitchen",
+      "stationId": "st_fry",
+      "category": "Kitchen",
+      "description": "프라이 섹션 가능",
+      "isCritical": true,
+      "usesLevelStep": true,
+      "active": true
+    },
+    {
+      "id": "sk_cold",
+      "name": "Cold section",
+      "partId": "part_kitchen",
+      "stationId": "st_cold",
+      "category": "Kitchen",
+      "description": "콜드 섹션 가능",
+      "isCritical": false,
+      "usesLevelStep": true,
+      "active": true
+    },
+    {
+      "id": "sk_pass",
+      "name": "Pass control",
+      "partId": "part_kitchen",
+      "stationId": "st_pass",
+      "category": "Kitchen",
+      "description": "패스/품질/타이밍 관리",
+      "isCritical": true,
+      "usesLevelStep": true,
+      "active": true
+    },
+    {
+      "id": "sk_prep",
+      "name": "Prep",
+      "partId": "part_kitchen",
+      "stationId": "st_prep",
+      "category": "Kitchen",
+      "description": "프렙/미장 가능",
+      "isCritical": false,
+      "usesLevelStep": true,
+      "active": true
+    },
+    {
+      "id": "sk_dish",
+      "name": "Dish",
+      "partId": "part_kitchen",
+      "stationId": "st_dish",
+      "category": "Kitchen",
+      "description": "디시/세척 가능",
+      "isCritical": false,
+      "usesLevelStep": true,
+      "active": true
+    },
+    {
+      "id": "sk_floor",
+      "name": "Floor service",
+      "partId": "part_hall",
+      "stationId": "st_floor",
+      "category": "Hall",
+      "description": "홀 플로어 가능",
+      "isCritical": true,
+      "usesLevelStep": true,
+      "active": true
+    },
+    {
+      "id": "sk_cashier",
+      "name": "Cashier",
+      "partId": "part_hall",
+      "stationId": "st_cashier",
+      "category": "Hall",
+      "description": "포스/캐셔 가능",
+      "isCritical": true,
+      "usesLevelStep": true,
+      "active": true
+    },
+    {
+      "id": "sk_runner",
+      "name": "Runner",
+      "partId": "part_hall",
+      "stationId": "st_runner",
+      "category": "Hall",
+      "description": "러너 가능",
+      "isCritical": false,
+      "usesLevelStep": true,
+      "active": true
+    },
+    {
+      "id": "sk_barista",
+      "name": "Barista",
+      "partId": "part_barista",
+      "stationId": "st_barista",
+      "category": "Barista",
+      "description": "커피/음료 제조",
+      "isCritical": true,
+      "usesLevelStep": true,
+      "active": true
+    },
+    {
+      "id": "sk_leader",
+      "name": "Leader",
+      "partId": "part_manager",
+      "stationId": "st_leader",
+      "category": "Manager",
+      "description": "리더/현장 판단 가능",
+      "isCritical": true,
+      "usesLevelStep": true,
+      "active": true
+    },
+    {
+      "id": "sk_closing",
+      "name": "Closing",
+      "partId": "part_manager",
+      "stationId": "st_close",
+      "category": "Manager",
+      "description": "마감/정산 가능",
+      "isCritical": true,
+      "usesLevelStep": true,
+      "active": true
+    }
+  ],
+  "levelTemplates": [
+    {
+      "id": "lvl_sk_hot_1_1",
+      "skillId": "sk_hot",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "기본 개념을 배우는 단계",
+      "canDo": "기본 보조 업무",
+      "cannotDoYet": "단독 업무와 피크타임 대응",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_hot"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 1
+    },
+    {
+      "id": "lvl_sk_hot_1_2",
+      "skillId": "sk_hot",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 2,
+      "stepName": "Step 2",
+      "description": "반복 업무와 기본 흐름을 일부 수행할 수 있는 단계",
+      "canDo": "간단한 반복 업무",
+      "cannotDoYet": "조리/응대 상태 최종 판단",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_hot"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 2
+    },
+    {
+      "id": "lvl_sk_hot_1_3",
+      "skillId": "sk_hot",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 3,
+      "stepName": "Step 3",
+      "description": "대부분의 흐름을 알고 몇 가지 확인을 통해 업무 가능",
+      "canDo": "일반 시간대 보조 및 일부 단독 업무",
+      "cannotDoYet": "피크타임 단독 업무",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_hot"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 3
+    },
+    {
+      "id": "lvl_sk_hot_1_4",
+      "skillId": "sk_hot",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 4,
+      "stepName": "Step 4",
+      "description": "Level 2 직전 단계. 약간의 어시스트를 제외하면 대부분 수행 가능",
+      "canDo": "일반 시간대 주요 업무",
+      "cannotDoYet": "복잡한 피크타임 판단",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_hot"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 4
+    },
+    {
+      "id": "lvl_sk_hot_2_1",
+      "skillId": "sk_hot",
+      "levelNumber": 2,
+      "levelName": "Level 2",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "일반 시간대 단독 업무가 가능한 단계",
+      "canDo": "일반 운영",
+      "cannotDoYet": "고강도 피크타임 전체 통제",
+      "canWorkAlone": true,
+      "canWorkPeakTime": false,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_hot"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 5
+    },
+    {
+      "id": "lvl_sk_hot_2_2",
+      "skillId": "sk_hot",
+      "levelNumber": 2,
+      "levelName": "Level 2",
+      "stepNumber": 2,
+      "stepName": "Step 2",
+      "description": "일반 업무와 일부 피크타임 대응이 가능한 단계",
+      "canDo": "일반 운영과 일부 피크 대응",
+      "cannotDoYet": "리더 역할",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_hot"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 6
+    },
+    {
+      "id": "lvl_sk_hot_3_1",
+      "skillId": "sk_hot",
+      "levelNumber": 3,
+      "levelName": "Level 3",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "피크타임 핵심 업무가 가능한 단계",
+      "canDo": "피크타임 핵심 업무",
+      "cannotDoYet": "신입 교육과 전체 운영 판단",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_hot"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 7
+    },
+    {
+      "id": "lvl_sk_hot_4_1",
+      "skillId": "sk_hot",
+      "levelNumber": 4,
+      "levelName": "Level 4",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "리더와 교육 담당이 가능한 단계",
+      "canDo": "리더/트레이닝/문제 해결",
+      "cannotDoYet": "상위 관리 업무",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_hot"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 8
+    },
+    {
+      "id": "lvl_sk_fry_1_1",
+      "skillId": "sk_fry",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "기본 개념을 배우는 단계",
+      "canDo": "기본 보조 업무",
+      "cannotDoYet": "단독 업무와 피크타임 대응",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_fry"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 1
+    },
+    {
+      "id": "lvl_sk_fry_1_2",
+      "skillId": "sk_fry",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 2,
+      "stepName": "Step 2",
+      "description": "반복 업무와 기본 흐름을 일부 수행할 수 있는 단계",
+      "canDo": "간단한 반복 업무",
+      "cannotDoYet": "조리/응대 상태 최종 판단",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_fry"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 2
+    },
+    {
+      "id": "lvl_sk_fry_1_3",
+      "skillId": "sk_fry",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 3,
+      "stepName": "Step 3",
+      "description": "대부분의 흐름을 알고 몇 가지 확인을 통해 업무 가능",
+      "canDo": "일반 시간대 보조 및 일부 단독 업무",
+      "cannotDoYet": "피크타임 단독 업무",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_fry"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 3
+    },
+    {
+      "id": "lvl_sk_fry_1_4",
+      "skillId": "sk_fry",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 4,
+      "stepName": "Step 4",
+      "description": "Level 2 직전 단계. 약간의 어시스트를 제외하면 대부분 수행 가능",
+      "canDo": "일반 시간대 주요 업무",
+      "cannotDoYet": "복잡한 피크타임 판단",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_fry"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 4
+    },
+    {
+      "id": "lvl_sk_fry_2_1",
+      "skillId": "sk_fry",
+      "levelNumber": 2,
+      "levelName": "Level 2",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "일반 시간대 단독 업무가 가능한 단계",
+      "canDo": "일반 운영",
+      "cannotDoYet": "고강도 피크타임 전체 통제",
+      "canWorkAlone": true,
+      "canWorkPeakTime": false,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_fry"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 5
+    },
+    {
+      "id": "lvl_sk_fry_2_2",
+      "skillId": "sk_fry",
+      "levelNumber": 2,
+      "levelName": "Level 2",
+      "stepNumber": 2,
+      "stepName": "Step 2",
+      "description": "일반 업무와 일부 피크타임 대응이 가능한 단계",
+      "canDo": "일반 운영과 일부 피크 대응",
+      "cannotDoYet": "리더 역할",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_fry"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 6
+    },
+    {
+      "id": "lvl_sk_fry_3_1",
+      "skillId": "sk_fry",
+      "levelNumber": 3,
+      "levelName": "Level 3",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "피크타임 핵심 업무가 가능한 단계",
+      "canDo": "피크타임 핵심 업무",
+      "cannotDoYet": "신입 교육과 전체 운영 판단",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_fry"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 7
+    },
+    {
+      "id": "lvl_sk_fry_4_1",
+      "skillId": "sk_fry",
+      "levelNumber": 4,
+      "levelName": "Level 4",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "리더와 교육 담당이 가능한 단계",
+      "canDo": "리더/트레이닝/문제 해결",
+      "cannotDoYet": "상위 관리 업무",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_fry"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 8
+    },
+    {
+      "id": "lvl_sk_cold_1_1",
+      "skillId": "sk_cold",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "기본 개념을 배우는 단계",
+      "canDo": "기본 보조 업무",
+      "cannotDoYet": "단독 업무와 피크타임 대응",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_cold"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 1
+    },
+    {
+      "id": "lvl_sk_cold_1_2",
+      "skillId": "sk_cold",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 2,
+      "stepName": "Step 2",
+      "description": "반복 업무와 기본 흐름을 일부 수행할 수 있는 단계",
+      "canDo": "간단한 반복 업무",
+      "cannotDoYet": "조리/응대 상태 최종 판단",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_cold"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 2
+    },
+    {
+      "id": "lvl_sk_cold_1_3",
+      "skillId": "sk_cold",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 3,
+      "stepName": "Step 3",
+      "description": "대부분의 흐름을 알고 몇 가지 확인을 통해 업무 가능",
+      "canDo": "일반 시간대 보조 및 일부 단독 업무",
+      "cannotDoYet": "피크타임 단독 업무",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_cold"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 3
+    },
+    {
+      "id": "lvl_sk_cold_1_4",
+      "skillId": "sk_cold",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 4,
+      "stepName": "Step 4",
+      "description": "Level 2 직전 단계. 약간의 어시스트를 제외하면 대부분 수행 가능",
+      "canDo": "일반 시간대 주요 업무",
+      "cannotDoYet": "복잡한 피크타임 판단",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_cold"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 4
+    },
+    {
+      "id": "lvl_sk_cold_2_1",
+      "skillId": "sk_cold",
+      "levelNumber": 2,
+      "levelName": "Level 2",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "일반 시간대 단독 업무가 가능한 단계",
+      "canDo": "일반 운영",
+      "cannotDoYet": "고강도 피크타임 전체 통제",
+      "canWorkAlone": true,
+      "canWorkPeakTime": false,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_cold"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 5
+    },
+    {
+      "id": "lvl_sk_cold_2_2",
+      "skillId": "sk_cold",
+      "levelNumber": 2,
+      "levelName": "Level 2",
+      "stepNumber": 2,
+      "stepName": "Step 2",
+      "description": "일반 업무와 일부 피크타임 대응이 가능한 단계",
+      "canDo": "일반 운영과 일부 피크 대응",
+      "cannotDoYet": "리더 역할",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_cold"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 6
+    },
+    {
+      "id": "lvl_sk_cold_3_1",
+      "skillId": "sk_cold",
+      "levelNumber": 3,
+      "levelName": "Level 3",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "피크타임 핵심 업무가 가능한 단계",
+      "canDo": "피크타임 핵심 업무",
+      "cannotDoYet": "신입 교육과 전체 운영 판단",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_cold"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 7
+    },
+    {
+      "id": "lvl_sk_cold_4_1",
+      "skillId": "sk_cold",
+      "levelNumber": 4,
+      "levelName": "Level 4",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "리더와 교육 담당이 가능한 단계",
+      "canDo": "리더/트레이닝/문제 해결",
+      "cannotDoYet": "상위 관리 업무",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_cold"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 8
+    },
+    {
+      "id": "lvl_sk_pass_1_1",
+      "skillId": "sk_pass",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "기본 개념을 배우는 단계",
+      "canDo": "기본 보조 업무",
+      "cannotDoYet": "단독 업무와 피크타임 대응",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_pass"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 1
+    },
+    {
+      "id": "lvl_sk_pass_1_2",
+      "skillId": "sk_pass",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 2,
+      "stepName": "Step 2",
+      "description": "반복 업무와 기본 흐름을 일부 수행할 수 있는 단계",
+      "canDo": "간단한 반복 업무",
+      "cannotDoYet": "조리/응대 상태 최종 판단",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_pass"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 2
+    },
+    {
+      "id": "lvl_sk_pass_1_3",
+      "skillId": "sk_pass",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 3,
+      "stepName": "Step 3",
+      "description": "대부분의 흐름을 알고 몇 가지 확인을 통해 업무 가능",
+      "canDo": "일반 시간대 보조 및 일부 단독 업무",
+      "cannotDoYet": "피크타임 단독 업무",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_pass"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 3
+    },
+    {
+      "id": "lvl_sk_pass_1_4",
+      "skillId": "sk_pass",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 4,
+      "stepName": "Step 4",
+      "description": "Level 2 직전 단계. 약간의 어시스트를 제외하면 대부분 수행 가능",
+      "canDo": "일반 시간대 주요 업무",
+      "cannotDoYet": "복잡한 피크타임 판단",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_pass"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 4
+    },
+    {
+      "id": "lvl_sk_pass_2_1",
+      "skillId": "sk_pass",
+      "levelNumber": 2,
+      "levelName": "Level 2",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "일반 시간대 단독 업무가 가능한 단계",
+      "canDo": "일반 운영",
+      "cannotDoYet": "고강도 피크타임 전체 통제",
+      "canWorkAlone": true,
+      "canWorkPeakTime": false,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_pass"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 5
+    },
+    {
+      "id": "lvl_sk_pass_2_2",
+      "skillId": "sk_pass",
+      "levelNumber": 2,
+      "levelName": "Level 2",
+      "stepNumber": 2,
+      "stepName": "Step 2",
+      "description": "일반 업무와 일부 피크타임 대응이 가능한 단계",
+      "canDo": "일반 운영과 일부 피크 대응",
+      "cannotDoYet": "리더 역할",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_pass"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 6
+    },
+    {
+      "id": "lvl_sk_pass_3_1",
+      "skillId": "sk_pass",
+      "levelNumber": 3,
+      "levelName": "Level 3",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "피크타임 핵심 업무가 가능한 단계",
+      "canDo": "피크타임 핵심 업무",
+      "cannotDoYet": "신입 교육과 전체 운영 판단",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_pass"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 7
+    },
+    {
+      "id": "lvl_sk_pass_4_1",
+      "skillId": "sk_pass",
+      "levelNumber": 4,
+      "levelName": "Level 4",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "리더와 교육 담당이 가능한 단계",
+      "canDo": "리더/트레이닝/문제 해결",
+      "cannotDoYet": "상위 관리 업무",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_pass"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 8
+    },
+    {
+      "id": "lvl_sk_prep_1_1",
+      "skillId": "sk_prep",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "기본 개념을 배우는 단계",
+      "canDo": "기본 보조 업무",
+      "cannotDoYet": "단독 업무와 피크타임 대응",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_prep"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 1
+    },
+    {
+      "id": "lvl_sk_prep_1_2",
+      "skillId": "sk_prep",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 2,
+      "stepName": "Step 2",
+      "description": "반복 업무와 기본 흐름을 일부 수행할 수 있는 단계",
+      "canDo": "간단한 반복 업무",
+      "cannotDoYet": "조리/응대 상태 최종 판단",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_prep"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 2
+    },
+    {
+      "id": "lvl_sk_prep_1_3",
+      "skillId": "sk_prep",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 3,
+      "stepName": "Step 3",
+      "description": "대부분의 흐름을 알고 몇 가지 확인을 통해 업무 가능",
+      "canDo": "일반 시간대 보조 및 일부 단독 업무",
+      "cannotDoYet": "피크타임 단독 업무",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_prep"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 3
+    },
+    {
+      "id": "lvl_sk_prep_1_4",
+      "skillId": "sk_prep",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 4,
+      "stepName": "Step 4",
+      "description": "Level 2 직전 단계. 약간의 어시스트를 제외하면 대부분 수행 가능",
+      "canDo": "일반 시간대 주요 업무",
+      "cannotDoYet": "복잡한 피크타임 판단",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_prep"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 4
+    },
+    {
+      "id": "lvl_sk_prep_2_1",
+      "skillId": "sk_prep",
+      "levelNumber": 2,
+      "levelName": "Level 2",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "일반 시간대 단독 업무가 가능한 단계",
+      "canDo": "일반 운영",
+      "cannotDoYet": "고강도 피크타임 전체 통제",
+      "canWorkAlone": true,
+      "canWorkPeakTime": false,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_prep"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 5
+    },
+    {
+      "id": "lvl_sk_prep_2_2",
+      "skillId": "sk_prep",
+      "levelNumber": 2,
+      "levelName": "Level 2",
+      "stepNumber": 2,
+      "stepName": "Step 2",
+      "description": "일반 업무와 일부 피크타임 대응이 가능한 단계",
+      "canDo": "일반 운영과 일부 피크 대응",
+      "cannotDoYet": "리더 역할",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_prep"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 6
+    },
+    {
+      "id": "lvl_sk_prep_3_1",
+      "skillId": "sk_prep",
+      "levelNumber": 3,
+      "levelName": "Level 3",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "피크타임 핵심 업무가 가능한 단계",
+      "canDo": "피크타임 핵심 업무",
+      "cannotDoYet": "신입 교육과 전체 운영 판단",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_prep"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 7
+    },
+    {
+      "id": "lvl_sk_prep_4_1",
+      "skillId": "sk_prep",
+      "levelNumber": 4,
+      "levelName": "Level 4",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "리더와 교육 담당이 가능한 단계",
+      "canDo": "리더/트레이닝/문제 해결",
+      "cannotDoYet": "상위 관리 업무",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_prep"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 8
+    },
+    {
+      "id": "lvl_sk_dish_1_1",
+      "skillId": "sk_dish",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "기본 개념을 배우는 단계",
+      "canDo": "기본 보조 업무",
+      "cannotDoYet": "단독 업무와 피크타임 대응",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_dish"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 1
+    },
+    {
+      "id": "lvl_sk_dish_1_2",
+      "skillId": "sk_dish",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 2,
+      "stepName": "Step 2",
+      "description": "반복 업무와 기본 흐름을 일부 수행할 수 있는 단계",
+      "canDo": "간단한 반복 업무",
+      "cannotDoYet": "조리/응대 상태 최종 판단",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_dish"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 2
+    },
+    {
+      "id": "lvl_sk_dish_1_3",
+      "skillId": "sk_dish",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 3,
+      "stepName": "Step 3",
+      "description": "대부분의 흐름을 알고 몇 가지 확인을 통해 업무 가능",
+      "canDo": "일반 시간대 보조 및 일부 단독 업무",
+      "cannotDoYet": "피크타임 단독 업무",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_dish"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 3
+    },
+    {
+      "id": "lvl_sk_dish_1_4",
+      "skillId": "sk_dish",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 4,
+      "stepName": "Step 4",
+      "description": "Level 2 직전 단계. 약간의 어시스트를 제외하면 대부분 수행 가능",
+      "canDo": "일반 시간대 주요 업무",
+      "cannotDoYet": "복잡한 피크타임 판단",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_dish"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 4
+    },
+    {
+      "id": "lvl_sk_dish_2_1",
+      "skillId": "sk_dish",
+      "levelNumber": 2,
+      "levelName": "Level 2",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "일반 시간대 단독 업무가 가능한 단계",
+      "canDo": "일반 운영",
+      "cannotDoYet": "고강도 피크타임 전체 통제",
+      "canWorkAlone": true,
+      "canWorkPeakTime": false,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_dish"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 5
+    },
+    {
+      "id": "lvl_sk_dish_2_2",
+      "skillId": "sk_dish",
+      "levelNumber": 2,
+      "levelName": "Level 2",
+      "stepNumber": 2,
+      "stepName": "Step 2",
+      "description": "일반 업무와 일부 피크타임 대응이 가능한 단계",
+      "canDo": "일반 운영과 일부 피크 대응",
+      "cannotDoYet": "리더 역할",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_dish"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 6
+    },
+    {
+      "id": "lvl_sk_dish_3_1",
+      "skillId": "sk_dish",
+      "levelNumber": 3,
+      "levelName": "Level 3",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "피크타임 핵심 업무가 가능한 단계",
+      "canDo": "피크타임 핵심 업무",
+      "cannotDoYet": "신입 교육과 전체 운영 판단",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_dish"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 7
+    },
+    {
+      "id": "lvl_sk_dish_4_1",
+      "skillId": "sk_dish",
+      "levelNumber": 4,
+      "levelName": "Level 4",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "리더와 교육 담당이 가능한 단계",
+      "canDo": "리더/트레이닝/문제 해결",
+      "cannotDoYet": "상위 관리 업무",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_dish"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 8
+    },
+    {
+      "id": "lvl_sk_floor_1_1",
+      "skillId": "sk_floor",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "기본 개념을 배우는 단계",
+      "canDo": "기본 보조 업무",
+      "cannotDoYet": "단독 업무와 피크타임 대응",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_floor"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 1
+    },
+    {
+      "id": "lvl_sk_floor_1_2",
+      "skillId": "sk_floor",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 2,
+      "stepName": "Step 2",
+      "description": "반복 업무와 기본 흐름을 일부 수행할 수 있는 단계",
+      "canDo": "간단한 반복 업무",
+      "cannotDoYet": "조리/응대 상태 최종 판단",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_floor"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 2
+    },
+    {
+      "id": "lvl_sk_floor_1_3",
+      "skillId": "sk_floor",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 3,
+      "stepName": "Step 3",
+      "description": "대부분의 흐름을 알고 몇 가지 확인을 통해 업무 가능",
+      "canDo": "일반 시간대 보조 및 일부 단독 업무",
+      "cannotDoYet": "피크타임 단독 업무",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_floor"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 3
+    },
+    {
+      "id": "lvl_sk_floor_1_4",
+      "skillId": "sk_floor",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 4,
+      "stepName": "Step 4",
+      "description": "Level 2 직전 단계. 약간의 어시스트를 제외하면 대부분 수행 가능",
+      "canDo": "일반 시간대 주요 업무",
+      "cannotDoYet": "복잡한 피크타임 판단",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_floor"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 4
+    },
+    {
+      "id": "lvl_sk_floor_2_1",
+      "skillId": "sk_floor",
+      "levelNumber": 2,
+      "levelName": "Level 2",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "일반 시간대 단독 업무가 가능한 단계",
+      "canDo": "일반 운영",
+      "cannotDoYet": "고강도 피크타임 전체 통제",
+      "canWorkAlone": true,
+      "canWorkPeakTime": false,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_floor"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 5
+    },
+    {
+      "id": "lvl_sk_floor_2_2",
+      "skillId": "sk_floor",
+      "levelNumber": 2,
+      "levelName": "Level 2",
+      "stepNumber": 2,
+      "stepName": "Step 2",
+      "description": "일반 업무와 일부 피크타임 대응이 가능한 단계",
+      "canDo": "일반 운영과 일부 피크 대응",
+      "cannotDoYet": "리더 역할",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_floor"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 6
+    },
+    {
+      "id": "lvl_sk_floor_3_1",
+      "skillId": "sk_floor",
+      "levelNumber": 3,
+      "levelName": "Level 3",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "피크타임 핵심 업무가 가능한 단계",
+      "canDo": "피크타임 핵심 업무",
+      "cannotDoYet": "신입 교육과 전체 운영 판단",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_floor"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 7
+    },
+    {
+      "id": "lvl_sk_floor_4_1",
+      "skillId": "sk_floor",
+      "levelNumber": 4,
+      "levelName": "Level 4",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "리더와 교육 담당이 가능한 단계",
+      "canDo": "리더/트레이닝/문제 해결",
+      "cannotDoYet": "상위 관리 업무",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_floor"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 8
+    },
+    {
+      "id": "lvl_sk_cashier_1_1",
+      "skillId": "sk_cashier",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "기본 개념을 배우는 단계",
+      "canDo": "기본 보조 업무",
+      "cannotDoYet": "단독 업무와 피크타임 대응",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_cashier"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 1
+    },
+    {
+      "id": "lvl_sk_cashier_1_2",
+      "skillId": "sk_cashier",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 2,
+      "stepName": "Step 2",
+      "description": "반복 업무와 기본 흐름을 일부 수행할 수 있는 단계",
+      "canDo": "간단한 반복 업무",
+      "cannotDoYet": "조리/응대 상태 최종 판단",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_cashier"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 2
+    },
+    {
+      "id": "lvl_sk_cashier_1_3",
+      "skillId": "sk_cashier",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 3,
+      "stepName": "Step 3",
+      "description": "대부분의 흐름을 알고 몇 가지 확인을 통해 업무 가능",
+      "canDo": "일반 시간대 보조 및 일부 단독 업무",
+      "cannotDoYet": "피크타임 단독 업무",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_cashier"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 3
+    },
+    {
+      "id": "lvl_sk_cashier_1_4",
+      "skillId": "sk_cashier",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 4,
+      "stepName": "Step 4",
+      "description": "Level 2 직전 단계. 약간의 어시스트를 제외하면 대부분 수행 가능",
+      "canDo": "일반 시간대 주요 업무",
+      "cannotDoYet": "복잡한 피크타임 판단",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_cashier"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 4
+    },
+    {
+      "id": "lvl_sk_cashier_2_1",
+      "skillId": "sk_cashier",
+      "levelNumber": 2,
+      "levelName": "Level 2",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "일반 시간대 단독 업무가 가능한 단계",
+      "canDo": "일반 운영",
+      "cannotDoYet": "고강도 피크타임 전체 통제",
+      "canWorkAlone": true,
+      "canWorkPeakTime": false,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_cashier"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 5
+    },
+    {
+      "id": "lvl_sk_cashier_2_2",
+      "skillId": "sk_cashier",
+      "levelNumber": 2,
+      "levelName": "Level 2",
+      "stepNumber": 2,
+      "stepName": "Step 2",
+      "description": "일반 업무와 일부 피크타임 대응이 가능한 단계",
+      "canDo": "일반 운영과 일부 피크 대응",
+      "cannotDoYet": "리더 역할",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_cashier"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 6
+    },
+    {
+      "id": "lvl_sk_cashier_3_1",
+      "skillId": "sk_cashier",
+      "levelNumber": 3,
+      "levelName": "Level 3",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "피크타임 핵심 업무가 가능한 단계",
+      "canDo": "피크타임 핵심 업무",
+      "cannotDoYet": "신입 교육과 전체 운영 판단",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_cashier"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 7
+    },
+    {
+      "id": "lvl_sk_cashier_4_1",
+      "skillId": "sk_cashier",
+      "levelNumber": 4,
+      "levelName": "Level 4",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "리더와 교육 담당이 가능한 단계",
+      "canDo": "리더/트레이닝/문제 해결",
+      "cannotDoYet": "상위 관리 업무",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_cashier"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 8
+    },
+    {
+      "id": "lvl_sk_runner_1_1",
+      "skillId": "sk_runner",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "기본 개념을 배우는 단계",
+      "canDo": "기본 보조 업무",
+      "cannotDoYet": "단독 업무와 피크타임 대응",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_runner"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 1
+    },
+    {
+      "id": "lvl_sk_runner_1_2",
+      "skillId": "sk_runner",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 2,
+      "stepName": "Step 2",
+      "description": "반복 업무와 기본 흐름을 일부 수행할 수 있는 단계",
+      "canDo": "간단한 반복 업무",
+      "cannotDoYet": "조리/응대 상태 최종 판단",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_runner"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 2
+    },
+    {
+      "id": "lvl_sk_runner_1_3",
+      "skillId": "sk_runner",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 3,
+      "stepName": "Step 3",
+      "description": "대부분의 흐름을 알고 몇 가지 확인을 통해 업무 가능",
+      "canDo": "일반 시간대 보조 및 일부 단독 업무",
+      "cannotDoYet": "피크타임 단독 업무",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_runner"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 3
+    },
+    {
+      "id": "lvl_sk_runner_1_4",
+      "skillId": "sk_runner",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 4,
+      "stepName": "Step 4",
+      "description": "Level 2 직전 단계. 약간의 어시스트를 제외하면 대부분 수행 가능",
+      "canDo": "일반 시간대 주요 업무",
+      "cannotDoYet": "복잡한 피크타임 판단",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_runner"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 4
+    },
+    {
+      "id": "lvl_sk_runner_2_1",
+      "skillId": "sk_runner",
+      "levelNumber": 2,
+      "levelName": "Level 2",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "일반 시간대 단독 업무가 가능한 단계",
+      "canDo": "일반 운영",
+      "cannotDoYet": "고강도 피크타임 전체 통제",
+      "canWorkAlone": true,
+      "canWorkPeakTime": false,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_runner"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 5
+    },
+    {
+      "id": "lvl_sk_runner_2_2",
+      "skillId": "sk_runner",
+      "levelNumber": 2,
+      "levelName": "Level 2",
+      "stepNumber": 2,
+      "stepName": "Step 2",
+      "description": "일반 업무와 일부 피크타임 대응이 가능한 단계",
+      "canDo": "일반 운영과 일부 피크 대응",
+      "cannotDoYet": "리더 역할",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_runner"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 6
+    },
+    {
+      "id": "lvl_sk_runner_3_1",
+      "skillId": "sk_runner",
+      "levelNumber": 3,
+      "levelName": "Level 3",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "피크타임 핵심 업무가 가능한 단계",
+      "canDo": "피크타임 핵심 업무",
+      "cannotDoYet": "신입 교육과 전체 운영 판단",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_runner"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 7
+    },
+    {
+      "id": "lvl_sk_runner_4_1",
+      "skillId": "sk_runner",
+      "levelNumber": 4,
+      "levelName": "Level 4",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "리더와 교육 담당이 가능한 단계",
+      "canDo": "리더/트레이닝/문제 해결",
+      "cannotDoYet": "상위 관리 업무",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_runner"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 8
+    },
+    {
+      "id": "lvl_sk_barista_1_1",
+      "skillId": "sk_barista",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "기본 개념을 배우는 단계",
+      "canDo": "기본 보조 업무",
+      "cannotDoYet": "단독 업무와 피크타임 대응",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_barista"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 1
+    },
+    {
+      "id": "lvl_sk_barista_1_2",
+      "skillId": "sk_barista",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 2,
+      "stepName": "Step 2",
+      "description": "반복 업무와 기본 흐름을 일부 수행할 수 있는 단계",
+      "canDo": "간단한 반복 업무",
+      "cannotDoYet": "조리/응대 상태 최종 판단",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_barista"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 2
+    },
+    {
+      "id": "lvl_sk_barista_1_3",
+      "skillId": "sk_barista",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 3,
+      "stepName": "Step 3",
+      "description": "대부분의 흐름을 알고 몇 가지 확인을 통해 업무 가능",
+      "canDo": "일반 시간대 보조 및 일부 단독 업무",
+      "cannotDoYet": "피크타임 단독 업무",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_barista"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 3
+    },
+    {
+      "id": "lvl_sk_barista_1_4",
+      "skillId": "sk_barista",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 4,
+      "stepName": "Step 4",
+      "description": "Level 2 직전 단계. 약간의 어시스트를 제외하면 대부분 수행 가능",
+      "canDo": "일반 시간대 주요 업무",
+      "cannotDoYet": "복잡한 피크타임 판단",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_barista"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 4
+    },
+    {
+      "id": "lvl_sk_barista_2_1",
+      "skillId": "sk_barista",
+      "levelNumber": 2,
+      "levelName": "Level 2",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "일반 시간대 단독 업무가 가능한 단계",
+      "canDo": "일반 운영",
+      "cannotDoYet": "고강도 피크타임 전체 통제",
+      "canWorkAlone": true,
+      "canWorkPeakTime": false,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_barista"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 5
+    },
+    {
+      "id": "lvl_sk_barista_2_2",
+      "skillId": "sk_barista",
+      "levelNumber": 2,
+      "levelName": "Level 2",
+      "stepNumber": 2,
+      "stepName": "Step 2",
+      "description": "일반 업무와 일부 피크타임 대응이 가능한 단계",
+      "canDo": "일반 운영과 일부 피크 대응",
+      "cannotDoYet": "리더 역할",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_barista"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 6
+    },
+    {
+      "id": "lvl_sk_barista_3_1",
+      "skillId": "sk_barista",
+      "levelNumber": 3,
+      "levelName": "Level 3",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "피크타임 핵심 업무가 가능한 단계",
+      "canDo": "피크타임 핵심 업무",
+      "cannotDoYet": "신입 교육과 전체 운영 판단",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_barista"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 7
+    },
+    {
+      "id": "lvl_sk_barista_4_1",
+      "skillId": "sk_barista",
+      "levelNumber": 4,
+      "levelName": "Level 4",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "리더와 교육 담당이 가능한 단계",
+      "canDo": "리더/트레이닝/문제 해결",
+      "cannotDoYet": "상위 관리 업무",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_barista"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 8
+    },
+    {
+      "id": "lvl_sk_leader_1_1",
+      "skillId": "sk_leader",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "기본 개념을 배우는 단계",
+      "canDo": "기본 보조 업무",
+      "cannotDoYet": "단독 업무와 피크타임 대응",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_leader"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 1
+    },
+    {
+      "id": "lvl_sk_leader_1_2",
+      "skillId": "sk_leader",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 2,
+      "stepName": "Step 2",
+      "description": "반복 업무와 기본 흐름을 일부 수행할 수 있는 단계",
+      "canDo": "간단한 반복 업무",
+      "cannotDoYet": "조리/응대 상태 최종 판단",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_leader"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 2
+    },
+    {
+      "id": "lvl_sk_leader_1_3",
+      "skillId": "sk_leader",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 3,
+      "stepName": "Step 3",
+      "description": "대부분의 흐름을 알고 몇 가지 확인을 통해 업무 가능",
+      "canDo": "일반 시간대 보조 및 일부 단독 업무",
+      "cannotDoYet": "피크타임 단독 업무",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_leader"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 3
+    },
+    {
+      "id": "lvl_sk_leader_1_4",
+      "skillId": "sk_leader",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 4,
+      "stepName": "Step 4",
+      "description": "Level 2 직전 단계. 약간의 어시스트를 제외하면 대부분 수행 가능",
+      "canDo": "일반 시간대 주요 업무",
+      "cannotDoYet": "복잡한 피크타임 판단",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_leader"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 4
+    },
+    {
+      "id": "lvl_sk_leader_2_1",
+      "skillId": "sk_leader",
+      "levelNumber": 2,
+      "levelName": "Level 2",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "일반 시간대 단독 업무가 가능한 단계",
+      "canDo": "일반 운영",
+      "cannotDoYet": "고강도 피크타임 전체 통제",
+      "canWorkAlone": true,
+      "canWorkPeakTime": false,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_leader"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 5
+    },
+    {
+      "id": "lvl_sk_leader_2_2",
+      "skillId": "sk_leader",
+      "levelNumber": 2,
+      "levelName": "Level 2",
+      "stepNumber": 2,
+      "stepName": "Step 2",
+      "description": "일반 업무와 일부 피크타임 대응이 가능한 단계",
+      "canDo": "일반 운영과 일부 피크 대응",
+      "cannotDoYet": "리더 역할",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_leader"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 6
+    },
+    {
+      "id": "lvl_sk_leader_3_1",
+      "skillId": "sk_leader",
+      "levelNumber": 3,
+      "levelName": "Level 3",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "피크타임 핵심 업무가 가능한 단계",
+      "canDo": "피크타임 핵심 업무",
+      "cannotDoYet": "신입 교육과 전체 운영 판단",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_leader"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 7
+    },
+    {
+      "id": "lvl_sk_leader_4_1",
+      "skillId": "sk_leader",
+      "levelNumber": 4,
+      "levelName": "Level 4",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "리더와 교육 담당이 가능한 단계",
+      "canDo": "리더/트레이닝/문제 해결",
+      "cannotDoYet": "상위 관리 업무",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_leader"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 8
+    },
+    {
+      "id": "lvl_sk_closing_1_1",
+      "skillId": "sk_closing",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "기본 개념을 배우는 단계",
+      "canDo": "기본 보조 업무",
+      "cannotDoYet": "단독 업무와 피크타임 대응",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_close"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 1
+    },
+    {
+      "id": "lvl_sk_closing_1_2",
+      "skillId": "sk_closing",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 2,
+      "stepName": "Step 2",
+      "description": "반복 업무와 기본 흐름을 일부 수행할 수 있는 단계",
+      "canDo": "간단한 반복 업무",
+      "cannotDoYet": "조리/응대 상태 최종 판단",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_close"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 2
+    },
+    {
+      "id": "lvl_sk_closing_1_3",
+      "skillId": "sk_closing",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 3,
+      "stepName": "Step 3",
+      "description": "대부분의 흐름을 알고 몇 가지 확인을 통해 업무 가능",
+      "canDo": "일반 시간대 보조 및 일부 단독 업무",
+      "cannotDoYet": "피크타임 단독 업무",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": true,
+      "allowedStations": [
+        "st_close"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 3
+    },
+    {
+      "id": "lvl_sk_closing_1_4",
+      "skillId": "sk_closing",
+      "levelNumber": 1,
+      "levelName": "Level 1",
+      "stepNumber": 4,
+      "stepName": "Step 4",
+      "description": "Level 2 직전 단계. 약간의 어시스트를 제외하면 대부분 수행 가능",
+      "canDo": "일반 시간대 주요 업무",
+      "cannotDoYet": "복잡한 피크타임 판단",
+      "canWorkAlone": false,
+      "canWorkPeakTime": false,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_close"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 4
+    },
+    {
+      "id": "lvl_sk_closing_2_1",
+      "skillId": "sk_closing",
+      "levelNumber": 2,
+      "levelName": "Level 2",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "일반 시간대 단독 업무가 가능한 단계",
+      "canDo": "일반 운영",
+      "cannotDoYet": "고강도 피크타임 전체 통제",
+      "canWorkAlone": true,
+      "canWorkPeakTime": false,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_close"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 5
+    },
+    {
+      "id": "lvl_sk_closing_2_2",
+      "skillId": "sk_closing",
+      "levelNumber": 2,
+      "levelName": "Level 2",
+      "stepNumber": 2,
+      "stepName": "Step 2",
+      "description": "일반 업무와 일부 피크타임 대응이 가능한 단계",
+      "canDo": "일반 운영과 일부 피크 대응",
+      "cannotDoYet": "리더 역할",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_close"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 6
+    },
+    {
+      "id": "lvl_sk_closing_3_1",
+      "skillId": "sk_closing",
+      "levelNumber": 3,
+      "levelName": "Level 3",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "피크타임 핵심 업무가 가능한 단계",
+      "canDo": "피크타임 핵심 업무",
+      "cannotDoYet": "신입 교육과 전체 운영 판단",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_close"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 7
+    },
+    {
+      "id": "lvl_sk_closing_4_1",
+      "skillId": "sk_closing",
+      "levelNumber": 4,
+      "levelName": "Level 4",
+      "stepNumber": 1,
+      "stepName": "Step 1",
+      "description": "리더와 교육 담당이 가능한 단계",
+      "canDo": "리더/트레이닝/문제 해결",
+      "cannotDoYet": "상위 관리 업무",
+      "canWorkAlone": true,
+      "canWorkPeakTime": true,
+      "needsSupervisor": false,
+      "allowedStations": [
+        "st_close"
+      ],
+      "nextPromotionCriteria": "운영자가 직접 승급 조건을 작성하세요.",
+      "sortOrder": 8
+    }
+  ],
+  "employees": [
+    {
+      "id": "emp_alex",
+      "name": "Alex",
+      "partId": "part_kitchen",
+      "role": "Kitchen Staff",
+      "employmentType": "Casual",
+      "baseRate": 30,
+      "saturdayMultiplier": 1.25,
+      "sundayMultiplier": 1.5,
+      "publicHolidayMultiplier": 2.25,
+      "maxWeeklyHours": 38,
+      "preferredWeeklyHours": 32,
+      "availability": {
+        "monday": {
+          "available": true,
+          "startTime": "10:00",
+          "endTime": "22:00"
+        },
+        "tuesday": {
+          "available": true,
+          "startTime": "10:00",
+          "endTime": "22:00"
+        },
+        "wednesday": {
+          "available": true,
+          "startTime": "10:00",
+          "endTime": "22:00"
+        },
+        "thursday": {
+          "available": true,
+          "startTime": "10:00",
+          "endTime": "22:00"
+        },
+        "friday": {
+          "available": true,
+          "startTime": "10:00",
+          "endTime": "22:00"
+        },
+        "saturday": {
+          "available": true,
+          "startTime": "10:00",
+          "endTime": "22:00"
+        },
+        "sunday": {
+          "available": true,
+          "startTime": "10:00",
+          "endTime": "22:00"
+        }
+      },
+      "active": true,
+      "notes": "",
+      "assignedSkills": {
+        "sk_hot": {
+          "level": 2,
+          "step": 2,
+          "note": ""
+        },
+        "sk_fry": {
+          "level": 3,
+          "step": 1,
+          "note": ""
+        },
+        "sk_closing": {
+          "level": 2,
+          "step": 1,
+          "note": ""
+        },
+        "sk_prep": {
+          "level": 2,
+          "step": 1,
+          "note": ""
+        }
+      }
+    },
+    {
+      "id": "emp_jay",
+      "name": "Jay",
+      "partId": "part_kitchen",
+      "role": "Kitchen Assistant",
+      "employmentType": "Part-time",
+      "baseRate": 26,
+      "saturdayMultiplier": 1.25,
+      "sundayMultiplier": 1.5,
+      "publicHolidayMultiplier": 2.25,
+      "maxWeeklyHours": 30,
+      "preferredWeeklyHours": 24,
+      "availability": {
+        "monday": {
+          "available": true,
+          "startTime": "09:00",
+          "endTime": "21:00"
+        },
+        "tuesday": {
+          "available": true,
+          "startTime": "09:00",
+          "endTime": "21:00"
+        },
+        "wednesday": {
+          "available": true,
+          "startTime": "09:00",
+          "endTime": "21:00"
+        },
+        "thursday": {
+          "available": true,
+          "startTime": "09:00",
+          "endTime": "21:00"
+        },
+        "friday": {
+          "available": true,
+          "startTime": "09:00",
+          "endTime": "21:00"
+        },
+        "saturday": {
+          "available": true,
+          "startTime": "09:00",
+          "endTime": "21:00"
+        },
+        "sunday": {
+          "available": true,
+          "startTime": "09:00",
+          "endTime": "21:00"
+        }
+      },
+      "active": true,
+      "notes": "",
+      "assignedSkills": {
+        "sk_prep": {
+          "level": 2,
+          "step": 1,
+          "note": ""
+        },
+        "sk_fry": {
+          "level": 1,
+          "step": 4,
+          "note": ""
+        },
+        "sk_dish": {
+          "level": 3,
+          "step": 1,
+          "note": ""
+        }
+      }
+    },
+    {
+      "id": "emp_mina",
+      "name": "Mina",
+      "partId": "part_hall",
+      "role": "Hall Staff",
+      "employmentType": "Casual",
+      "baseRate": 28,
+      "saturdayMultiplier": 1.25,
+      "sundayMultiplier": 1.5,
+      "publicHolidayMultiplier": 2.25,
+      "maxWeeklyHours": 35,
+      "preferredWeeklyHours": 28,
+      "availability": {
+        "monday": {
+          "available": true,
+          "startTime": "10:00",
+          "endTime": "22:00"
+        },
+        "tuesday": {
+          "available": true,
+          "startTime": "10:00",
+          "endTime": "22:00"
+        },
+        "wednesday": {
+          "available": true,
+          "startTime": "10:00",
+          "endTime": "22:00"
+        },
+        "thursday": {
+          "available": true,
+          "startTime": "10:00",
+          "endTime": "22:00"
+        },
+        "friday": {
+          "available": true,
+          "startTime": "10:00",
+          "endTime": "22:00"
+        },
+        "saturday": {
+          "available": true,
+          "startTime": "10:00",
+          "endTime": "22:00"
+        },
+        "sunday": {
+          "available": true,
+          "startTime": "10:00",
+          "endTime": "22:00"
+        }
+      },
+      "active": true,
+      "notes": "",
+      "assignedSkills": {
+        "sk_floor": {
+          "level": 2,
+          "step": 2,
+          "note": ""
+        },
+        "sk_cashier": {
+          "level": 1,
+          "step": 4,
+          "note": ""
+        },
+        "sk_runner": {
+          "level": 2,
+          "step": 1,
+          "note": ""
+        }
+      }
+    },
+    {
+      "id": "emp_sara",
+      "name": "Sara",
+      "partId": "part_hall",
+      "role": "Senior Hall Staff",
+      "employmentType": "Casual",
+      "baseRate": 29,
+      "saturdayMultiplier": 1.25,
+      "sundayMultiplier": 1.5,
+      "publicHolidayMultiplier": 2.25,
+      "maxWeeklyHours": 38,
+      "preferredWeeklyHours": 30,
+      "availability": {
+        "monday": {
+          "available": true,
+          "startTime": "10:00",
+          "endTime": "23:00"
+        },
+        "tuesday": {
+          "available": true,
+          "startTime": "10:00",
+          "endTime": "23:00"
+        },
+        "wednesday": {
+          "available": true,
+          "startTime": "10:00",
+          "endTime": "23:00"
+        },
+        "thursday": {
+          "available": true,
+          "startTime": "10:00",
+          "endTime": "23:00"
+        },
+        "friday": {
+          "available": true,
+          "startTime": "10:00",
+          "endTime": "23:00"
+        },
+        "saturday": {
+          "available": true,
+          "startTime": "10:00",
+          "endTime": "23:00"
+        },
+        "sunday": {
+          "available": true,
+          "startTime": "10:00",
+          "endTime": "23:00"
+        }
+      },
+      "active": true,
+      "notes": "",
+      "assignedSkills": {
+        "sk_floor": {
+          "level": 3,
+          "step": 1,
+          "note": ""
+        },
+        "sk_cashier": {
+          "level": 2,
+          "step": 2,
+          "note": ""
+        },
+        "sk_runner": {
+          "level": 2,
+          "step": 2,
+          "note": ""
+        }
+      }
+    },
+    {
+      "id": "emp_james",
+      "name": "James",
+      "partId": "part_manager",
+      "role": "Shift Manager",
+      "employmentType": "Full-time",
+      "baseRate": 35,
+      "saturdayMultiplier": 1.25,
+      "sundayMultiplier": 1.5,
+      "publicHolidayMultiplier": 2.25,
+      "maxWeeklyHours": 40,
+      "preferredWeeklyHours": 38,
+      "availability": {
+        "monday": {
+          "available": true,
+          "startTime": "09:00",
+          "endTime": "22:30"
+        },
+        "tuesday": {
+          "available": true,
+          "startTime": "09:00",
+          "endTime": "22:30"
+        },
+        "wednesday": {
+          "available": true,
+          "startTime": "09:00",
+          "endTime": "22:30"
+        },
+        "thursday": {
+          "available": true,
+          "startTime": "09:00",
+          "endTime": "22:30"
+        },
+        "friday": {
+          "available": true,
+          "startTime": "09:00",
+          "endTime": "22:30"
+        },
+        "saturday": {
+          "available": true,
+          "startTime": "09:00",
+          "endTime": "22:30"
+        },
+        "sunday": {
+          "available": true,
+          "startTime": "09:00",
+          "endTime": "22:30"
+        }
+      },
+      "active": true,
+      "notes": "",
+      "assignedSkills": {
+        "sk_pass": {
+          "level": 3,
+          "step": 1,
+          "note": ""
+        },
+        "sk_closing": {
+          "level": 4,
+          "step": 1,
+          "note": ""
+        },
+        "sk_cashier": {
+          "level": 3,
+          "step": 1,
+          "note": ""
+        },
+        "sk_leader": {
+          "level": 3,
+          "step": 1,
+          "note": ""
+        }
+      }
+    },
+    {
+      "id": "emp_emma",
+      "name": "Emma",
+      "partId": "part_manager",
+      "role": "Operations Lead",
+      "employmentType": "Full-time",
+      "baseRate": 36,
+      "saturdayMultiplier": 1.25,
+      "sundayMultiplier": 1.5,
+      "publicHolidayMultiplier": 2.25,
+      "maxWeeklyHours": 40,
+      "preferredWeeklyHours": 36,
+      "availability": {
+        "monday": {
+          "available": true,
+          "startTime": "09:00",
+          "endTime": "22:30"
+        },
+        "tuesday": {
+          "available": true,
+          "startTime": "09:00",
+          "endTime": "22:30"
+        },
+        "wednesday": {
+          "available": true,
+          "startTime": "09:00",
+          "endTime": "22:30"
+        },
+        "thursday": {
+          "available": true,
+          "startTime": "09:00",
+          "endTime": "22:30"
+        },
+        "friday": {
+          "available": true,
+          "startTime": "09:00",
+          "endTime": "22:30"
+        },
+        "saturday": {
+          "available": true,
+          "startTime": "09:00",
+          "endTime": "22:30"
+        },
+        "sunday": {
+          "available": true,
+          "startTime": "09:00",
+          "endTime": "22:30"
+        }
+      },
+      "active": true,
+      "notes": "",
+      "assignedSkills": {
+        "sk_leader": {
+          "level": 4,
+          "step": 1,
+          "note": ""
+        },
+        "sk_closing": {
+          "level": 3,
+          "step": 1,
+          "note": ""
+        },
+        "sk_floor": {
+          "level": 3,
+          "step": 1,
+          "note": ""
+        },
+        "sk_cashier": {
+          "level": 3,
+          "step": 1,
+          "note": ""
+        }
+      }
+    }
+  ],
+  "requirements": [
+    {
+      "id": "req_monday_0",
+      "dayOfWeek": "monday",
+      "startTime": "09:00",
+      "endTime": "10:00",
+      "label": "Opening",
+      "minTotalStaff": 2,
+      "recommendedTotalStaff": 2,
+      "isPeak": false,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_monday_0_0_0",
+          "partId": "part_manager",
+          "stationId": "st_leader",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_leader",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": true,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_monday_0_1_0",
+          "partId": "part_kitchen",
+          "stationId": "st_prep",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_prep",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_monday_1",
+      "dayOfWeek": "monday",
+      "startTime": "10:00",
+      "endTime": "12:00",
+      "label": "Normal Service",
+      "minTotalStaff": 3,
+      "recommendedTotalStaff": 3,
+      "isPeak": false,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_monday_1_0_0",
+          "partId": "part_kitchen",
+          "stationId": "st_hot",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_hot",
+          "minLevel": 1,
+          "minStep": 4,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_monday_1_1_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_monday_1_2_0",
+          "partId": "part_hall",
+          "stationId": "st_cashier",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_cashier",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_monday_2",
+      "dayOfWeek": "monday",
+      "startTime": "12:00",
+      "endTime": "14:30",
+      "label": "Lunch Peak",
+      "minTotalStaff": 5,
+      "recommendedTotalStaff": 5,
+      "isPeak": true,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_monday_2_0_0",
+          "partId": "part_kitchen",
+          "stationId": "st_hot",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_hot",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_monday_2_1_0",
+          "partId": "part_kitchen",
+          "stationId": "st_fry",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_fry",
+          "minLevel": 1,
+          "minStep": 4,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_monday_2_2_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_monday_2_2_1",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_monday_2_3_0",
+          "partId": "part_hall",
+          "stationId": "st_cashier",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_cashier",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_monday_3",
+      "dayOfWeek": "monday",
+      "startTime": "14:30",
+      "endTime": "17:00",
+      "label": "Low Service",
+      "minTotalStaff": 2,
+      "recommendedTotalStaff": 2,
+      "isPeak": false,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_monday_3_0_0",
+          "partId": "part_kitchen",
+          "stationId": "st_prep",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_prep",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_monday_3_1_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_monday_4",
+      "dayOfWeek": "monday",
+      "startTime": "17:00",
+      "endTime": "20:30",
+      "label": "Dinner Peak",
+      "minTotalStaff": 7,
+      "recommendedTotalStaff": 7,
+      "isPeak": true,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_monday_4_0_0",
+          "partId": "part_kitchen",
+          "stationId": "st_hot",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_hot",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_monday_4_1_0",
+          "partId": "part_kitchen",
+          "stationId": "st_fry",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_fry",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_monday_4_2_0",
+          "partId": "part_kitchen",
+          "stationId": "st_pass",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_pass",
+          "minLevel": 3,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_monday_4_3_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_monday_4_3_1",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_monday_4_4_0",
+          "partId": "part_hall",
+          "stationId": "st_cashier",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_cashier",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_monday_4_5_0",
+          "partId": "part_manager",
+          "stationId": "st_leader",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_leader",
+          "minLevel": 3,
+          "minStep": 1,
+          "needsLeader": true,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_monday_5",
+      "dayOfWeek": "monday",
+      "startTime": "20:30",
+      "endTime": "22:00",
+      "label": "Closing",
+      "minTotalStaff": 3,
+      "recommendedTotalStaff": 3,
+      "isPeak": false,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_monday_5_0_0",
+          "partId": "part_manager",
+          "stationId": "st_close",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_closing",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_monday_5_1_0",
+          "partId": "part_kitchen",
+          "stationId": "st_dish",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_dish",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_monday_5_2_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 4,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_tuesday_0",
+      "dayOfWeek": "tuesday",
+      "startTime": "09:00",
+      "endTime": "10:00",
+      "label": "Opening",
+      "minTotalStaff": 2,
+      "recommendedTotalStaff": 2,
+      "isPeak": false,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_tuesday_0_0_0",
+          "partId": "part_manager",
+          "stationId": "st_leader",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_leader",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": true,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_tuesday_0_1_0",
+          "partId": "part_kitchen",
+          "stationId": "st_prep",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_prep",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_tuesday_1",
+      "dayOfWeek": "tuesday",
+      "startTime": "10:00",
+      "endTime": "12:00",
+      "label": "Normal Service",
+      "minTotalStaff": 3,
+      "recommendedTotalStaff": 3,
+      "isPeak": false,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_tuesday_1_0_0",
+          "partId": "part_kitchen",
+          "stationId": "st_hot",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_hot",
+          "minLevel": 1,
+          "minStep": 4,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_tuesday_1_1_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_tuesday_1_2_0",
+          "partId": "part_hall",
+          "stationId": "st_cashier",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_cashier",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_tuesday_2",
+      "dayOfWeek": "tuesday",
+      "startTime": "12:00",
+      "endTime": "14:30",
+      "label": "Lunch Peak",
+      "minTotalStaff": 5,
+      "recommendedTotalStaff": 5,
+      "isPeak": true,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_tuesday_2_0_0",
+          "partId": "part_kitchen",
+          "stationId": "st_hot",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_hot",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_tuesday_2_1_0",
+          "partId": "part_kitchen",
+          "stationId": "st_fry",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_fry",
+          "minLevel": 1,
+          "minStep": 4,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_tuesday_2_2_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_tuesday_2_2_1",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_tuesday_2_3_0",
+          "partId": "part_hall",
+          "stationId": "st_cashier",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_cashier",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_tuesday_3",
+      "dayOfWeek": "tuesday",
+      "startTime": "14:30",
+      "endTime": "17:00",
+      "label": "Low Service",
+      "minTotalStaff": 2,
+      "recommendedTotalStaff": 2,
+      "isPeak": false,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_tuesday_3_0_0",
+          "partId": "part_kitchen",
+          "stationId": "st_prep",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_prep",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_tuesday_3_1_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_tuesday_4",
+      "dayOfWeek": "tuesday",
+      "startTime": "17:00",
+      "endTime": "20:30",
+      "label": "Dinner Peak",
+      "minTotalStaff": 7,
+      "recommendedTotalStaff": 7,
+      "isPeak": true,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_tuesday_4_0_0",
+          "partId": "part_kitchen",
+          "stationId": "st_hot",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_hot",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_tuesday_4_1_0",
+          "partId": "part_kitchen",
+          "stationId": "st_fry",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_fry",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_tuesday_4_2_0",
+          "partId": "part_kitchen",
+          "stationId": "st_pass",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_pass",
+          "minLevel": 3,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_tuesday_4_3_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_tuesday_4_3_1",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_tuesday_4_4_0",
+          "partId": "part_hall",
+          "stationId": "st_cashier",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_cashier",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_tuesday_4_5_0",
+          "partId": "part_manager",
+          "stationId": "st_leader",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_leader",
+          "minLevel": 3,
+          "minStep": 1,
+          "needsLeader": true,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_tuesday_5",
+      "dayOfWeek": "tuesday",
+      "startTime": "20:30",
+      "endTime": "22:00",
+      "label": "Closing",
+      "minTotalStaff": 3,
+      "recommendedTotalStaff": 3,
+      "isPeak": false,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_tuesday_5_0_0",
+          "partId": "part_manager",
+          "stationId": "st_close",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_closing",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_tuesday_5_1_0",
+          "partId": "part_kitchen",
+          "stationId": "st_dish",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_dish",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_tuesday_5_2_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 4,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_wednesday_0",
+      "dayOfWeek": "wednesday",
+      "startTime": "09:00",
+      "endTime": "10:00",
+      "label": "Opening",
+      "minTotalStaff": 2,
+      "recommendedTotalStaff": 2,
+      "isPeak": false,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_wednesday_0_0_0",
+          "partId": "part_manager",
+          "stationId": "st_leader",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_leader",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": true,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_wednesday_0_1_0",
+          "partId": "part_kitchen",
+          "stationId": "st_prep",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_prep",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_wednesday_1",
+      "dayOfWeek": "wednesday",
+      "startTime": "10:00",
+      "endTime": "12:00",
+      "label": "Normal Service",
+      "minTotalStaff": 3,
+      "recommendedTotalStaff": 3,
+      "isPeak": false,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_wednesday_1_0_0",
+          "partId": "part_kitchen",
+          "stationId": "st_hot",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_hot",
+          "minLevel": 1,
+          "minStep": 4,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_wednesday_1_1_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_wednesday_1_2_0",
+          "partId": "part_hall",
+          "stationId": "st_cashier",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_cashier",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_wednesday_2",
+      "dayOfWeek": "wednesday",
+      "startTime": "12:00",
+      "endTime": "14:30",
+      "label": "Lunch Peak",
+      "minTotalStaff": 5,
+      "recommendedTotalStaff": 5,
+      "isPeak": true,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_wednesday_2_0_0",
+          "partId": "part_kitchen",
+          "stationId": "st_hot",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_hot",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_wednesday_2_1_0",
+          "partId": "part_kitchen",
+          "stationId": "st_fry",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_fry",
+          "minLevel": 1,
+          "minStep": 4,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_wednesday_2_2_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_wednesday_2_2_1",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_wednesday_2_3_0",
+          "partId": "part_hall",
+          "stationId": "st_cashier",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_cashier",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_wednesday_3",
+      "dayOfWeek": "wednesday",
+      "startTime": "14:30",
+      "endTime": "17:00",
+      "label": "Low Service",
+      "minTotalStaff": 2,
+      "recommendedTotalStaff": 2,
+      "isPeak": false,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_wednesday_3_0_0",
+          "partId": "part_kitchen",
+          "stationId": "st_prep",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_prep",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_wednesday_3_1_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_wednesday_4",
+      "dayOfWeek": "wednesday",
+      "startTime": "17:00",
+      "endTime": "20:30",
+      "label": "Dinner Peak",
+      "minTotalStaff": 7,
+      "recommendedTotalStaff": 7,
+      "isPeak": true,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_wednesday_4_0_0",
+          "partId": "part_kitchen",
+          "stationId": "st_hot",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_hot",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_wednesday_4_1_0",
+          "partId": "part_kitchen",
+          "stationId": "st_fry",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_fry",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_wednesday_4_2_0",
+          "partId": "part_kitchen",
+          "stationId": "st_pass",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_pass",
+          "minLevel": 3,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_wednesday_4_3_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_wednesday_4_3_1",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_wednesday_4_4_0",
+          "partId": "part_hall",
+          "stationId": "st_cashier",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_cashier",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_wednesday_4_5_0",
+          "partId": "part_manager",
+          "stationId": "st_leader",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_leader",
+          "minLevel": 3,
+          "minStep": 1,
+          "needsLeader": true,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_wednesday_5",
+      "dayOfWeek": "wednesday",
+      "startTime": "20:30",
+      "endTime": "22:00",
+      "label": "Closing",
+      "minTotalStaff": 3,
+      "recommendedTotalStaff": 3,
+      "isPeak": false,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_wednesday_5_0_0",
+          "partId": "part_manager",
+          "stationId": "st_close",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_closing",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_wednesday_5_1_0",
+          "partId": "part_kitchen",
+          "stationId": "st_dish",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_dish",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_wednesday_5_2_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 4,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_thursday_0",
+      "dayOfWeek": "thursday",
+      "startTime": "09:00",
+      "endTime": "10:00",
+      "label": "Opening",
+      "minTotalStaff": 2,
+      "recommendedTotalStaff": 2,
+      "isPeak": false,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_thursday_0_0_0",
+          "partId": "part_manager",
+          "stationId": "st_leader",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_leader",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": true,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_thursday_0_1_0",
+          "partId": "part_kitchen",
+          "stationId": "st_prep",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_prep",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_thursday_1",
+      "dayOfWeek": "thursday",
+      "startTime": "10:00",
+      "endTime": "12:00",
+      "label": "Normal Service",
+      "minTotalStaff": 3,
+      "recommendedTotalStaff": 3,
+      "isPeak": false,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_thursday_1_0_0",
+          "partId": "part_kitchen",
+          "stationId": "st_hot",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_hot",
+          "minLevel": 1,
+          "minStep": 4,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_thursday_1_1_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_thursday_1_2_0",
+          "partId": "part_hall",
+          "stationId": "st_cashier",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_cashier",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_thursday_2",
+      "dayOfWeek": "thursday",
+      "startTime": "12:00",
+      "endTime": "14:30",
+      "label": "Lunch Peak",
+      "minTotalStaff": 5,
+      "recommendedTotalStaff": 5,
+      "isPeak": true,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_thursday_2_0_0",
+          "partId": "part_kitchen",
+          "stationId": "st_hot",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_hot",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_thursday_2_1_0",
+          "partId": "part_kitchen",
+          "stationId": "st_fry",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_fry",
+          "minLevel": 1,
+          "minStep": 4,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_thursday_2_2_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_thursday_2_2_1",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_thursday_2_3_0",
+          "partId": "part_hall",
+          "stationId": "st_cashier",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_cashier",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_thursday_3",
+      "dayOfWeek": "thursday",
+      "startTime": "14:30",
+      "endTime": "17:00",
+      "label": "Low Service",
+      "minTotalStaff": 2,
+      "recommendedTotalStaff": 2,
+      "isPeak": false,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_thursday_3_0_0",
+          "partId": "part_kitchen",
+          "stationId": "st_prep",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_prep",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_thursday_3_1_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_thursday_4",
+      "dayOfWeek": "thursday",
+      "startTime": "17:00",
+      "endTime": "20:30",
+      "label": "Dinner Peak",
+      "minTotalStaff": 7,
+      "recommendedTotalStaff": 7,
+      "isPeak": true,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_thursday_4_0_0",
+          "partId": "part_kitchen",
+          "stationId": "st_hot",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_hot",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_thursday_4_1_0",
+          "partId": "part_kitchen",
+          "stationId": "st_fry",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_fry",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_thursday_4_2_0",
+          "partId": "part_kitchen",
+          "stationId": "st_pass",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_pass",
+          "minLevel": 3,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_thursday_4_3_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_thursday_4_3_1",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_thursday_4_4_0",
+          "partId": "part_hall",
+          "stationId": "st_cashier",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_cashier",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_thursday_4_5_0",
+          "partId": "part_manager",
+          "stationId": "st_leader",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_leader",
+          "minLevel": 3,
+          "minStep": 1,
+          "needsLeader": true,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_thursday_5",
+      "dayOfWeek": "thursday",
+      "startTime": "20:30",
+      "endTime": "22:00",
+      "label": "Closing",
+      "minTotalStaff": 3,
+      "recommendedTotalStaff": 3,
+      "isPeak": false,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_thursday_5_0_0",
+          "partId": "part_manager",
+          "stationId": "st_close",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_closing",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_thursday_5_1_0",
+          "partId": "part_kitchen",
+          "stationId": "st_dish",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_dish",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_thursday_5_2_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 4,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_friday_0",
+      "dayOfWeek": "friday",
+      "startTime": "09:00",
+      "endTime": "10:00",
+      "label": "Opening",
+      "minTotalStaff": 2,
+      "recommendedTotalStaff": 2,
+      "isPeak": false,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_friday_0_0_0",
+          "partId": "part_manager",
+          "stationId": "st_leader",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_leader",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": true,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_friday_0_1_0",
+          "partId": "part_kitchen",
+          "stationId": "st_prep",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_prep",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_friday_1",
+      "dayOfWeek": "friday",
+      "startTime": "10:00",
+      "endTime": "12:00",
+      "label": "Normal Service",
+      "minTotalStaff": 3,
+      "recommendedTotalStaff": 3,
+      "isPeak": false,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_friday_1_0_0",
+          "partId": "part_kitchen",
+          "stationId": "st_hot",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_hot",
+          "minLevel": 1,
+          "minStep": 4,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_friday_1_1_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_friday_1_2_0",
+          "partId": "part_hall",
+          "stationId": "st_cashier",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_cashier",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_friday_2",
+      "dayOfWeek": "friday",
+      "startTime": "12:00",
+      "endTime": "14:30",
+      "label": "Lunch Peak",
+      "minTotalStaff": 5,
+      "recommendedTotalStaff": 5,
+      "isPeak": true,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_friday_2_0_0",
+          "partId": "part_kitchen",
+          "stationId": "st_hot",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_hot",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_friday_2_1_0",
+          "partId": "part_kitchen",
+          "stationId": "st_fry",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_fry",
+          "minLevel": 1,
+          "minStep": 4,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_friday_2_2_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_friday_2_2_1",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_friday_2_3_0",
+          "partId": "part_hall",
+          "stationId": "st_cashier",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_cashier",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_friday_3",
+      "dayOfWeek": "friday",
+      "startTime": "14:30",
+      "endTime": "17:00",
+      "label": "Low Service",
+      "minTotalStaff": 2,
+      "recommendedTotalStaff": 2,
+      "isPeak": false,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_friday_3_0_0",
+          "partId": "part_kitchen",
+          "stationId": "st_prep",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_prep",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_friday_3_1_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_friday_4",
+      "dayOfWeek": "friday",
+      "startTime": "17:00",
+      "endTime": "20:30",
+      "label": "Dinner Peak",
+      "minTotalStaff": 7,
+      "recommendedTotalStaff": 7,
+      "isPeak": true,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_friday_4_0_0",
+          "partId": "part_kitchen",
+          "stationId": "st_hot",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_hot",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_friday_4_1_0",
+          "partId": "part_kitchen",
+          "stationId": "st_fry",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_fry",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_friday_4_2_0",
+          "partId": "part_kitchen",
+          "stationId": "st_pass",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_pass",
+          "minLevel": 3,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_friday_4_3_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_friday_4_3_1",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_friday_4_4_0",
+          "partId": "part_hall",
+          "stationId": "st_cashier",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_cashier",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_friday_4_5_0",
+          "partId": "part_manager",
+          "stationId": "st_leader",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_leader",
+          "minLevel": 3,
+          "minStep": 1,
+          "needsLeader": true,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_friday_5",
+      "dayOfWeek": "friday",
+      "startTime": "20:30",
+      "endTime": "22:00",
+      "label": "Closing",
+      "minTotalStaff": 3,
+      "recommendedTotalStaff": 3,
+      "isPeak": false,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_friday_5_0_0",
+          "partId": "part_manager",
+          "stationId": "st_close",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_closing",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_friday_5_1_0",
+          "partId": "part_kitchen",
+          "stationId": "st_dish",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_dish",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_friday_5_2_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 4,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_saturday_0",
+      "dayOfWeek": "saturday",
+      "startTime": "09:00",
+      "endTime": "10:00",
+      "label": "Opening",
+      "minTotalStaff": 2,
+      "recommendedTotalStaff": 2,
+      "isPeak": false,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_saturday_0_0_0",
+          "partId": "part_manager",
+          "stationId": "st_leader",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_leader",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": true,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_saturday_0_1_0",
+          "partId": "part_kitchen",
+          "stationId": "st_prep",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_prep",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_saturday_1",
+      "dayOfWeek": "saturday",
+      "startTime": "10:00",
+      "endTime": "12:00",
+      "label": "Normal Service",
+      "minTotalStaff": 3,
+      "recommendedTotalStaff": 3,
+      "isPeak": false,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_saturday_1_0_0",
+          "partId": "part_kitchen",
+          "stationId": "st_hot",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_hot",
+          "minLevel": 1,
+          "minStep": 4,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_saturday_1_1_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_saturday_1_2_0",
+          "partId": "part_hall",
+          "stationId": "st_cashier",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_cashier",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_saturday_2",
+      "dayOfWeek": "saturday",
+      "startTime": "12:00",
+      "endTime": "14:30",
+      "label": "Lunch Peak",
+      "minTotalStaff": 5,
+      "recommendedTotalStaff": 5,
+      "isPeak": true,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_saturday_2_0_0",
+          "partId": "part_kitchen",
+          "stationId": "st_hot",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_hot",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_saturday_2_1_0",
+          "partId": "part_kitchen",
+          "stationId": "st_fry",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_fry",
+          "minLevel": 1,
+          "minStep": 4,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_saturday_2_2_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_saturday_2_2_1",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_saturday_2_3_0",
+          "partId": "part_hall",
+          "stationId": "st_cashier",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_cashier",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_saturday_3",
+      "dayOfWeek": "saturday",
+      "startTime": "14:30",
+      "endTime": "17:00",
+      "label": "Low Service",
+      "minTotalStaff": 2,
+      "recommendedTotalStaff": 2,
+      "isPeak": false,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_saturday_3_0_0",
+          "partId": "part_kitchen",
+          "stationId": "st_prep",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_prep",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_saturday_3_1_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_saturday_4",
+      "dayOfWeek": "saturday",
+      "startTime": "17:00",
+      "endTime": "20:30",
+      "label": "Dinner Peak",
+      "minTotalStaff": 7,
+      "recommendedTotalStaff": 7,
+      "isPeak": true,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_saturday_4_0_0",
+          "partId": "part_kitchen",
+          "stationId": "st_hot",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_hot",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_saturday_4_1_0",
+          "partId": "part_kitchen",
+          "stationId": "st_fry",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_fry",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_saturday_4_2_0",
+          "partId": "part_kitchen",
+          "stationId": "st_pass",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_pass",
+          "minLevel": 3,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_saturday_4_3_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_saturday_4_3_1",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_saturday_4_4_0",
+          "partId": "part_hall",
+          "stationId": "st_cashier",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_cashier",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_saturday_4_5_0",
+          "partId": "part_manager",
+          "stationId": "st_leader",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_leader",
+          "minLevel": 3,
+          "minStep": 1,
+          "needsLeader": true,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_saturday_5",
+      "dayOfWeek": "saturday",
+      "startTime": "20:30",
+      "endTime": "22:00",
+      "label": "Closing",
+      "minTotalStaff": 3,
+      "recommendedTotalStaff": 3,
+      "isPeak": false,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_saturday_5_0_0",
+          "partId": "part_manager",
+          "stationId": "st_close",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_closing",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_saturday_5_1_0",
+          "partId": "part_kitchen",
+          "stationId": "st_dish",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_dish",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_saturday_5_2_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 4,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_sunday_0",
+      "dayOfWeek": "sunday",
+      "startTime": "09:00",
+      "endTime": "10:00",
+      "label": "Opening",
+      "minTotalStaff": 2,
+      "recommendedTotalStaff": 2,
+      "isPeak": false,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_sunday_0_0_0",
+          "partId": "part_manager",
+          "stationId": "st_leader",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_leader",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": true,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_sunday_0_1_0",
+          "partId": "part_kitchen",
+          "stationId": "st_prep",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_prep",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_sunday_1",
+      "dayOfWeek": "sunday",
+      "startTime": "10:00",
+      "endTime": "12:00",
+      "label": "Normal Service",
+      "minTotalStaff": 3,
+      "recommendedTotalStaff": 3,
+      "isPeak": false,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_sunday_1_0_0",
+          "partId": "part_kitchen",
+          "stationId": "st_hot",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_hot",
+          "minLevel": 1,
+          "minStep": 4,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_sunday_1_1_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_sunday_1_2_0",
+          "partId": "part_hall",
+          "stationId": "st_cashier",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_cashier",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_sunday_2",
+      "dayOfWeek": "sunday",
+      "startTime": "12:00",
+      "endTime": "14:30",
+      "label": "Lunch Peak",
+      "minTotalStaff": 5,
+      "recommendedTotalStaff": 5,
+      "isPeak": true,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_sunday_2_0_0",
+          "partId": "part_kitchen",
+          "stationId": "st_hot",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_hot",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_sunday_2_1_0",
+          "partId": "part_kitchen",
+          "stationId": "st_fry",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_fry",
+          "minLevel": 1,
+          "minStep": 4,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_sunday_2_2_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_sunday_2_2_1",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_sunday_2_3_0",
+          "partId": "part_hall",
+          "stationId": "st_cashier",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_cashier",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_sunday_3",
+      "dayOfWeek": "sunday",
+      "startTime": "14:30",
+      "endTime": "17:00",
+      "label": "Low Service",
+      "minTotalStaff": 2,
+      "recommendedTotalStaff": 2,
+      "isPeak": false,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_sunday_3_0_0",
+          "partId": "part_kitchen",
+          "stationId": "st_prep",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_prep",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_sunday_3_1_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_sunday_4",
+      "dayOfWeek": "sunday",
+      "startTime": "17:00",
+      "endTime": "20:30",
+      "label": "Dinner Peak",
+      "minTotalStaff": 7,
+      "recommendedTotalStaff": 7,
+      "isPeak": true,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_sunday_4_0_0",
+          "partId": "part_kitchen",
+          "stationId": "st_hot",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_hot",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_sunday_4_1_0",
+          "partId": "part_kitchen",
+          "stationId": "st_fry",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_fry",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_sunday_4_2_0",
+          "partId": "part_kitchen",
+          "stationId": "st_pass",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_pass",
+          "minLevel": 3,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_sunday_4_3_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_sunday_4_3_1",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_sunday_4_4_0",
+          "partId": "part_hall",
+          "stationId": "st_cashier",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_cashier",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_sunday_4_5_0",
+          "partId": "part_manager",
+          "stationId": "st_leader",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_leader",
+          "minLevel": 3,
+          "minStep": 1,
+          "needsLeader": true,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    },
+    {
+      "id": "req_sunday_5",
+      "dayOfWeek": "sunday",
+      "startTime": "20:30",
+      "endTime": "22:00",
+      "label": "Closing",
+      "minTotalStaff": 3,
+      "recommendedTotalStaff": 3,
+      "isPeak": false,
+      "needsHandover": false,
+      "handoverMinutes": 0,
+      "notes": "",
+      "stationRequirements": [
+        {
+          "id": "sreq_sunday_5_0_0",
+          "partId": "part_manager",
+          "stationId": "st_close",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_closing",
+          "minLevel": 2,
+          "minStep": 1,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_sunday_5_1_0",
+          "partId": "part_kitchen",
+          "stationId": "st_dish",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_dish",
+          "minLevel": 1,
+          "minStep": 3,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        },
+        {
+          "id": "sreq_sunday_5_2_0",
+          "partId": "part_hall",
+          "stationId": "st_floor",
+          "requiredCount": 1,
+          "requiredSkillId": "sk_floor",
+          "minLevel": 1,
+          "minStep": 4,
+          "needsLeader": false,
+          "canUseLowerStepAsEmergency": true
+        }
+      ]
+    }
+  ],
+  "schedule": {}
+}

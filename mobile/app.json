@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "SkillShift Mobile",
+    "slug": "skillshift-mobile",
+    "scheme": "skillshift",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
