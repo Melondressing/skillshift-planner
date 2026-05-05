@@ -102,7 +102,7 @@ const I18N = {
     },
     settings: {
       title: '설정',
-      subtitle: '언어 전환, 기본 표시값, 광고/피드백 링크, 저장/복원 정책을 관리한다.',
+      subtitle: '언어 전환, 기본 표시값, 광고/피드백 링크, 접근 준비, 저장/복원 정책을 관리한다.',
       languageLabel: '언어 전환',
       languageHelp: '앱의 주요 버튼과 섹션 제목을 한국어 또는 영어로 바꾼다. 저장된 데이터 이름은 그대로 유지된다.',
       laborTitle: '인건비 기준',
@@ -110,6 +110,20 @@ const I18N = {
       budgetHelp: '대시보드와 인건비 계산의 기준값이다.',
       ratioLabel: '목표 인건비율',
       ratioHelp: '매출 대비 인건비 비율을 계산할 때 사용한다.',
+      accessTitle: '접근 / 로그인 준비',
+      accessHelp: '기업별 로그인 페이지와 직원용 포털, 초대코드 구조를 미리 정리한다. 실제 인증은 서버에서 처리한다.',
+      companyNameLabel: '회사명',
+      companyNameHelp: '관리자 로그인 페이지와 직원 포털에 표시될 이름이다.',
+      companyNamePlaceholder: '예: Kitchen Worklog',
+      companyCodeLabel: '회사 코드',
+      companyCodeHelp: '회사명에서 자동 생성되는 짧은 식별자다.',
+      employeePortalLabel: '직원용 모바일 페이지',
+      employeePortalHelp: '직원은 읽기 전용 스케줄과 본인 관련 항목만 보게 된다.',
+      inviteCodeLabel: '직원 초대 코드',
+      inviteCodeHelp: '직원 초대는 일회용 코드나 링크로 발급한다. 실제 검증은 서버에서 한다.',
+      portalEnabled: '활성화 예정',
+      portalDisabled: '비활성화',
+      authNote: '관리자 / 매니저 / 직원 권한 분리는 이후 로그인 설계의 기준이 된다.',
       supportTitle: '광고 / 피드백',
       supportSubtitle: '광고가 들어갈 자리와 사용자 문의 채널을 따로 분리해 둔다.',
       adTitle: '광고 영역',
@@ -398,7 +412,7 @@ const I18N = {
     },
     settings: {
       title: 'Settings',
-      subtitle: 'Manage language, default display values, ad/feedback links, and save/restore behavior.',
+      subtitle: 'Manage language, default display values, access prep, ad/feedback links, and save/restore behavior.',
       languageLabel: 'Language switch',
       languageHelp: 'Switch the main app buttons and section titles between Korean and English. Saved data names stay unchanged.',
       laborTitle: 'Labor settings',
@@ -406,6 +420,20 @@ const I18N = {
       budgetHelp: 'Used as the baseline for the dashboard and labor calculations.',
       ratioLabel: 'Target labor ratio',
       ratioHelp: 'Used when calculating labor cost as a share of sales.',
+      accessTitle: 'Access / login prep',
+      accessHelp: 'Prepare the structure for company login, the employee portal, and invite codes. Real authentication will be handled by the server.',
+      companyNameLabel: 'Company name',
+      companyNameHelp: 'Shown on the admin login page and the employee portal.',
+      companyNamePlaceholder: 'e.g. Kitchen Worklog',
+      companyCodeLabel: 'Company code',
+      companyCodeHelp: 'A short identifier automatically derived from the company name.',
+      employeePortalLabel: 'Employee mobile page',
+      employeePortalHelp: 'Employees will only see read-only schedule data and their own related items.',
+      inviteCodeLabel: 'Employee invite code',
+      inviteCodeHelp: 'Invite employees with one-time codes or links. Real validation happens on the server.',
+      portalEnabled: 'Planned to enable',
+      portalDisabled: 'Disabled',
+      authNote: 'Admin / manager / employee role separation will drive the later login design.',
       supportTitle: 'Ads / Feedback',
       supportSubtitle: 'Keep ad space and contact channels separate from the core scheduler.',
       adTitle: 'Ad space',
@@ -840,6 +868,8 @@ function createDefaultState() {
     appVersion: APP_STATE_VERSION,
     settings: {
       language: 'ko',
+      companyName: '',
+      employeePortalEnabled: true,
       laborBudget: 4000,
       targetLaborRatio: 28,
       currency: '$',
@@ -854,6 +884,12 @@ function createDefaultState() {
     employees,
     requirements,
     schedule: {},
+    trainingRecords: [],
+    promotionChecklists: [],
+    attendanceRecords: [],
+    scheduleDrafts: [],
+    invitations: [],
+    portalRequests: [],
   };
 }
 
@@ -862,6 +898,7 @@ function createBlankState(settings = createDefaultState().settings) {
     appVersion: APP_STATE_VERSION,
     settings: {
       ...settings,
+      companyName: String(settings.companyName || '').trim(),
       feedbackEmail: 'kitchenworklog@gmail.com',
       feedbackUrl: '',
     },
@@ -872,15 +909,24 @@ function createBlankState(settings = createDefaultState().settings) {
     employees: [],
     requirements: [],
     schedule: {},
+    trainingRecords: [],
+    promotionChecklists: [],
+    attendanceRecords: [],
+    scheduleDrafts: [],
+    invitations: [],
+    portalRequests: [],
   };
 }
 
 function mergeState(parsed = {}) {
   const defaults = createDefaultState();
+  const asArray = (value) => (Array.isArray(value) ? value : []);
   const settings = {
     ...defaults.settings,
     ...(parsed.settings || {}),
   };
+  settings.companyName = String(settings.companyName || '').trim();
+  settings.employeePortalEnabled = Boolean(settings.employeePortalEnabled);
   settings.feedbackEmail = 'kitchenworklog@gmail.com';
   settings.feedbackUrl = '';
   return {
@@ -888,6 +934,12 @@ function mergeState(parsed = {}) {
     ...parsed,
     appVersion: Math.max(Number(parsed.appVersion || 0), defaults.appVersion),
     settings,
+    trainingRecords: asArray(parsed.trainingRecords),
+    promotionChecklists: asArray(parsed.promotionChecklists),
+    attendanceRecords: asArray(parsed.attendanceRecords),
+    scheduleDrafts: asArray(parsed.scheduleDrafts),
+    invitations: asArray(parsed.invitations),
+    portalRequests: asArray(parsed.portalRequests),
   };
 }
 
@@ -962,6 +1014,23 @@ function normalizeExternalUrl(value) {
   if (!raw) return '';
   if (/^(https?:|mailto:|tel:)/i.test(raw)) return raw;
   return `https://${raw}`;
+}
+function deriveCompanyCode(value) {
+  const raw = String(value ?? '').trim();
+  if (!raw) return '';
+  const slug = raw
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  if (slug) return slug;
+  let hash = 0;
+  for (const char of raw) {
+    hash = Math.imul(31, hash) + char.codePointAt(0);
+    hash |= 0;
+  }
+  return `c-${Math.abs(hash).toString(36)}`;
 }
 function mailtoLink(email) {
   const raw = String(email ?? '').trim();
@@ -2377,14 +2446,14 @@ function renderValidation() {
 
 function renderRoadmap() {
   const items = [
-    ['완전 자동 스케줄 생성', '현재는 추천 기반 배치다. 향후 Requirements, Members, Availability, Level/Step, Labor Budget을 기준으로 주간 스케줄을 자동 생성한다.'],
-    ['직원용 모바일 페이지', '직원이 가능 시간, 휴무 요청, 대체 가능 여부를 직접 제출하는 화면을 분리한다.'],
-    ['승인 시스템', '직원이 제출한 휴무/가능 시간은 관리자가 승인해야 스케줄 추천에 반영되도록 한다.'],
-    ['실제 출퇴근 기록', '예정 스케줄과 실제 출퇴근 시간을 비교해 차이 시간과 실제 인건비를 계산한다.'],
-    ['공휴일 / Penalty Rate / Super / Tax', '현재는 단순 배율 계산만 한다. 향후 호주 기준 penalty rate, allowance, super, tax를 설정값으로 확장한다.'],
-    ['매출 연동', '실제 매출 또는 기존 가게 운영 앱의 Sales 데이터와 연결해 실시간 인건비율을 계산한다.'],
-    ['직원 성장 관리', 'Level/Step을 교육 기록과 승급 체크리스트로 확장한다. 부족 Station을 기준으로 교육 대상자를 추천한다.'],
+    ['기업별 로그인 / 초대코드', '회사별 로그인 페이지와 직원 초대 코드를 먼저 두고, 관리자와 직원을 분리해서 접근을 제어한다.'],
+    ['직원용 모바일 페이지', '직원은 읽기 전용 스케줄과 본인 관련 항목만 보고, 가능 시간·휴무 요청·대체 가능 여부만 제출한다.'],
+    ['완전 자동 스케줄 생성', 'Requirements, Members, Availability, Level/Step, Labor Budget을 기준으로 주간 초안을 자동 생성하고 수동 수정도 가능하게 한다.'],
+    ['직원 성장 관리', 'Level/Step을 교육 기록과 승급 체크리스트로 확장하고, 부족 Station을 기준으로 교육 대상을 추천한다.'],
     ['직원 의존도 분석', '특정 직원이 빠졌을 때 운영이 무너지는 구조를 감지하고 대체 가능자 부족을 경고한다.'],
+    ['실제 출퇴근 기록', '예정 스케줄과 실제 출퇴근 시간을 비교해 차이 시간과 실제 인건비를 계산한다.'],
+    ['공휴일 / Penalty Rate / Super / Tax', '현재의 단순 배율 계산을 넘어 호주 기준 penalty rate, allowance, super, tax를 설정값으로 확장한다.'],
+    ['승인 시스템', '직원이 제출한 휴무/가능 시간/대체 가능 여부는 관리자가 승인해야 스케줄과 포털에 반영되게 한다.'],
     ['알림 기능', '스케줄 확정, 변경, 대체 요청, 인건비 초과, 필수 인력 부족 알림을 구현한다.'],
   ];
   document.getElementById('roadmap').innerHTML = `
@@ -2396,6 +2465,9 @@ function renderRoadmap() {
 function renderSettings() {
   const el = document.getElementById('settings');
   const lang = currentLanguage();
+  const companyName = String(state.settings.companyName || '').trim();
+  const companyCode = deriveCompanyCode(companyName);
+  const employeePortalEnabled = Boolean(state.settings.employeePortalEnabled);
   const feedbackEmail = String(state.settings.feedbackEmail || '').trim();
   const feedbackUrl = normalizeExternalUrl(state.settings.feedbackUrl);
   const feedbackEmailHref = mailtoLink(feedbackEmail);
@@ -2432,6 +2504,41 @@ function renderSettings() {
           </label>
         </div>
         <p class="small-text">${t('settings.ratioHelp')}</p>
+      </div>
+    </div>
+    <div class="section-head" style="margin-top: 24px;">
+      <div>
+        <h2>${t('settings.accessTitle')}</h2>
+        <p>${t('settings.accessHelp')}</p>
+      </div>
+    </div>
+    <div class="grid two">
+      <div class="card">
+        <h3>${t('settings.companyNameLabel')}</h3>
+        <p class="small-text">${t('settings.companyNameHelp')}</p>
+        <label class="small-text" style="display:grid; gap:6px; max-width: 320px;">
+          ${t('settings.companyNameLabel')}
+          <input type="text" value="${escapeHtml(companyName)}" placeholder="${escapeHtml(t('settings.companyNamePlaceholder'))}" data-setting="companyName" />
+        </label>
+        <label class="small-text" style="display:grid; gap:6px; margin-top: 12px;">
+          ${t('settings.companyCodeLabel')}
+          <div class="copy-field">
+            <input type="text" readonly value="${escapeHtml(companyCode)}" aria-readonly="true" />
+            ${companyCode ? `<button class="btn secondary small" type="button" data-action="copy-company-code">${t('common.copy')}</button>` : `<button class="btn secondary small" type="button" disabled>${t('common.copy')}</button>`}
+          </div>
+          <span class="small-text">${t('settings.companyCodeHelp')}</span>
+        </label>
+      </div>
+      <div class="card">
+        <h3>${t('settings.employeePortalLabel')}</h3>
+        <p class="small-text">${t('settings.employeePortalHelp')}</p>
+        <label class="small-text" style="display:flex; align-items:center; gap:10px; margin-top: 12px;">
+          <input type="checkbox" data-setting="employeePortalEnabled" ${employeePortalEnabled ? 'checked' : ''} />
+          <span>${employeePortalEnabled ? t('settings.portalEnabled') : t('settings.portalDisabled')}</span>
+        </label>
+        <h4 style="margin-top: 18px;">${t('settings.inviteCodeLabel')}</h4>
+        <p class="small-text">${t('settings.inviteCodeHelp')}</p>
+        <p class="small-text">${t('settings.authNote')}</p>
       </div>
     </div>
     <div class="section-head" style="margin-top: 24px;">
@@ -2521,6 +2628,7 @@ function handleClick(e) {
   if (action === 'show-replace') { replacementContext = { reqId: target.dataset.req, sreqId: target.dataset.sreq, slotIndex: Number(target.dataset.slot) }; recommendationContext = null; render(); }
   if (action === 'close-panels') { recommendationContext = null; replacementContext = null; render(); }
   if (action === 'apply-recommend') { state.schedule[target.dataset.key] = target.dataset.emp; saveState(false); recommendationContext = null; replacementContext = null; render(); toast(t('messages.scheduled')); }
+  if (action === 'copy-company-code') { copyToClipboard(deriveCompanyCode(state.settings.companyName)); }
   if (action === 'copy-feedback-email') { copyToClipboard(state.settings.feedbackEmail || ''); }
   if (action === 'copy-feedback-link') { copyToClipboard(normalizeExternalUrl(state.settings.feedbackUrl) || ''); }
 }
@@ -2531,6 +2639,12 @@ function handleChange(e) {
   if (el.dataset.setting) {
     if (el.dataset.setting === 'language') {
       setLanguage(el.value);
+      return;
+    }
+    if (el.type === 'checkbox' || el.dataset.settingType === 'boolean') {
+      state.settings[el.dataset.setting] = el.checked;
+      saveState(false);
+      render();
       return;
     }
     if (el.type === 'number' || el.dataset.settingType === 'number') {

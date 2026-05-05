@@ -1,4 +1,4 @@
-const CACHE_NAME = 'skillshift-planner-v19';
+const CACHE_NAME = 'skillshift-planner-v21';
 const CORE_ASSETS = [
   './index.html',
   './styles.css',
