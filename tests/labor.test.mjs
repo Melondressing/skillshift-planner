@@ -60,9 +60,9 @@ test("labor cost over budget is flagged, under budget is not", () => {
   assert.equal(budgetIssue(), undefined);
 });
 
-test("labor tab shows budget usage", () => {
+test("summary step shows budget usage", () => {
   t.assign(MON_LUNCH_PEAK, HOT(MON_LUNCH_PEAK), "emp_minjun"); // $93
   t.getState().settings.laborBudget = 186;
-  app.renderLabor();
-  assert.match(t.elements.get("labor").innerHTML, /50\.0%/);
+  app.renderDashboard();
+  assert.match(t.elements.get("dashboard").innerHTML, /50\.0%/);
 });

@@ -72,6 +72,14 @@ body {
 }
 
 .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+.tab-btn .step-num {
+  display: inline-grid; place-items: center;
+  width: 20px; height: 20px; margin-right: 6px;
+  border-radius: 999px; background: var(--line); color: var(--text, #111827); font-size: 12px;
+}
+.tab-btn.active .step-num { background: rgba(255,255,255,0.25); color: white; }
+.tab-btn.gear { margin-left: auto; font-size: 16px; }
+.tab-panel.active ~ .tab-panel.active { margin-top: 36px; padding-top: 24px; border-top: 1px solid var(--line); }
 
 .app-main { padding: 22px 28px 60px; max-width: 1500px; margin: 0 auto; }
 .tab-panel { display: none; }

@@ -19,21 +19,28 @@ const DAYS = [
   { key: 'sunday', ko: { label: '일요일', short: '일' }, en: { label: 'Sunday', short: 'Sun' } },
 ];
 
-const TABS = [
-  { id: 'dashboard', labelKey: 'tabs.dashboard' },
-  { id: 'parts', labelKey: 'tabs.parts' },
-  { id: 'skills', labelKey: 'tabs.skills' },
-  { id: 'members', labelKey: 'tabs.members' },
-  { id: 'requirements', labelKey: 'tabs.requirements' },
-  { id: 'schedule', labelKey: 'tabs.schedule' },
-  { id: 'labor', labelKey: 'tabs.labor' },
-  { id: 'validation', labelKey: 'tabs.validation' },
-  { id: 'settings', labelKey: 'tabs.settings' },
-  { id: 'roadmap', labelKey: 'tabs.roadmap' },
+// The four steps of building a roster. Each step shows one or more panels
+// stacked; settings (gear) and the roadmap are reachable but not numbered.
+const STEPS = [
+  { id: 'setup', labelKey: 'steps.setup', panels: ['parts', 'skills'] },
+  { id: 'members', labelKey: 'steps.members', panels: ['members'] },
+  { id: 'roster', labelKey: 'steps.roster', panels: ['requirements', 'schedule'] },
+  { id: 'summary', labelKey: 'steps.summary', panels: ['dashboard', 'labor', 'validation'] },
+];
+const EXTRA_VIEWS = [
+  { id: 'settings', labelKey: 'steps.settings', panels: ['settings'] },
+  { id: 'roadmap', labelKey: 'tabs.roadmap', panels: ['roadmap'] },
 ];
 
 const I18N = {
   ko: {
+    steps: {
+      setup: '매장 설정',
+      members: '직원',
+      roster: '근무표',
+      summary: '요약',
+      settings: '설정',
+    },
     tabs: {
       dashboard: '대시보드',
       parts: '파트 / 스테이션',
@@ -145,6 +152,7 @@ const I18N = {
       feedbackUrlHelp: '아직 공백으로 두고, 나중에 질문 링크를 넣으면 된다.',
       feedbackOpenEmail: '질문 보내기',
       feedbackOpenLink: '질문 링크 열기',
+      roadmapLink: '앞으로 추가될 기능 보기',
       dataTitle: '데이터 초기화',
       resetHelp: '직원, 근무표, 필요 인원 등 입력한 내용을 모두 지웁니다. 되돌릴 수 없으니 먼저 JSON 내보내기로 백업하세요.',
       current: '현재 언어',
@@ -346,6 +354,13 @@ const I18N = {
     },
   },
   en: {
+    steps: {
+      setup: 'Store setup',
+      members: 'Staff',
+      roster: 'Roster',
+      summary: 'Summary',
+      settings: 'Settings',
+    },
     tabs: {
       dashboard: 'Dashboard',
       parts: 'Parts / Stations',
@@ -457,6 +472,7 @@ const I18N = {
       feedbackUrlHelp: 'Leave it blank for now, and add a question link later.',
       feedbackOpenEmail: 'Send question',
       feedbackOpenLink: 'Open question link',
+      roadmapLink: 'See planned features',
       dataTitle: 'Reset data',
       resetHelp: 'Deletes everything you entered, including staff, roster and requirements. This cannot be undone, so export a JSON backup first.',
       current: 'Current language',
@@ -683,7 +699,7 @@ function setLanguage(lang) {
 
 function syncDocumentLanguage() {
   document.documentElement.lang = currentLanguage();
-  document.title = `SkillShift Planner · ${t('tabs.dashboard')}`;
+  document.title = `SkillShift Planner · ${t(findView(activeTab).labelKey)}`;
   const subtitle = document.getElementById('headerSubtitle');
   if (subtitle) subtitle.textContent = t('header.subtitle');
   const importLabel = document.getElementById('importLabel');
@@ -695,7 +711,7 @@ function syncDocumentLanguage() {
 }
 
 let state = loadState();
-let activeTab = 'dashboard';
+let activeTab = 'summary';
 let selectedSkillId = state.skills[0]?.id || '';
 let scheduleView = 'sheet';
 let selectedScheduleDay = 'monday';
@@ -1452,10 +1468,17 @@ function render() {
   renderRoadmap();
 }
 
+function findView(id) {
+  return [...STEPS, ...EXTRA_VIEWS].find((view) => view.id === id) || STEPS[STEPS.length - 1];
+}
+
 function renderTabs() {
   const tabs = document.getElementById('tabs');
-  tabs.innerHTML = TABS.map((tab) => `<button class="tab-btn ${activeTab === tab.id ? 'active' : ''}" data-tab="${tab.id}">${t(tab.labelKey)}</button>`).join('');
-  document.querySelectorAll('.tab-panel').forEach((panel) => panel.classList.toggle('active', panel.id === activeTab));
+  const isSettings = activeTab === 'settings' || activeTab === 'roadmap';
+  tabs.innerHTML = `${STEPS.map((step, i) => `<button class="tab-btn ${activeTab === step.id ? 'active' : ''}" data-tab="${step.id}"><span class="step-num">${i + 1}</span>${t(step.labelKey)}</button>`).join('')}
+    <button class="tab-btn gear ${isSettings ? 'active' : ''}" data-tab="settings" title="${t('steps.settings')}" aria-label="${t('steps.settings')}">⚙</button>`;
+  const panels = findView(activeTab).panels;
+  document.querySelectorAll('.tab-panel').forEach((panel) => panel.classList.toggle('active', panels.includes(panel.id)));
 }
 
 function metricCard(label, value, sub = '', status = '') {
@@ -1476,12 +1499,10 @@ function renderDashboard() {
   const totalSlots = getRequirementSeatRows().length;
   const completion = totalSlots ? (assignedSlots / totalSlots) * 100 : 0;
 
-  const partCosts = state.parts.map((part) => `<span class="badge info">${escapeHtml(part.name)} ${money(partLabor(part.id).cost)}</span>`).join('');
-
   el.innerHTML = `
     <div class="section-head">
       <div>
-        <h2>${t('tabs.dashboard')}</h2>
+        <h2>${t('steps.summary')}</h2>
         <p>${t('dashboard.subtitle')}</p>
       </div>
       <div class="inline-actions">
@@ -1503,10 +1524,6 @@ function renderDashboard() {
       <h3>${t('dashboard.budgetProgress')}</h3>
       <div class="progress ${budgetStatus}"><div style="width:${Math.min(ratio, 120)}%"></div></div>
       <p class="small-text">${budgetNote}</p>
-    </div>
-    <div class="grid two" style="margin-top:14px;">
-      <div class="card"><h3>${t('dashboard.partLabor')}</h3>${partCosts || `<p class="muted">${t('common.noData')}</p>`}</div>
-      <div class="card"><h3>${t('dashboard.topIssues')}</h3>${issues.slice(0, 6).map(issueBadge).join('') || `<span class="badge ok">${t('dashboard.noIssues')}</span>`}</div>
     </div>
   `;
 }
@@ -2354,8 +2371,6 @@ function renderSchedulePartView() {
 }
 
 function renderLabor() {
-  const { cost, budget, ratio, neededSales, status, budgetNote } = laborSummary();
-
   const employeeRows = state.employees.map((emp) => {
     const bd = employeeWorkBreakdown(emp.id);
     return `<tr>
@@ -2377,13 +2392,6 @@ function renderLabor() {
   const el = document.getElementById('labor');
   el.innerHTML = `
     <div class="section-head"><div><h2>${t('tabs.labor')}</h2><p>${t('labor.subtitle')}</p></div></div>
-    <div class="grid four">
-      ${metricCard(t('labor.labor'), money(cost), t('labor.usageBase'), status)}
-      ${metricCard(t('labor.budget'), money(budget), budgetNote)}
-      ${metricCard(t('labor.usage'), `${ratio.toFixed(1)}%`, t('labor.usageBase'), status)}
-      ${metricCard(t('labor.neededSales'), money(neededSales), t('labor.ratioBase', { ratio: state.settings.targetLaborRatio }))}
-    </div>
-    <div class="card" style="margin-top:14px;"><h3>${t('labor.progress')}</h3><div class="progress ${status}"><div style="width:${Math.min(ratio,120)}%"></div></div></div>
     <div class="grid two" style="margin-top:14px;">
       <div class="card wide-card"><h3>${t('labor.byEmployee')}</h3><div class="table-wrap"><table><thead><tr><th>${t('labor.employee')}</th><th>${t('labor.part')}</th><th>${t('labor.weekday')}</th><th>${t('labor.saturday')}</th><th>${t('labor.sunday')}</th><th>${t('labor.total')}</th><th>${t('labor.labor')}</th><th>${t('labor.max')}</th></tr></thead><tbody>${employeeRows}</tbody></table></div></div>
       <div class="card"><h3>${t('labor.byPart')}</h3><div class="table-wrap"><table><thead><tr><th>${t('labor.part')}</th><th>${t('labor.total')}</th><th>${t('labor.labor')}</th></tr></thead><tbody>${partRows}</tbody></table></div></div>
@@ -2553,6 +2561,7 @@ function renderSettings() {
       <p class="small-text">${t('settings.resetHelp')}</p>
       <button class="btn danger" type="button" data-action="reset-all">${t('common.resetAll')}</button>
     </div>
+    <p class="small-text" style="margin-top: 16px;"><button class="btn secondary small" type="button" data-tab="roadmap">${t('settings.roadmapLink')}</button></p>
   `;
 }
 
