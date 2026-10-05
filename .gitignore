@@ -6,3 +6,4 @@ mobile/.expo-shared/
 .expo/
 .expo-shared/
 web-build/
+.wrangler/
