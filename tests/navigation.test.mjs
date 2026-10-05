@@ -36,6 +36,15 @@ test("step labels are translated", () => {
 });
 
 test("settings links to the roadmap", () => {
-  app.render();
+  app.showView("settings");
   assert.ok(elements.get("settings").innerHTML.includes('data-tab="roadmap"'));
+});
+
+test("only the current view's panels are drawn", () => {
+  app.showView("members");
+  assert.ok(elements.get("members").innerHTML.length > 0);
+  assert.equal(elements.get("dashboard").innerHTML, "");
+  assert.equal(elements.get("schedule").innerHTML, "");
+  app.showView("summary");
+  assert.equal(elements.get("members").innerHTML, "");
 });

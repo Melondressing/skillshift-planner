@@ -1,12 +1,14 @@
 const STORE_KEY = 'skillshift_planner_v14';
 const STORE_PREFIX = 'skillshift_planner_';
-const APP_STATE_VERSION = 4;
+const APP_STATE_VERSION = 5;
 
 // Each step upgrades saved data to `version`. Steps run in order for anything
 // older, so add a new entry (instead of resetting) whenever the shape changes.
 const STATE_MIGRATIONS = [
   // v1–v3 → v4: same data shape; only the built-in sample roster changed.
   { version: 4, migrate: (saved) => saved },
+  // v5: the roster belongs to a dated week; older rosters become this week's.
+  { version: 5, migrate: (saved) => ({ ...saved, weekStart: saved.weekStart || currentWeekStart(), savedWeeks: saved.savedWeeks || {} }) },
 ];
 
 const DAYS = [
@@ -46,8 +48,8 @@ const I18N = {
       parts: '파트 / 스테이션',
       skills: '스킬',
       members: '직원',
-      requirements: '요구사항',
-      schedule: '스케줄 보드',
+      requirements: '필요 인원',
+      schedule: '근무표 배정',
       labor: '인건비',
       validation: '검증',
       settings: '설정',
@@ -57,9 +59,10 @@ const I18N = {
       subtitle: '파트 · 스테이션 · Level/Step 기반 근무표 & 인건비 관리',
     },
     common: {
-      save: '저장',
-      exportJson: 'JSON 내보내기',
-      importJson: 'JSON 가져오기',
+      autoSaved: '자동 저장됨',
+      autoSavedAt: '자동 저장됨 · {time}',
+      exportJson: '백업 파일 받기',
+      importJson: '백업 불러오기',
       resetAll: '전체 초기화',
       copy: '복사',
       add: '추가',
@@ -79,25 +82,24 @@ const I18N = {
       noItems: '표시할 항목이 없다.',
     },
     messages: {
-      saved: '저장됨',
       resetConfirm: '모든 입력 데이터를 삭제하고 빈 상태로 되돌릴까요? 현재 데이터는 삭제됩니다.',
       resetDone: '모든 입력 데이터가 삭제되었습니다',
-      jsonImported: 'JSON 가져오기 완료',
-      invalidJson: 'JSON 파일을 읽을 수 없습니다.',
+      jsonImported: '백업을 불러왔어요',
+      invalidJson: '백업 파일을 읽을 수 없습니다.',
       copied: '복사됨',
       copyFailed: '복사에 실패했습니다',
-      partNameRequired: 'Part 이름을 입력하세요',
-      partSelectRequired: 'Part를 먼저 선택하세요',
-      partAdded: 'Part 추가됨',
-      partDeleteConfirm: 'Part를 삭제할까요? 관련 직원/스테이션 연결은 남을 수 있습니다.',
-      stationNameRequired: 'Station 이름을 입력하세요',
-      stationSelectRequired: 'Station을 먼저 선택하세요',
-      stationAdded: 'Station 추가됨',
-      stationDeleteConfirm: 'Station을 삭제할까요?',
-      skillNameRequired: 'Skill 이름을 입력하세요',
-      skillAdded: 'Skill 추가됨',
-      skillDeleteConfirm: 'Skill을 삭제할까요? 직원에게 부여된 해당 Skill도 제거됩니다.',
-      levelAdded: 'Skill 단계 추가됨',
+      partNameRequired: '파트 이름을 입력하세요',
+      partSelectRequired: '파트를 먼저 선택하세요',
+      partAdded: '파트 추가됨',
+      partDeleteConfirm: '파트를 삭제할까요? 관련 직원/스테이션 연결은 남을 수 있습니다.',
+      stationNameRequired: '스테이션 이름을 입력하세요',
+      stationSelectRequired: '스테이션을 먼저 선택하세요',
+      stationAdded: '스테이션 추가됨',
+      stationDeleteConfirm: '스테이션을 삭제할까요?',
+      skillNameRequired: '스킬 이름을 입력하세요',
+      skillAdded: '스킬 추가됨',
+      skillDeleteConfirm: '스킬을 삭제할까요? 직원에게 부여된 해당 스킬도 제거됩니다.',
+      levelAdded: '스킬 단계 추가됨',
       employeeNameRequired: '직원 이름을 입력하세요',
       employeeAdded: '직원 추가됨',
       employeeDeleteConfirm: '직원을 삭제할까요? 해당 직원의 스케줄 배정도 제거됩니다.',
@@ -105,12 +107,7 @@ const I18N = {
       requirementDeleteConfirm: '시간 블록을 삭제할까요? 관련 스케줄 배정도 제거됩니다.',
       stationReqAdded: '필요 자리 1개 추가됨',
       stationReqCloned: '같은 자리 1개 추가됨',
-      skillSelectRequired: 'Skill을 선택하세요',
-      levelSelectRequired: 'Level을 선택하세요',
-      stepSelectRequired: 'Step을 선택하세요',
-      skillNotFound: 'Skill을 찾을 수 없습니다.',
-      skillSaved: '{skill} Level {level} / Step {step} 저장됨',
-      levelExistsConfirm: '같은 Skill 안에 동일한 Level / Step이 이미 있습니다. 그래도 추가할까요?',
+      levelExistsConfirm: '같은 스킬 안에 동일한 Level / Step이 이미 있습니다. 그래도 추가할까요?',
       scheduled: '배정됨',
       languageSaved: '언어가 변경되었습니다',
     },
@@ -154,14 +151,16 @@ const I18N = {
       feedbackOpenLink: '질문 링크 열기',
       roadmapLink: '앞으로 추가될 기능 보기',
       dataTitle: '데이터 초기화',
-      resetHelp: '직원, 근무표, 필요 인원 등 입력한 내용을 모두 지웁니다. 되돌릴 수 없으니 먼저 JSON 내보내기로 백업하세요.',
+      backupTitle: '백업',
+      backupHelp: '모든 변경은 이 기기의 브라우저에 자동 저장됩니다. 다른 기기로 옮기거나 만일을 대비하려면 백업 파일을 받아 두세요.',
+      resetHelp: '직원, 근무표, 필요 인원 등 입력한 내용을 모두 지웁니다. 되돌릴 수 없으니 먼저 위에서 백업 파일을 받아 두세요.',
       current: '현재 언어',
       koreanLabel: '한국어',
       englishLabel: '영어',
       uiPreview: 'UI 미리보기',
     },
     dashboard: {
-      title: 'Dashboard',
+      title: '요약',
       subtitle: '이번 주 스케줄의 운영 가능성, 인건비, 부족한 스테이션을 한눈에 확인한다.',
       budgetEdit: '목표 인건비 수정',
       ratioEdit: '목표 인건비율 수정 %',
@@ -186,65 +185,67 @@ const I18N = {
       currentSchedule: '현재 스케줄 기준',
       budgetTarget: '목표 {amount}',
       budgetRatioBase: '목표 인건비율 {ratio}% 기준',
-      slotsAssigned: '{assigned}/{total} slots 배정',
+      slotsAssigned: '{assigned}/{total} 자리 배정',
       goalMet: '목표 이내',
       goalExceeded: '목표 초과',
     },
     parts: {
-      title: 'Parts / Stations',
-      subtitle: 'Part는 큰 부서, Station은 실제 배치 위치다. 예: 주방 → 준비, 화구, 프라이, 패스, 세척 / 홀 → 플로어, 캐셔, 러너.',
-      partAddTitle: 'Part 추가',
-      stationAddTitle: 'Station 추가',
-      partName: 'Part 이름',
-      stationName: 'Station 이름',
+      title: '파트 / 스테이션',
+      subtitle: '파트는 큰 부서, 스테이션은 실제 배치 위치다. 예: 주방 → 준비, 화구, 프라이, 패스, 세척 / 홀 → 플로어, 캐셔, 러너.',
+      partAddTitle: '파트 추가',
+      stationAddTitle: '스테이션 추가',
+      partName: '파트 이름',
+      stationName: '스테이션 이름',
       description: '설명',
       color: '색상',
-      active: 'Active',
-      inactive: 'Inactive',
-      partHeader: 'Part',
-      stationHeader: 'Station',
+      active: '활성',
+      inactive: '비활성',
+      partHeader: '파트',
+      stationHeader: '스테이션',
       statusHeader: '상태',
-      noParts: '등록된 Part가 없다.',
-      noStations: '등록된 Station이 없다.',
+      noParts: '등록된 파트가 없다.',
+      noStations: '등록된 스테이션이 없다.',
       deletePart: '삭제',
       deleteStation: '삭제',
     },
     skills: {
-      title: 'Skills / Levels',
-      subtitle: '왼쪽에서 Skill을 선택하면 오른쪽에서 그 Skill에 속한 Level / Step을 관리한다. Level / Step은 Skill 밖의 별도 분류가 아니다.',
+      advancedTitle: '고급: 스킬과 숙련도 단계',
+      advancedHelp: '스테이션을 추가하면 같은 이름의 스킬과 기본 Level/Step 단계가 자동으로 만들어집니다. 단계 설명을 바꾸거나 한 스테이션에 스킬을 더 두고 싶을 때만 여세요.',
+      advancedOpen: '열기',
+      advancedClose: '닫기',
+      title: '스킬 / 숙련도',
+      subtitle: '왼쪽에서 스킬을 선택하면 오른쪽에서 그 스킬에 속한 Level / Step을 관리한다. Level / Step은 스킬 밖의 별도 분류가 아니다.',
       guideTitle: '구조 정리',
-      guideText: 'Station은 근무 위치, Skill은 그 위치에서 필요한 업무 능력, Level / Step은 선택한 Skill 안에서의 숙련 단계다. 예: Fry section → Level 1 / Step 4.',
-      addSkillTitle: 'Skill 추가',
+      guideText: '스테이션은 근무 위치, 스킬은 그 위치에서 필요한 업무 능력, Level / Step은 선택한 스킬 안에서의 숙련 단계다. 예: 프라이 → Level 1 / Step 4.',
+      addSkillTitle: '스킬 추가',
       addStepTitle: 'Level / Step 추가',
-      noSkillSelected: '선택된 Skill 없음',
-      noSkillSelectedText: '왼쪽에서 Skill을 추가하거나 선택하면 Level / Step 관리 패널이 열린다.',
-      noSkillSteps: '이 Skill에는 아직 Level / Step이 없다. 위에서 단계를 추가해라.',
-      noSkills: '아직 등록된 Skill이 없다.',
-      chooseSkill: 'Skill 선택',
-      chooseLevel: 'Level 선택',
-      chooseStep: 'Step 선택',
+      noSkillSelected: '선택된 스킬 없음',
+      noSkillSelectedText: '왼쪽에서 스킬을 추가하거나 선택하면 Level / Step 관리 패널이 열린다.',
+      noSkillSteps: '이 스킬에는 아직 Level / Step이 없다. 위에서 단계를 추가해라.',
+      noSkills: '아직 등록된 스킬이 없다.',
       addLevel: '단계 추가',
       deleteLevel: '삭제',
       deleteSkill: '삭제',
     },
     members: {
-      title: 'Members',
-      subtitle: '직원별 Part, 가능 요일/시간, 가능 Skill, Level/Step을 관리한다. Part 필터는 Parts 탭의 추가/삭제와 자동 연동된다.',
-      partFilter: '보기 Part',
+      title: '직원',
+      subtitle: '직원별 파트, 가능 요일/시간, 가능 스킬, Level/Step을 관리한다. 파트 필터는 파트 탭의 추가/삭제와 자동 연동된다.',
+      partFilter: '보기 파트',
       addEmployeeTitle: '직원 추가',
       name: '이름',
-      part: 'Part',
+      part: '파트',
       role: '역할',
       rate: '시급',
       maxHours: '최대 주간시간',
       addEmployee: '직원 추가',
       availability: '근무 가능 요일/시간',
-      skillLevelStep: 'Skill별 Level / Step 지정',
-      skillStepHelp: 'Skill 안에 정의된 단계 중 하나를 선택한다.',
-      assignSkill: 'Skill 추가/갱신',
-      removeSkill: '제거',
-      noEmployeesHere: '이 Part에 등록된 직원 없음',
-      noEmployeesVisible: '선택한 Part에 표시할 직원이 없다.',
+      skillLevelStep: '할 수 있는 스테이션',
+      skillStepHelp: '스테이션마다 숙련도(Level-Step)를 고르세요. "못함"이면 그 자리에 추천되지 않습니다.',
+      cannotDo: '못함',
+      otherSkills: '기타 스킬',
+      noStationsYet: '먼저 매장 설정에서 스테이션을 추가하세요.',
+      noEmployeesHere: '이 파트에 등록된 직원 없음',
+      noEmployeesVisible: '선택한 파트에 표시할 직원이 없다.',
       weekHours: '이번 주',
       max: '최대',
       weekday: '평일',
@@ -254,10 +255,10 @@ const I18N = {
       activate: '활성',
     },
     requirements: {
-      title: 'Requirements',
-      subtitle: '요일별 시간 블록 안에 필요한 실제 자리만 한 줄씩 추가한다. 같은 자리가 2명 필요하면 같은 Station을 두 번 추가한다.',
+      title: '필요 인원',
+      subtitle: '요일별 시간 블록 안에 필요한 실제 자리만 한 줄씩 추가한다. 같은 자리가 2명 필요하면 같은 스테이션을 두 번 추가한다.',
       guideTitle: '입력 방식',
-      guideText: '예: 디너 피크에 Kitchen/Fry 2명이 필요하면 Kitchen / Fry 자리를 두 번 추가한다. Schedule Board에는 두 줄이 자동 생성되고, 각 줄마다 조건에 맞는 직원만 선택된다.',
+      guideText: '예: 디너 피크에 주방/프라이 2명이 필요하면 주방/프라이 자리를 두 번 추가한다. 근무표 배정에는 두 줄이 자동 생성되고, 각 줄마다 조건에 맞는 직원만 선택된다.',
       daySelect: '요일 선택',
       addBlockTitle: '시간 블록 추가',
       day: '요일',
@@ -274,28 +275,28 @@ const I18N = {
       deleteBlock: '블록 삭제',
       deleteSeat: '삭제',
       noSeats: '필요 자리를 한 줄씩 추가하세요.',
-      part: 'Part',
-      station: 'Section',
-      skill: '자동 Skill',
-      min: 'Min',
+      part: '파트',
+      station: '스테이션',
+      skill: '자동 스킬',
+      min: '최소',
     },
     schedule: {
-      title: 'Schedule Board',
-      subtitle: 'Roster Sheet는 왼쪽에 Part/Station, 위쪽에 시간대를 두는 가로형 스프레드시트다. 조건에 맞지 않는 직원은 드롭다운에서 숨긴다.',
-      sheet: 'Roster Sheet',
+      title: '근무표 배정',
+      subtitle: '배치표는 왼쪽에 파트/스테이션, 위쪽에 시간대를 두는 가로형 스프레드시트다. 조건에 맞지 않는 직원은 드롭다운에서 숨긴다.',
+      sheet: '배치표',
       confirmed: '확정 근무표',
       member: '직원별',
       part: '파트별',
       csv: 'CSV 내보내기',
       print: 'PDF용 인쇄',
       dayLabel: '요일',
-      noRequirementDay: '이 요일에는 Requirements에서 추가된 자리가 없다.',
+      noRequirementDay: '이 요일에는 필요 인원에서 추가된 자리가 없다.',
       noTimeBlocks: '시간 블록 없음',
-      statusRequired: 'Status / Required',
-      partHeader: 'Part',
-      stationHeader: 'Station',
-      seatHeader: 'Seat',
-      requiredHeader: 'Status / Required',
+      statusRequired: '상태 / 필요 조건',
+      partHeader: '파트',
+      stationHeader: '스테이션',
+      seatHeader: '자리',
+      requiredHeader: '상태 / 필요 조건',
       recommend: '추천',
       replace: '대체',
       assigned: '정상',
@@ -305,18 +306,18 @@ const I18N = {
       ok: '적합',
       caution: '주의',
       urgent: '긴급',
-      noRequirements: 'Requirements에 시간 블록이 없다.',
-      weeklyRoster: 'Weekly Roster',
+      noRequirements: '필요 인원에 시간 블록이 없다.',
+      weeklyRoster: '주간 근무표',
       printTitle: '월–일 전체 확정 근무표',
-      printSubtitle: 'PDF 출력용 로스터다. 요일은 가로축, Phase는 세로축이며 Part별로 한 페이지씩 출력되도록 압축했다.',
+      printSubtitle: 'PDF 출력용 로스터다. 요일은 가로축, 시간대는 세로축이며 파트별로 한 페이지씩 출력되도록 압축했다.',
       noPartWork: '이 카테고리에 배정할 업무가 없다.',
-      phase: 'Phase',
-      time: 'Time',
-      peak: 'Peak',
-      normal: 'Normal',
-      schedulePreview: 'Schedule preview',
-      rosterHint: '시간을 가로축에 둔 배치표다. 왼쪽 Part/Station 행을 보고, 각 시간대 칸에서 조건에 맞는 직원만 선택한다.',
-      confirmedHint: 'PDF 출력용 로스터다. 요일은 가로축, Phase는 세로축이며 Part별로 한 페이지씩 출력되도록 압축했다.',
+      phase: '시간대',
+      time: '시간',
+      peak: '피크',
+      normal: '일반',
+      schedulePreview: '근무표 미리보기',
+      rosterHint: '시간을 가로축에 둔 배치표다. 왼쪽 파트/스테이션 행을 보고, 각 시간대 칸에서 조건에 맞는 직원만 선택한다.',
+      confirmedHint: 'PDF 출력용 로스터다. 요일은 가로축, 시간대는 세로축이며 파트별로 한 페이지씩 출력되도록 압축했다.',
       rosterHintShort: '시간을 가로축에 둔 배치표다.',
       autoFill: '빈 자리 자동 채우기',
       autoFillHint: '일주일 전체의 빈 자리에 완전 적합한 직원 중 1순위를 넣습니다.',
@@ -324,17 +325,49 @@ const I18N = {
       autoFillNothing: '채울 빈 자리가 없어요.',
       autoFillKeep: '확인',
       autoFillUndo: '취소',
-      autoFillUndone: '자동 채우기를 취소했어요.',
+      autoFillUndone: '되돌렸어요.',
+    },
+    week: {
+      previous: '지난주',
+      next: '다음 주',
+      thisWeek: '이번 주',
+      copyPrevious: '지난주 배정 가져오기',
+      copiedPrevious: '지난주 배정 {copied}자리를 이번 주 빈 자리에 넣었어요.',
+    },
+    start: {
+      title: '시작하기: 4단계면 근무표가 완성돼요',
+      stations: '파트와 스테이션 만들기',
+      stationsHelp: '예: 주방 → 화구, 프라이 / 홀 → 플로어, 캐셔',
+      staff: '직원 추가하고 할 수 있는 스테이션 고르기',
+      staffHelp: '시급, 근무 가능 시간, 스테이션별 숙련도',
+      requirements: '시간대별 필요 인원 정하기',
+      requirementsHelp: '하루를 시간 블록으로 나누고 필요한 자리를 추가',
+      assign: '자리에 직원 배정하기',
+      assignHelp: '"빈 자리 자동 채우기"로 한 번에 채울 수 있어요',
+      go: '하러 가기',
+      doneLabel: '완료',
+      sample: '예시 데이터로 둘러보기',
+      sampleHelp: '식당 예시(직원 7명, 주방/홀)를 불러옵니다. 설정에서 언제든 초기화할 수 있어요.',
+    },
+    copy: {
+      requirementsLabel: '{day} 시간 블록을 다른 요일에도 똑같이:',
+      assignmentsLabel: '{day} 배정을 다른 요일의 같은 자리에 복사:',
+      button: '복사',
+      pickDays: '복사할 요일을 고르세요',
+      nothing: '고른 요일의 같은 자리가 이미 똑같아요',
+      requirementsConfirm: '{days}의 기존 시간 블록과 그 배정이 바뀝니다. 계속할까요?',
+      requirementsDone: '{days}개 요일에 시간 블록 {blocks}개를 복사했어요',
+      assignmentsResult: '{copied}자리를 복사했어요. 그중 {check}자리는 조건 확인이 필요하고, {unmatched}자리는 같은 시간 블록이 없어 건너뛰었어요.',
     },
     labor: {
-      title: 'Labor Cost',
+      title: '인건비',
       subtitle: '스케줄 배정 결과를 기준으로 직원별 평일/토/일 근무시간과 파트별 인건비를 계산한다.',
       budget: '목표 인건비',
       usage: '사용률',
       neededSales: '필요 매출',
       progress: '목표 대비 진행률',
       employee: '직원',
-      part: 'Part',
+      part: '파트',
       weekday: '평일',
       saturday: '토',
       sunday: '일',
@@ -347,19 +380,128 @@ const I18N = {
       ratioBase: '{ratio}% 인건비율 기준',
     },
     validation: {
-      title: 'Validation',
-      subtitle: '미배정, Skill/Level 부족, 가능 시간 위반, 중복 배치, 목표 인건비 초과를 검사한다.',
+      title: '검증',
+      subtitle: '미배정, 스킬/Level 부족, 가능 시간 위반, 중복 배치, 목표 인건비 초과를 검사한다.',
       resultTitle: '검증 결과',
       noIssues: '현재 주요 문제 없음',
       fix: '고치기',
       fixHint: '근무표에서 이 자리를 열고 추천 직원을 보여줍니다.',
-      statusHigh: 'high',
-      statusMedium: 'medium',
-      statusLow: 'low',
+      statusHigh: '높음',
+      statusMedium: '중간',
+      statusLow: '낮음',
+    },
+    ui: {
+      unknownPart: '알 수 없는 파트',
+      unknownStation: '알 수 없는 스테이션',
+      unknownSkill: '알 수 없는 스킬',
+      unassigned: '미배정',
+      noLinkedSkill: '연결된 스킬 없음',
+      people: '{n}명',
+      yes: '예',
+      no: '아니요',
+      phPartName: '예: 주방',
+      phPartDesc: '예: 조리 파트',
+      phStationName: '예: 화구',
+      phStationDesc: '예: 메인 조리',
+      phSkillName: '예: 프라이',
+      phLevelDesc: '예: Level 2 직전 단계, 일부 확인 후 업무 가능',
+      phEmpName: '예: 민호',
+      phRole: '예: 주방 직원',
+      phBlockLabel: '예: 디너 피크',
+      skillName: '스킬 이름',
+      stepCount: '단계 수',
+      kind: '구분',
+      critical: '필수',
+      normal: '일반',
+      stepsCount: '{n}단계',
+      select: '선택',
+      description: '설명',
+      canDo: '가능 업무',
+      manage: '관리',
+      noSeatsSummary: '자리 없음',
+      noAssignments: '배정 없음',
+      assignmentsCount: '{n}건 배정',
+      needs: '필요: {skill}',
+    },
+    status: {
+      unassigned: '미배정',
+      missingEmployee: '직원 없음',
+      pickEmployee: '직원을 선택하세요.',
+      deletedEmployee: '삭제된 직원입니다.',
+      fit: '적합',
+      partial: '주의',
+      emergency: '긴급',
+      bad: '부적합',
+      notApplicable: '해당 없음',
+      riskCount: '미배정/위험 {n}',
+      warnCount: '주의 {n}',
+      okCount: '적합 {n}',
+      currentBelow: '현재 배정(조건 미달)',
+      noneFits: '조건에 맞는 직원 없음',
+    },
+    recs: {
+      title: '추천 직원 · {where}',
+      replaceTitle: '대체근무자 추천 · {name} 대체',
+      originalCost: '기존 비용 {amount}',
+      fit: '완전 적합',
+      partial: '부분 적합',
+      emergency: '긴급 대체 가능',
+      bad: '부적합',
+      score: '점수 {n}',
+      weekProjected: '주간 예상 {hours}h',
+      costDiff: '기존 대비 비용 차이:',
+      apply: '이 직원 배치',
+    },
+    reasons: {
+      dayUnavailable: '{day} 근무 불가능',
+      available: '{start}–{end} 가능',
+      partialAvailable: '부분 가능: {start}–{end}',
+      timeUnavailable: '시간 불가: {start}–{end}',
+      noSkill: '필수 스킬 없음',
+      meets: 'Level {level} - Step {step}: 요구 조건 충족',
+      stepShort: 'Level은 맞지만 Step 부족: 현재 Step {step}, 필요 Step {minStep}',
+      emergency: '한 Level 아래지만 높은 Step: Level {level} - Step {step}',
+      tooLow: '숙련도 부족: Level {level} - Step {step}, 필요 Level {minLevel} - Step {minStep}',
+      inactive: '비활성 직원',
+      peakOk: '피크타임 가능',
+      peakCheck: '피크타임 가능 여부 확인 필요',
+      overlap: '같은 시간대 다른 배정 있음',
+      overMax: '최대 주간시간 초과 예상: {hours}h / {max}h',
+      weekly: '주간 예상 {hours}h / {max}h',
+      addedCost: '추가 인건비 {amount}',
+    },
+    issues: {
+      unassigned: '미배정',
+      missingEmployee: '직원 없음',
+      availability: '가능 시간 위반',
+      skillShort: '스킬 / Level 부족',
+      skillCaution: '스킬 / Level 주의',
+      noReplacement: '대체근무자 없음',
+      doubleBooked: '중복 배치',
+      overMaxHours: '주간 최대시간 초과',
+      overBudget: '목표 인건비 초과',
+      unassignedMsg: '{when} / {part} / {station} 미배정',
+      missingEmployeeMsg: '삭제된 직원이 배정되어 있습니다.',
+      noReplacementMsg: '{name} 결근 시 대체 가능자가 없습니다.',
+      doubleBookedMsg: '{name}: 같은 시간 블록에 {count}번 배정됨',
+      overMaxMsg: '{name}: {hours}h / 최대 {max}h',
+      overBudgetMsg: '현재 인건비 {cost} / 목표 {budget}',
+      needs: '필요 {skill}',
     },
     roadmap: {
-      title: 'Roadmap',
+      title: '로드맵',
       subtitle: '지금 구현하지 않는 기능을 앱 내부에 남겨두는 개발 메모다.',
+      items: [
+        ['기업별 로그인 / 초대코드', '회사별 로그인 페이지와 직원 초대 코드를 먼저 두고, 관리자와 직원을 분리해서 접근을 제어한다.'],
+        ['직원용 모바일 페이지', '직원은 읽기 전용 스케줄과 본인 관련 항목만 보고, 가능 시간·휴무 요청·대체 가능 여부만 제출한다.'],
+        ['완전 자동 스케줄 생성', '필요 인원, 직원, 가능 시간, Level/Step, 목표 인건비를 기준으로 주간 초안을 자동 생성하고 수동 수정도 가능하게 한다.'],
+        ['직원 성장 관리', 'Level/Step을 교육 기록과 승급 체크리스트로 확장하고, 부족한 스테이션을 기준으로 교육 대상을 추천한다.'],
+        ['직원 의존도 분석', '특정 직원이 빠졌을 때 운영이 무너지는 구조를 감지하고 대체 가능자 부족을 경고한다.'],
+        ['실제 출퇴근 기록', '예정 스케줄과 실제 출퇴근 시간을 비교해 차이 시간과 실제 인건비를 계산한다.'],
+        ['공휴일 / 가산 수당 / 연금 / 세금', '현재의 단순 배율 계산을 넘어 호주 기준 penalty rate, allowance, super, tax를 설정값으로 확장한다.'],
+        ['승인 시스템', '직원이 제출한 휴무/가능 시간/대체 가능 여부는 관리자가 승인해야 스케줄과 포털에 반영되게 한다.'],
+        ['알림 기능', '스케줄 확정, 변경, 대체 요청, 인건비 초과, 필수 인력 부족 알림을 구현한다.'],
+      ],
     },
   },
   en: {
@@ -386,9 +528,10 @@ const I18N = {
       subtitle: 'Shift scheduling and labor cost management based on Parts, Stations, and Level/Step',
     },
     common: {
-      save: 'Save',
-      exportJson: 'Export JSON',
-      importJson: 'Import JSON',
+      autoSaved: 'Saved automatically',
+      autoSavedAt: 'Saved automatically · {time}',
+      exportJson: 'Download backup file',
+      importJson: 'Restore from backup',
       resetAll: 'Reset All',
       copy: 'Copy',
       add: 'Add',
@@ -408,7 +551,6 @@ const I18N = {
       noItems: 'Nothing to show.',
     },
     messages: {
-      saved: 'Saved',
       resetConfirm: 'Clear all input data and return to a blank state? Your current data will be deleted.',
       resetDone: 'All input data has been cleared',
       jsonImported: 'JSON import complete',
@@ -434,11 +576,6 @@ const I18N = {
       requirementDeleteConfirm: 'Delete this time block? Related schedule assignments will also be removed.',
       stationReqAdded: 'Added one required seat',
       stationReqCloned: 'Cloned one required seat',
-      skillSelectRequired: 'Select a Skill',
-      levelSelectRequired: 'Select a Level',
-      stepSelectRequired: 'Select a Step',
-      skillNotFound: 'Could not find the Skill',
-      skillSaved: '{skill} Level {level} / Step {step} saved',
       levelExistsConfirm: 'This Skill already has the same Level / Step. Add it anyway?',
       scheduled: 'Assigned',
       languageSaved: 'Language changed',
@@ -483,7 +620,9 @@ const I18N = {
       feedbackOpenLink: 'Open question link',
       roadmapLink: 'See planned features',
       dataTitle: 'Reset data',
-      resetHelp: 'Deletes everything you entered, including staff, roster and requirements. This cannot be undone, so export a JSON backup first.',
+      backupTitle: 'Backup',
+      backupHelp: 'Every change is saved automatically in this browser. Download a backup file to move to another device or to be safe.',
+      resetHelp: 'Deletes everything you entered, including staff, roster and requirements. This cannot be undone, so download a backup file above first.',
       current: 'Current language',
       koreanLabel: 'Korean',
       englishLabel: 'English',
@@ -539,6 +678,10 @@ const I18N = {
       deleteStation: 'Delete',
     },
     skills: {
+      advancedTitle: 'Advanced: skills and proficiency steps',
+      advancedHelp: 'Adding a station creates a matching skill with default Level/Step steps. Open this only to edit step descriptions or give a station extra skills.',
+      advancedOpen: 'Open',
+      advancedClose: 'Close',
       title: 'Skills / Levels',
       subtitle: 'Select a Skill on the left, then manage its Level / Step definitions on the right. Level / Step lives inside the Skill.',
       guideTitle: 'Structure',
@@ -549,9 +692,6 @@ const I18N = {
       noSkillSelectedText: 'Add or choose a Skill on the left to open the Level / Step panel.',
       noSkillSteps: 'This Skill has no Level / Step yet. Add one above.',
       noSkills: 'No Skills yet.',
-      chooseSkill: 'Choose Skill',
-      chooseLevel: 'Choose Level',
-      chooseStep: 'Choose Step',
       addLevel: 'Add step',
       deleteLevel: 'Delete',
       deleteSkill: 'Delete',
@@ -568,10 +708,11 @@ const I18N = {
       maxHours: 'Max weekly hours',
       addEmployee: 'Add employee',
       availability: 'Availability',
-      skillLevelStep: 'Assign Skill Level / Step',
-      skillStepHelp: 'Pick one of the levels defined inside the selected Skill.',
-      assignSkill: 'Add / update Skill',
-      removeSkill: 'Remove',
+      skillLevelStep: 'Stations they can work',
+      skillStepHelp: 'Pick a proficiency (Level-Step) per station. "Can\'t" means they are never suggested there.',
+      cannotDo: 'Can\'t',
+      otherSkills: 'Other skills',
+      noStationsYet: 'Add stations in Store setup first.',
       noEmployeesHere: 'No employees in this Part',
       noEmployeesVisible: 'No employees to show for the selected Part.',
       weekHours: 'This week',
@@ -653,7 +794,39 @@ const I18N = {
       autoFillNothing: 'There are no empty seats to fill.',
       autoFillKeep: 'Keep',
       autoFillUndo: 'Undo',
-      autoFillUndone: 'Auto-fill undone.',
+      autoFillUndone: 'Undone.',
+    },
+    week: {
+      previous: 'Previous week',
+      next: 'Next week',
+      thisWeek: 'This week',
+      copyPrevious: 'Bring in last week',
+      copiedPrevious: 'Filled {copied} empty seats with last week\'s assignments.',
+    },
+    start: {
+      title: 'Getting started: four steps to a roster',
+      stations: 'Create parts and stations',
+      stationsHelp: 'e.g. Kitchen → Grill, Fry / Hall → Floor, Cashier',
+      staff: 'Add staff and pick the stations they can work',
+      staffHelp: 'Rate, availability and proficiency per station',
+      requirements: 'Set how many people each time block needs',
+      requirementsHelp: 'Split the day into time blocks and add the seats needed',
+      assign: 'Assign staff to seats',
+      assignHelp: '"Auto-fill empty seats" can fill them in one go',
+      go: 'Go',
+      doneLabel: 'Done',
+      sample: 'Explore with sample data',
+      sampleHelp: 'Loads a sample restaurant (7 staff, kitchen and hall). You can reset it any time in Settings.',
+    },
+    copy: {
+      requirementsLabel: 'Use the {day} time blocks on other days too:',
+      assignmentsLabel: 'Copy {day} assignments to the same seats on:',
+      button: 'Copy',
+      pickDays: 'Pick the days to copy to',
+      nothing: 'Those days already have the same people in these seats',
+      requirementsConfirm: 'This replaces the time blocks and their assignments on {days}. Continue?',
+      requirementsDone: 'Copied {blocks} time blocks to {days} days',
+      assignmentsResult: 'Copied {copied} seats. {check} need a check, and {unmatched} were skipped because that day has no matching time block.',
     },
     labor: {
       title: 'Labor Cost',
@@ -686,9 +859,118 @@ const I18N = {
       statusMedium: 'medium',
       statusLow: 'low',
     },
+    ui: {
+      unknownPart: 'Unknown part',
+      unknownStation: 'Unknown station',
+      unknownSkill: 'Unknown skill',
+      unassigned: 'Unassigned',
+      noLinkedSkill: 'No linked skill',
+      people: '{n} people',
+      yes: 'Yes',
+      no: 'No',
+      phPartName: 'e.g. Kitchen',
+      phPartDesc: 'e.g. Cooking',
+      phStationName: 'e.g. Grill',
+      phStationDesc: 'e.g. Main cooking',
+      phSkillName: 'e.g. Fry',
+      phLevelDesc: 'e.g. Almost Level 2; works with a few checks',
+      phEmpName: 'e.g. Alex',
+      phRole: 'e.g. Kitchen staff',
+      phBlockLabel: 'e.g. Dinner peak',
+      skillName: 'Skill name',
+      stepCount: 'Steps',
+      kind: 'Type',
+      critical: 'Critical',
+      normal: 'Normal',
+      stepsCount: '{n} steps',
+      select: 'Select',
+      description: 'Description',
+      canDo: 'Can do',
+      manage: 'Manage',
+      noSeatsSummary: 'No seats',
+      noAssignments: 'No assignments',
+      assignmentsCount: '{n} assignments',
+      needs: 'Needs: {skill}',
+    },
+    status: {
+      unassigned: 'Unassigned',
+      missingEmployee: 'Missing employee',
+      pickEmployee: 'Pick an employee.',
+      deletedEmployee: 'This employee was deleted.',
+      fit: 'Fit',
+      partial: 'Caution',
+      emergency: 'Emergency',
+      bad: 'Not fit',
+      notApplicable: 'N/A',
+      riskCount: 'Unassigned/risk {n}',
+      warnCount: 'Caution {n}',
+      okCount: 'Fit {n}',
+      currentBelow: 'current (below requirements)',
+      noneFits: 'No one fits',
+    },
+    recs: {
+      title: 'Suggested staff · {where}',
+      replaceTitle: 'Replacement for {name}',
+      originalCost: 'Current cost {amount}',
+      fit: 'Full fit',
+      partial: 'Partial fit',
+      emergency: 'Emergency cover',
+      bad: 'Not fit',
+      score: 'Score {n}',
+      weekProjected: 'Week projected {hours}h',
+      costDiff: 'Cost difference:',
+      apply: 'Assign',
+    },
+    reasons: {
+      dayUnavailable: 'Not available on {day}',
+      available: 'Available {start}–{end}',
+      partialAvailable: 'Partly available: {start}–{end}',
+      timeUnavailable: 'Not available then: {start}–{end}',
+      noSkill: 'Missing required skill',
+      meets: 'Level {level} - Step {step}: meets requirement',
+      stepShort: 'Level matches but Step is short: Step {step}, needs Step {minStep}',
+      emergency: 'One Level below but high Step: Level {level} - Step {step}',
+      tooLow: 'Not skilled enough: Level {level} - Step {step}, needs Level {minLevel} - Step {minStep}',
+      inactive: 'Inactive employee',
+      peakOk: 'Can work peak',
+      peakCheck: 'Check peak readiness',
+      overlap: 'Already assigned at this time',
+      overMax: 'Would exceed max weekly hours: {hours}h / {max}h',
+      weekly: 'Week projected {hours}h / {max}h',
+      addedCost: 'Added labor {amount}',
+    },
+    issues: {
+      unassigned: 'Unassigned',
+      missingEmployee: 'Missing employee',
+      availability: 'Availability conflict',
+      skillShort: 'Skill / Level short',
+      skillCaution: 'Skill / Level caution',
+      noReplacement: 'No replacement',
+      doubleBooked: 'Double booked',
+      overMaxHours: 'Over max weekly hours',
+      overBudget: 'Over labor budget',
+      unassignedMsg: '{when} / {part} / {station} unassigned',
+      missingEmployeeMsg: 'A deleted employee is assigned here.',
+      noReplacementMsg: 'No one can cover if {name} is absent.',
+      doubleBookedMsg: '{name}: assigned {count} times in the same time block',
+      overMaxMsg: '{name}: {hours}h / max {max}h',
+      overBudgetMsg: 'Labor {cost} / budget {budget}',
+      needs: 'Needs {skill}',
+    },
     roadmap: {
       title: 'Roadmap',
       subtitle: 'A living note inside the app for features not implemented yet.',
+      items: [
+        ['Company login / invite codes', 'A login page per company and employee invite codes, with managers and staff kept apart.'],
+        ['Employee mobile page', 'Staff see a read-only schedule and their own items, and only submit availability, leave requests and cover offers.'],
+        ['Fully automatic scheduling', 'Draft the week from requirements, staff, availability, Level/Step and the labor budget, then edit by hand.'],
+        ['Staff growth', 'Extend Level/Step with training records and promotion checklists, and suggest who to train for short-handed stations.'],
+        ['Dependency analysis', 'Detect where operations break if one person is missing and warn when cover is thin.'],
+        ['Time clock', 'Compare scheduled and actual hours to get the difference and real labor cost.'],
+        ['Public holidays / penalty rates / super / tax', 'Go beyond simple multipliers with Australian penalty rates, allowances, super and tax as settings.'],
+        ['Approvals', 'Leave, availability and cover offers from staff take effect only after a manager approves them.'],
+        ['Notifications', 'Notify on roster publish, changes, cover requests, budget overruns and missing critical staff.'],
+      ],
     },
   },
 };
@@ -710,7 +992,7 @@ function t(path, vars = {}) {
 
 function setLanguage(lang) {
   state.settings.language = lang === 'en' ? 'en' : 'ko';
-  saveState(false);
+  saveState();
   render();
   toast(t('messages.languageSaved'));
 }
@@ -720,12 +1002,16 @@ function syncDocumentLanguage() {
   document.title = `SkillShift Planner · ${t(findView(activeTab).labelKey)}`;
   const subtitle = document.getElementById('headerSubtitle');
   if (subtitle) subtitle.textContent = t('header.subtitle');
-  const importLabel = document.getElementById('importLabel');
-  if (importLabel) importLabel.textContent = t('common.importJson');
-  const saveBtn = document.getElementById('saveBtn');
-  if (saveBtn) saveBtn.textContent = t('common.save');
-  const exportBtn = document.getElementById('exportBtn');
-  if (exportBtn) exportBtn.textContent = t('common.exportJson');
+  renderSaveStatus();
+}
+
+let lastSavedAt = null;
+function renderSaveStatus() {
+  const el = document.getElementById('saveStatus');
+  if (!el) return;
+  el.textContent = lastSavedAt
+    ? t('common.autoSavedAt', { time: lastSavedAt.toLocaleTimeString(currentLanguage(), { hour: '2-digit', minute: '2-digit' }) })
+    : t('common.autoSaved');
 }
 
 let state = loadState();
@@ -735,9 +1021,60 @@ let scheduleView = 'sheet';
 let selectedScheduleDay = 'monday';
 let selectedRequirementDay = 'monday';
 let selectedMemberPart = 'all';
+let skillsAdvancedOpen = false;
 let recommendationContext = null;
 let replacementContext = null;
-let lastAutoFill = null;
+// The last bulk roster change (auto-fill or day copy), kept so it can be undone.
+let lastBulkChange = null;
+
+// Derived data (assignments, labor, recommendations, validation) shared by
+// every panel in one render pass. It only exists while render() runs, so
+// handlers that change state always compute fresh values.
+let renderCache = null;
+function cached(name, compute) {
+  if (!renderCache) return compute();
+  if (!renderCache.has(name)) renderCache.set(name, compute());
+  return renderCache.get(name);
+}
+
+// Dates are local calendar days written as YYYY-MM-DD.
+function toIsoDate(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+function parseIsoDate(iso) {
+  const [y, m, d] = String(iso).split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+function addDays(iso, days) {
+  const date = parseIsoDate(iso);
+  date.setDate(date.getDate() + days);
+  return toIsoDate(date);
+}
+function mondayOf(date) {
+  const monday = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+  return toIsoDate(monday);
+}
+function currentWeekStart() {
+  return mondayOf(new Date());
+}
+function isIsoDate(value) {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+// The Monday of the week the current roster (state.schedule) belongs to.
+function activeWeekStart() {
+  return isIsoDate(state.weekStart) ? state.weekStart : currentWeekStart();
+}
+function shortDate(iso) {
+  const date = parseIsoDate(iso);
+  return `${date.getMonth() + 1}/${date.getDate()}`;
+}
+function dateForDay(dayKey) {
+  return addDays(activeWeekStart(), Math.max(0, dayIndex(dayKey)));
+}
+function weekRangeLabel(weekStart = activeWeekStart()) {
+  return `${shortDate(weekStart)}–${shortDate(addDays(weekStart, 6))}`;
+}
 
 function uid(prefix = 'id') {
   return `${prefix}_${Math.random().toString(36).slice(2, 9)}_${Date.now().toString(36)}`;
@@ -927,7 +1264,9 @@ function createDefaultState() {
     levelTemplates,
     employees,
     requirements,
+    weekStart: '',
     schedule: {},
+    savedWeeks: {},
     trainingRecords: [],
     promotionChecklists: [],
     attendanceRecords: [],
@@ -952,7 +1291,9 @@ function createBlankState(settings = createDefaultState().settings) {
     levelTemplates: [],
     employees: [],
     requirements: [],
+    weekStart: currentWeekStart(),
     schedule: {},
+    savedWeeks: {},
     trainingRecords: [],
     promotionChecklists: [],
     attendanceRecords: [],
@@ -989,7 +1330,10 @@ function mergeState(parsed = {}) {
       ...req,
       stationRequirements: asArray(req?.stationRequirements),
     })),
+    weekStart: isIsoDate(parsed.weekStart) ? parsed.weekStart : currentWeekStart(),
     schedule: asObject(parsed.schedule, {}),
+    savedWeeks: Object.fromEntries(Object.entries(asObject(parsed.savedWeeks, {}))
+      .filter(([week, schedule]) => isIsoDate(week) && schedule && typeof schedule === 'object')),
     trainingRecords: asArray(parsed.trainingRecords),
     promotionChecklists: asArray(parsed.promotionChecklists),
     attendanceRecords: asArray(parsed.attendanceRecords),
@@ -1026,7 +1370,7 @@ function findLegacyStoredState() {
 }
 
 function makeFreshState() {
-  const fresh = createDefaultState();
+  const fresh = mergeState(createDefaultState());
   localStorage.setItem(STORE_KEY, JSON.stringify(fresh));
   return fresh;
 }
@@ -1047,9 +1391,11 @@ function loadState() {
   }
 }
 
-function saveState(show = true) {
+// Every change is saved right away; the header shows when it last happened.
+function saveState() {
   localStorage.setItem(STORE_KEY, JSON.stringify(state));
-  if (show) toast(t('messages.saved'));
+  lastSavedAt = new Date();
+  renderSaveStatus();
 }
 
 function resetState() {
@@ -1064,8 +1410,8 @@ function resetState() {
   scheduleView = 'sheet';
   recommendationContext = null;
   replacementContext = null;
-  lastAutoFill = null;
-  saveState(false);
+  lastBulkChange = null;
+  saveState();
   render();
   toast(t('messages.resetDone'));
 }
@@ -1079,10 +1425,10 @@ function toast(message) {
 }
 
 function byId(list, id) { return list.find((item) => item.id === id); }
-function partName(id) { return byId(state.parts, id)?.name || 'Unknown Part'; }
-function stationName(id) { return byId(state.stations, id)?.name || 'Unknown Station'; }
-function skillName(id) { return byId(state.skills, id)?.name || 'Unknown Skill'; }
-function employeeName(id) { return byId(state.employees, id)?.name || 'Unassigned'; }
+function partName(id) { return byId(state.parts, id)?.name || t('ui.unknownPart'); }
+function stationName(id) { return byId(state.stations, id)?.name || t('ui.unknownStation'); }
+function skillName(id) { return byId(state.skills, id)?.name || t('ui.unknownSkill'); }
+function employeeName(id) { return byId(state.employees, id)?.name || t('ui.unassigned'); }
 function dayLabel(key) { return DAYS.find((d) => d.key === key)?.[currentLanguage()]?.label || key; }
 function dayShort(key) { return DAYS.find((d) => d.key === key)?.[currentLanguage()]?.short || key; }
 function money(value) { return `${state.settings.currency}${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`; }
@@ -1178,12 +1524,23 @@ function parseAssignmentKey(key) {
 }
 
 function getAssignments() {
-  return Object.entries(state.schedule)
+  return cached('assignments', () => Object.entries(state.schedule)
     .filter(([, employeeId]) => employeeId)
-    .map(([key, employeeId]) => ({ key, employeeId, ...parseAssignmentKey(key) }));
+    .map(([key, employeeId]) => ({ key, employeeId, ...parseAssignmentKey(key) })));
 }
 
-function getReqById(reqId) { return state.requirements.find((req) => req.id === reqId); }
+function assignmentsOf(employeeId) {
+  const byEmployee = cached('assignmentsByEmployee', () => getAssignments().reduce((acc, a) => {
+    (acc[a.employeeId] ||= []).push(a);
+    return acc;
+  }, {}));
+  return byEmployee[employeeId] || [];
+}
+
+function getReqById(reqId) {
+  if (!renderCache) return state.requirements.find((req) => req.id === reqId);
+  return cached('reqById', () => new Map(state.requirements.map((req) => [req.id, req]))).get(reqId);
+}
 function getStationReq(reqId, stationReqId) { return getReqById(reqId)?.stationRequirements.find((s) => s.id === stationReqId); }
 function getRequiredSkillId(stationReq) {
   if (stationReq?.requiredSkillId) return stationReq.requiredSkillId;
@@ -1193,13 +1550,18 @@ function getRequiredSkillId(stationReq) {
 }
 function requiredSkillName(stationReq) {
   const skillId = getRequiredSkillId(stationReq);
-  return skillId ? skillName(skillId) : 'Station linked skill 없음';
+  return skillId ? skillName(skillId) : t('ui.noLinkedSkill');
 }
 function seatCount(sreq) {
   return Math.max(1, Number(sreq.requiredCount || 1));
 }
+function dayIndex(key) {
+  return DAYS.findIndex((d) => d.key === key);
+}
 function getRequirementSeatRows() {
-  const dayOrder = Object.fromEntries(DAYS.map((d, i) => [d.key, i]));
+  return cached('seatRows', buildRequirementSeatRows);
+}
+function buildRequirementSeatRows() {
   const rows = [];
   state.requirements.forEach((req) => {
     (req.stationRequirements || []).forEach((sreq) => {
@@ -1209,7 +1571,7 @@ function getRequirementSeatRows() {
     });
   });
   return rows.sort((a, b) =>
-    (dayOrder[a.req.dayOfWeek] - dayOrder[b.req.dayOfWeek]) ||
+    (dayIndex(a.req.dayOfWeek) - dayIndex(b.req.dayOfWeek)) ||
     (toMinutes(a.req.startTime) - toMinutes(b.req.startTime)) ||
     partName(a.sreq.partId).localeCompare(partName(b.sreq.partId)) ||
     stationName(a.sreq.stationId).localeCompare(stationName(b.sreq.stationId)) ||
@@ -1218,6 +1580,9 @@ function getRequirementSeatRows() {
 }
 
 function employeeWorkBreakdown(employeeId) {
+  return cached(`breakdown:${employeeId}`, () => computeWorkBreakdown(employeeId));
+}
+function computeWorkBreakdown(employeeId) {
   const employee = byId(state.employees, employeeId);
   const empty = {
     weekdayHours: 0,
@@ -1230,8 +1595,7 @@ function employeeWorkBreakdown(employeeId) {
     totalCost: 0,
   };
   if (!employee) return empty;
-  return getAssignments().reduce((acc, assignment) => {
-    if (assignment.employeeId !== employeeId) return acc;
+  return assignmentsOf(employeeId).reduce((acc, assignment) => {
     const req = getReqById(assignment.reqId);
     if (!req) return acc;
     const hours = durationHours(req.startTime, req.endTime);
@@ -1291,20 +1655,19 @@ function laborSummary() {
 
 function isEmployeeAvailable(employee, req) {
   const av = employee.availability?.[req.dayOfWeek];
-  if (!av || !av.available) return { status: 'bad', reason: `${dayLabel(req.dayOfWeek)} 근무 불가능` };
+  if (!av || !av.available) return { status: 'bad', reason: t('reasons.dayUnavailable', { day: dayLabel(req.dayOfWeek) }) };
   const reqStart = toMinutes(req.startTime);
   const reqEnd = toMinutes(req.endTime);
   const avStart = toMinutes(av.startTime);
   const avEnd = toMinutes(av.endTime);
-  if (avStart <= reqStart && avEnd >= reqEnd) return { status: 'ok', reason: `${av.startTime}–${av.endTime} 가능` };
-  if (avEnd > reqStart && avStart < reqEnd) return { status: 'partial', reason: `부분 가능: ${av.startTime}–${av.endTime}` };
-  return { status: 'bad', reason: `시간 불가: ${av.startTime}–${av.endTime}` };
+  if (avStart <= reqStart && avEnd >= reqEnd) return { status: 'ok', reason: t('reasons.available', { start: av.startTime, end: av.endTime }) };
+  if (avEnd > reqStart && avStart < reqEnd) return { status: 'partial', reason: t('reasons.partialAvailable', { start: av.startTime, end: av.endTime }) };
+  return { status: 'bad', reason: t('reasons.timeUnavailable', { start: av.startTime, end: av.endTime }) };
 }
 
 function hasOverlappingAssignment(employeeId, req, ignoreKey = '') {
-  return getAssignments().some((assignment) => {
+  return assignmentsOf(employeeId).some((assignment) => {
     if (assignment.key === ignoreKey) return false;
-    if (assignment.employeeId !== employeeId) return false;
     const other = getReqById(assignment.reqId);
     if (!other || other.dayOfWeek !== req.dayOfWeek) return false;
     return toMinutes(other.startTime) < toMinutes(req.endTime) && toMinutes(other.endTime) > toMinutes(req.startTime);
@@ -1321,29 +1684,29 @@ function highestStepForSkillLevel(skillId, levelNumber) {
 function compareLevelStep(employee, stationReq) {
   const requiredSkillId = getRequiredSkillId(stationReq);
   const assigned = employee.assignedSkills?.[requiredSkillId];
-  if (!assigned) return { status: 'bad', reason: '필수 Skill 없음', score: -100 };
+  if (!assigned) return { status: 'bad', reason: t('reasons.noSkill'), score: -100 };
   const level = num(assigned.level);
   const step = num(assigned.step);
   const minLevel = num(stationReq.minLevel);
   const minStep = num(stationReq.minStep);
 
   if (level > minLevel || (level === minLevel && step >= minStep)) {
-    return { status: 'ok', reason: `Level ${level} - Step ${step}: 요구 조건 충족`, score: 50 + (level - minLevel) * 10 + (step - minStep) };
+    return { status: 'ok', reason: t('reasons.meets', { level, step }), score: 50 + (level - minLevel) * 10 + (step - minStep) };
   }
   if (level === minLevel && step < minStep) {
-    return { status: 'partial', reason: `Level은 맞지만 Step 부족: 현재 Step ${step}, 필요 Step ${minStep}`, score: 20 - (minStep - step) };
+    return { status: 'partial', reason: t('reasons.stepShort', { step, minStep }), score: 20 - (minStep - step) };
   }
   if (stationReq.canUseLowerStepAsEmergency && level === minLevel - 1) {
     const maxStep = highestStepForSkillLevel(requiredSkillId, level);
     if (step >= Math.max(3, maxStep - 1)) {
-      return { status: 'emergency', reason: `한 Level 아래지만 높은 Step: Level ${level} - Step ${step}`, score: 8 };
+      return { status: 'emergency', reason: t('reasons.emergency', { level, step }), score: 8 };
     }
   }
-  return { status: 'bad', reason: `숙련도 부족: Level ${level} - Step ${step}, 필요 Level ${minLevel} - Step ${minStep}`, score: -40 };
+  return { status: 'bad', reason: t('reasons.tooLow', { level, step, minLevel, minStep }), score: -40 };
 }
 
 function getCandidateStatus(employee, req, stationReq, ignoreKey = '') {
-  if (!employee.active) return { category: 'bad', score: -999, reasons: ['비활성 직원'] };
+  if (!employee.active) return { category: 'bad', score: -999, reasons: [t('reasons.inactive')] };
   const reasons = [];
   let score = 0;
 
@@ -1361,9 +1724,9 @@ function getCandidateStatus(employee, req, stationReq, ignoreKey = '') {
     const template = getEmployeeLevelTemplate(employee, getRequiredSkillId(stationReq));
     if (template?.canWorkPeakTime) {
       score += 8;
-      reasons.push('피크타임 가능');
+      reasons.push(t('reasons.peakOk'));
     } else if (skill.status === 'ok') {
-      reasons.push('피크타임 가능 여부 확인 필요');
+      reasons.push(t('reasons.peakCheck'));
       score -= 5;
     }
   }
@@ -1371,7 +1734,7 @@ function getCandidateStatus(employee, req, stationReq, ignoreKey = '') {
   const overlapping = hasOverlappingAssignment(employee.id, req, ignoreKey);
   if (overlapping) {
     score -= 90;
-    reasons.push('같은 시간대 다른 배정 있음');
+    reasons.push(t('reasons.overlap'));
   }
 
   // An employee already sitting in the seat being checked has its hours counted once.
@@ -1380,14 +1743,14 @@ function getCandidateStatus(employee, req, stationReq, ignoreKey = '') {
   const overMaxHours = projectedHours > num(employee.maxWeeklyHours, 999);
   if (overMaxHours) {
     score -= 60;
-    reasons.push(`최대 주간시간 초과 예상: ${projectedHours.toFixed(1)}h / ${employee.maxWeeklyHours}h`);
+    reasons.push(t('reasons.overMax', { hours: projectedHours.toFixed(1), max: employee.maxWeeklyHours }));
   } else {
     score += 5;
-    reasons.push(`주간 예상 ${projectedHours.toFixed(1)}h / ${employee.maxWeeklyHours}h`);
+    reasons.push(t('reasons.weekly', { hours: projectedHours.toFixed(1), max: employee.maxWeeklyHours }));
   }
 
   const addedCost = durationHours(req.startTime, req.endTime) * getRate(employee, req.dayOfWeek);
-  reasons.push(`추가 인건비 ${money(addedCost)}`);
+  reasons.push(t('reasons.addedCost', { amount: money(addedCost) }));
 
   let category = 'bad';
   if (availability.status === 'ok' && skill.status === 'ok' && !overlapping && !overMaxHours) category = 'fit';
@@ -1408,10 +1771,10 @@ function getEmployeeLevelTemplate(employee, skillId) {
 }
 
 function getRecommendations(req, stationReq, excludeEmployeeId = '', ignoreKey = '') {
-  return state.employees
-    .filter((emp) => emp.id !== excludeEmployeeId)
+  const all = cached(`recs:${req.id}:${stationReq.id}:${ignoreKey}`, () => state.employees
     .map((emp) => ({ employee: emp, ...getCandidateStatus(emp, req, stationReq, ignoreKey) }))
-    .sort((a, b) => b.score - a.score);
+    .sort((a, b) => b.score - a.score));
+  return excludeEmployeeId ? all.filter((rec) => rec.employee.id !== excludeEmployeeId) : all;
 }
 
 // Fills every empty seat with the highest-scoring fully fitting ('fit')
@@ -1420,9 +1783,8 @@ function getRecommendations(req, stationReq, excludeEmployeeId = '', ignoreKey =
 function autoFillEmptySeats() {
   const filled = [];
   let skipped = 0;
-  const dayOrder = (key) => DAYS.findIndex((d) => d.key === key);
   const reqs = [...state.requirements].sort((a, b) =>
-    dayOrder(a.dayOfWeek) - dayOrder(b.dayOfWeek) || toMinutes(a.startTime) - toMinutes(b.startTime));
+    dayIndex(a.dayOfWeek) - dayIndex(b.dayOfWeek) || toMinutes(a.startTime) - toMinutes(b.startTime));
   reqs.forEach((req) => {
     req.stationRequirements.forEach((sreq) => {
       for (let i = 0; i < seatCount(sreq); i += 1) {
@@ -1438,11 +1800,156 @@ function autoFillEmptySeats() {
   return { filled, skipped };
 }
 
+// Removes assignments matching `drop(key, employeeId)` from this week and
+// every saved week.
+function removeAssignmentsWhere(drop) {
+  [state.schedule, ...Object.values(state.savedWeeks || {})].forEach((schedule) => {
+    Object.keys(schedule).forEach((key) => { if (drop(key, schedule[key])) delete schedule[key]; });
+  });
+}
+
+// Moves to another week: this week's roster is filed away and the target
+// week's roster (empty if it has none yet) becomes the current one.
+function switchWeek(weekStart) {
+  if (!isIsoDate(weekStart)) return;
+  const current = activeWeekStart();
+  if (weekStart === current) return;
+  state.savedWeeks = state.savedWeeks || {};
+  if (Object.keys(state.schedule).length) state.savedWeeks[current] = state.schedule;
+  else delete state.savedWeeks[current];
+  state.schedule = state.savedWeeks[weekStart] || {};
+  delete state.savedWeeks[weekStart];
+  state.weekStart = weekStart;
+  lastBulkChange = null;
+  recommendationContext = null;
+  replacementContext = null;
+}
+
+function previousWeekSchedule() {
+  return state.savedWeeks?.[addDays(activeWeekStart(), -7)] || null;
+}
+
+// Fills this week's empty seats with last week's assignments.
+function copyPreviousWeek() {
+  const previous = previousWeekSchedule() || {};
+  const seats = new Set(getRequirementSeatRows().map((row) => row.key));
+  const changes = [];
+  Object.entries(previous).forEach(([key, employeeId]) => {
+    if (!employeeId || state.schedule[key] || !seats.has(key)) return;
+    state.schedule[key] = employeeId;
+    changes.push({ key, before: '', after: employeeId });
+  });
+  return changes;
+}
+
+function renderWeekNav() {
+  const week = activeWeekStart();
+  const thisWeek = currentWeekStart();
+  const previous = previousWeekSchedule();
+  return `<div class="week-nav no-print">
+    <button class="btn small secondary" type="button" data-action="week-shift" data-days="-7" aria-label="${t('week.previous')}">◀</button>
+    <strong class="week-range">${weekRangeLabel(week)}</strong>
+    <button class="btn small secondary" type="button" data-action="week-shift" data-days="7" aria-label="${t('week.next')}">▶</button>
+    ${week !== thisWeek ? `<button class="btn small secondary" type="button" data-action="week-today">${t('week.thisWeek')}</button>` : `<span class="badge info">${t('week.thisWeek')}</span>`}
+    ${previous && Object.keys(previous).length ? `<button class="btn small secondary" type="button" data-action="copy-previous-week">${t('week.copyPrevious')}</button>` : ''}
+  </div>`;
+}
+
+// Restores each seat to what it was before a bulk change, unless it has
+// been edited by hand since.
+function undoScheduleChanges(changes) {
+  changes.forEach(({ key, before, after }) => {
+    if (state.schedule[key] !== after) return;
+    if (before) state.schedule[key] = before;
+    else delete state.schedule[key];
+  });
+}
+
 // Removes auto-filled assignments that haven't been changed since.
 function undoAutoFill(result) {
-  result.filled.forEach(({ key, employeeId }) => {
-    if (state.schedule[key] === employeeId) delete state.schedule[key];
+  undoScheduleChanges(result.filled.map(({ key, employeeId }) => ({ key, before: '', after: employeeId })));
+}
+
+// Seats of one time block keyed by part/station and how many times that
+// station appears in the block, e.g. "part_hall__st_floor__1" for the 2nd
+// floor seat. Used to line up the same seat across days.
+function seatsByStation(req) {
+  const counts = {};
+  const seats = new Map();
+  (req.stationRequirements || []).forEach((sreq) => {
+    for (let slotIndex = 0; slotIndex < seatCount(sreq); slotIndex += 1) {
+      const pair = `${sreq.partId}__${sreq.stationId}`;
+      const occurrence = counts[pair] || 0;
+      counts[pair] = occurrence + 1;
+      seats.set(`${pair}__${occurrence}`, { req, sreq, slotIndex, key: assignmentKey(req.id, sreq.id, slotIndex) });
+    }
   });
+  return seats;
+}
+
+// Copies one day's time blocks (and their seats) to other days, replacing
+// the blocks and assignments those days had.
+function copyDayRequirements(fromDay, toDays) {
+  const source = getDayRequirements(fromDay);
+  const targets = toDays.filter((day) => day !== fromDay);
+  const removedIds = new Set(state.requirements.filter((req) => targets.includes(req.dayOfWeek)).map((req) => req.id));
+  state.requirements = state.requirements.filter((req) => !removedIds.has(req.id));
+  removeAssignmentsWhere((key) => removedIds.has(parseAssignmentKey(key).reqId));
+  targets.forEach((day) => {
+    source.forEach((req) => {
+      state.requirements.push({
+        ...req,
+        id: uid('req'),
+        dayOfWeek: day,
+        stationRequirements: req.stationRequirements.map((sreq) => ({ ...sreq, id: uid('sreq') })),
+      });
+    });
+  });
+  return { blocks: source.length * targets.length, days: targets.length };
+}
+
+// Copies who works which seat on one day to the same seats (same time block
+// and station) on other days. Empty source seats leave the target alone.
+function copyDayAssignments(fromDay, toDays) {
+  const sourceByPhase = new Map(getDayRequirements(fromDay).map((req) => [phaseKeyFromReq(req), seatsByStation(req)]));
+  const changes = [];
+  let unmatched = 0;
+  toDays.filter((day) => day !== fromDay).forEach((day) => {
+    const targetByPhase = new Map(getDayRequirements(day).map((req) => [phaseKeyFromReq(req), seatsByStation(req)]));
+    sourceByPhase.forEach((sourceSeats, phase) => {
+      const targetSeats = targetByPhase.get(phase);
+      sourceSeats.forEach((seat, seatId) => {
+        const employeeId = state.schedule[seat.key];
+        if (!employeeId) return;
+        const target = targetSeats?.get(seatId);
+        if (!target) { unmatched += 1; return; }
+        const before = state.schedule[target.key] || '';
+        if (before === employeeId) return;
+        state.schedule[target.key] = employeeId;
+        changes.push({ key: target.key, before, after: employeeId });
+      });
+    });
+  });
+  const needsCheck = changes.filter(({ key, after }) => {
+    const { reqId, stationReqId } = parseAssignmentKey(key);
+    const employee = byId(state.employees, after);
+    return !employee || getCandidateStatus(employee, getReqById(reqId), getStationReq(reqId, stationReqId), key).category !== 'fit';
+  }).length;
+  return { changes, unmatched, needsCheck };
+}
+
+function selectedCopyTargets(kind) {
+  return [...document.querySelectorAll(`[data-copy-target="${kind}"]:checked`)].map((el) => el.value);
+}
+
+function renderCopyDayControls(kind, fromDay) {
+  return `<div class="copy-day-row no-print">
+    <span class="small-text">${t(`copy.${kind}Label`, { day: dayLabel(fromDay) })}</span>
+    <div class="copy-day-targets">
+      ${DAYS.filter((day) => day.key !== fromDay).map((day) => `<label class="copy-day-chip"><input type="checkbox" data-copy-target="${kind}" value="${day.key}" /> ${dayShort(day.key)}</label>`).join('')}
+    </div>
+    <button class="btn small secondary" type="button" data-action="copy-day-${kind}" data-day="${fromDay}">${t('copy.button')}</button>
+  </div>`;
 }
 
 // Opens the roster on the issue's day with the recommendation panel (empty
@@ -1465,7 +1972,16 @@ function openIssueInRoster(reqId, sreqId, slotIndex) {
 }
 
 function calculateValidation() {
+  return cached('validation', computeValidation);
+}
+function computeValidation() {
   const issues = [];
+  // kind is a stable code for logic; type is its label in the current language.
+  const issue = (kind, fields) => issues.push({ kind, type: t(`issues.${kind}`), ...fields });
+  const assignmentsByReq = getAssignments().reduce((acc, a) => {
+    (acc[a.reqId] ||= []).push(a);
+    return acc;
+  }, {});
 
   state.requirements.forEach((req) => {
     req.stationRequirements.forEach((sreq) => {
@@ -1474,39 +1990,38 @@ function calculateValidation() {
         const employeeId = state.schedule[key];
         const seat = { req, sreq, slotIndex: i };
         if (!employeeId) {
-          issues.push({ ...seat, severity: 'high', type: '미배정', message: `${dayLabel(req.dayOfWeek)} ${req.startTime}–${req.endTime} / ${partName(sreq.partId)} / ${stationName(sreq.stationId)} 미배정` });
+          issue('unassigned', { ...seat, severity: 'high', message: t('issues.unassignedMsg', { when: `${dayLabel(req.dayOfWeek)} ${req.startTime}–${req.endTime}`, part: partName(sreq.partId), station: stationName(sreq.stationId) }) });
           continue;
         }
         const employee = byId(state.employees, employeeId);
         if (!employee) {
-          issues.push({ ...seat, severity: 'high', type: '직원 없음', message: `삭제된 직원이 배정되어 있습니다.` });
+          issue('missingEmployee', { ...seat, severity: 'high', message: t('issues.missingEmployeeMsg') });
           continue;
         }
         const availability = isEmployeeAvailable(employee, req);
         if (availability.status !== 'ok') {
-          issues.push({ ...seat, severity: availability.status === 'partial' ? 'medium' : 'high', type: '가능 시간 위반', employee, message: `${employee.name}: ${availability.reason}` });
+          issue('availability', { ...seat, severity: availability.status === 'partial' ? 'medium' : 'high', employee, message: `${employee.name}: ${availability.reason}` });
         }
         const skill = compareLevelStep(employee, sreq);
         if (skill.status === 'bad') {
-          issues.push({ ...seat, severity: 'high', type: 'Skill / Level 부족', employee, message: `${employee.name}: ${skill.reason}` });
+          issue('skillShort', { ...seat, severity: 'high', employee, message: `${employee.name}: ${skill.reason}` });
         } else if (skill.status !== 'ok') {
-          issues.push({ ...seat, severity: 'medium', type: 'Skill / Level 주의', employee, message: `${employee.name}: ${skill.reason}` });
+          issue('skillCaution', { ...seat, severity: 'medium', employee, message: `${employee.name}: ${skill.reason}` });
         }
         const replacements = getRecommendations(req, sreq, employee.id, key).filter((r) => ['fit', 'partial', 'emergency'].includes(r.category));
         if (!replacements.length) {
-          issues.push({ ...seat, severity: 'medium', type: '대체근무자 없음', employee, message: `${employee.name} 결근 시 대체 가능자가 없습니다.` });
+          issue('noReplacement', { ...seat, severity: 'medium', employee, message: t('issues.noReplacementMsg', { name: employee.name }) });
         }
       }
     });
 
-    const inSlot = getAssignments().filter((a) => a.reqId === req.id);
-    const duplicates = inSlot.reduce((acc, a) => {
+    const duplicates = (assignmentsByReq[req.id] || []).reduce((acc, a) => {
       acc[a.employeeId] = (acc[a.employeeId] || 0) + 1;
       return acc;
     }, {});
     Object.entries(duplicates).forEach(([employeeId, count]) => {
       if (count > 1) {
-        issues.push({ severity: 'high', type: '중복 배치', req, message: `${employeeName(employeeId)}가 같은 시간 블록에 ${count}번 배정되었습니다.` });
+        issue('doubleBooked', { severity: 'high', req, message: t('issues.doubleBookedMsg', { name: employeeName(employeeId), count }) });
       }
     });
   });
@@ -1514,31 +2029,51 @@ function calculateValidation() {
   state.employees.forEach((emp) => {
     const hours = employeeWeeklyHours(emp.id);
     if (hours > num(emp.maxWeeklyHours, 999)) {
-      issues.push({ severity: 'high', type: '주간 최대시간 초과', employee: emp, message: `${emp.name}: ${hours.toFixed(1)}h / 최대 ${emp.maxWeeklyHours}h` });
+      issue('overMaxHours', { severity: 'high', employee: emp, message: t('issues.overMaxMsg', { name: emp.name, hours: hours.toFixed(1), max: emp.maxWeeklyHours }) });
     }
   });
 
   const totalCost = totalLaborCost();
   if (state.settings.laborBudget && totalCost > state.settings.laborBudget) {
-    issues.push({ severity: 'high', type: '목표 인건비 초과', message: `현재 인건비 ${money(totalCost)} / 목표 ${money(state.settings.laborBudget)}` });
+    issue('overBudget', { severity: 'high', message: t('issues.overBudgetMsg', { cost: money(totalCost), budget: money(state.settings.laborBudget) }) });
   }
 
   return issues;
 }
 
+const PANEL_RENDERERS = {
+  dashboard: () => renderDashboard(),
+  parts: () => renderParts(),
+  skills: () => renderSkills(),
+  members: () => renderMembers(),
+  requirements: () => renderRequirements(),
+  schedule: () => renderSchedule(),
+  labor: () => renderLabor(),
+  validation: () => renderValidation(),
+  settings: () => renderSettings(),
+  roadmap: () => renderRoadmap(),
+};
+
+// Draws only the panels of the current view; hidden panels are emptied so
+// no stale inputs linger in the page.
 function render() {
-  syncDocumentLanguage();
-  renderTabs();
-  renderDashboard();
-  renderParts();
-  renderSkills();
-  renderMembers();
-  renderRequirements();
-  renderSchedule();
-  renderLabor();
-  renderValidation();
-  renderSettings();
-  renderRoadmap();
+  renderCache = new Map();
+  try {
+    syncDocumentLanguage();
+    renderTabs();
+    const visible = findView(activeTab).panels;
+    Object.entries(PANEL_RENDERERS).forEach(([id, draw]) => {
+      if (visible.includes(id)) draw();
+      else document.getElementById(id).innerHTML = '';
+    });
+  } finally {
+    renderCache = null;
+  }
+}
+
+function showView(id) {
+  activeTab = findView(id).id;
+  render();
 }
 
 function findView(id) {
@@ -1565,9 +2100,9 @@ function renderDashboard() {
   const budgetStatus = status || 'ok';
   const issues = calculateValidation();
   const highIssues = issues.filter((i) => i.severity === 'high').length;
-  const missing = issues.filter((i) => i.type === '미배정').length;
-  const skillIssues = issues.filter((i) => i.type.includes('Skill')).length;
-  const replacementIssues = issues.filter((i) => i.type === '대체근무자 없음').length;
+  const missing = issues.filter((i) => i.kind === 'unassigned').length;
+  const skillIssues = issues.filter((i) => i.kind === 'skillShort' || i.kind === 'skillCaution').length;
+  const replacementIssues = issues.filter((i) => i.kind === 'noReplacement').length;
   const assignedSlots = getAssignments().length;
   const totalSlots = getRequirementSeatRows().length;
   const completion = totalSlots ? (assignedSlots / totalSlots) * 100 : 0;
@@ -1583,6 +2118,7 @@ function renderDashboard() {
         <label class="small-text">${t('dashboard.ratioEdit')} <input type="number" value="${state.settings.targetLaborRatio}" data-setting="targetLaborRatio" /></label>
       </div>
     </div>
+    ${renderGettingStarted()}
     <div class="grid four">
       ${metricCard(t('dashboard.assignedHours'), `${totalHours.toFixed(1)}h`, t('dashboard.currentSchedule'))}
       ${metricCard(t('dashboard.totalCost'), money(cost), t('dashboard.budgetTarget', { amount: money(budget) }), budgetStatus)}
@@ -1601,6 +2137,46 @@ function renderDashboard() {
   `;
 }
 
+// The four things a new store has to do, in order, and whether each is done.
+function getSetupProgress() {
+  return [
+    { key: 'stations', view: 'setup', done: state.parts.length > 0 && state.stations.length > 0 },
+    { key: 'staff', view: 'members', done: state.employees.some((emp) => Object.keys(emp.assignedSkills || {}).length) },
+    { key: 'requirements', view: 'roster', done: state.requirements.some((req) => req.stationRequirements?.length) },
+    { key: 'assign', view: 'roster', done: getAssignments().length > 0 },
+  ];
+}
+
+function isEmptyStore() {
+  return !state.parts.length && !state.stations.length && !state.employees.length && !state.requirements.length;
+}
+
+function renderGettingStarted() {
+  const steps = getSetupProgress();
+  if (steps.every((step) => step.done)) return '';
+  const next = steps.find((step) => !step.done);
+  return `<div class="card getting-started">
+    <h3>${t('start.title')}</h3>
+    <ol class="start-steps">
+      ${steps.map((step) => `<li class="${step.done ? 'done' : ''} ${step === next ? 'next' : ''}">
+        <span class="start-check" aria-hidden="true">${step.done ? '✓' : ''}</span>
+        <span><strong>${t(`start.${step.key}`)}</strong><br><span class="small-text">${t(`start.${step.key}Help`)}</span></span>
+        ${step.done ? `<span class="badge ok">${t('start.doneLabel')}</span>` : `<button class="btn small ${step === next ? '' : 'secondary'}" type="button" data-tab="${step.view}">${t('start.go')}</button>`}
+      </li>`).join('')}
+    </ol>
+    ${isEmptyStore() ? `<div class="inline-actions"><button class="btn secondary" type="button" data-action="load-sample">${t('start.sample')}</button><span class="small-text">${t('start.sampleHelp')}</span></div>` : ''}
+  </div>`;
+}
+
+// Fills an empty store with the built-in example roster, keeping settings.
+function loadSampleData() {
+  if (!isEmptyStore()) return;
+  state = { ...createDefaultState(), settings: { ...state.settings } };
+  selectedSkillId = state.skills[0]?.id || '';
+  saveState();
+  render();
+}
+
 function issueBadge(issue) {
   const cls = issue.severity === 'high' ? 'danger' : issue.severity === 'medium' ? 'warn' : 'info';
   return `<span class="badge ${cls}">${escapeHtml(issue.type)} · ${escapeHtml(issue.message)}</span>`;
@@ -1614,8 +2190,8 @@ function renderParts() {
       <div class="card">
         <h3>${t('parts.partAddTitle')}</h3>
         <div class="form-row compact">
-          <label>${t('parts.partName')}<input id="newPartName" placeholder="예: Kitchen" /></label>
-          <label>${t('parts.description')}<input id="newPartDesc" placeholder="예: 주방 파트" /></label>
+          <label>${t('parts.partName')}<input id="newPartName" placeholder="${escapeHtml(t('ui.phPartName'))}" /></label>
+          <label>${t('parts.description')}<input id="newPartDesc" placeholder="${escapeHtml(t('ui.phPartDesc'))}" /></label>
           <label>${t('parts.color')}<input id="newPartColor" type="color" value="#2563eb" /></label>
           <button class="btn" data-action="add-part">${t('common.add')}</button>
         </div>
@@ -1633,8 +2209,8 @@ function renderParts() {
         <h3>${t('parts.stationAddTitle')}</h3>
         <div class="form-row compact">
           <label>${t('parts.partHeader')}<select id="newStationPart">${partOptions()}</select></label>
-          <label>${t('parts.stationName')}<input id="newStationName" placeholder="예: Hot" /></label>
-          <label>${t('parts.description')}<input id="newStationDesc" placeholder="예: 핫 섹션" /></label>
+          <label>${t('parts.stationName')}<input id="newStationName" placeholder="${escapeHtml(t('ui.phStationName'))}" /></label>
+          <label>${t('parts.description')}<input id="newStationDesc" placeholder="${escapeHtml(t('ui.phStationDesc'))}" /></label>
           <button class="btn" data-action="add-station">${t('common.add')}</button>
         </div>
         <div class="table-wrap"><table><thead><tr><th>${t('parts.partHeader')}</th><th>${t('parts.stationHeader')}</th><th>${t('parts.description')}</th><th></th></tr></thead><tbody>
@@ -1675,49 +2251,75 @@ function stationOptions(selected = '', partFilter = '', compact = false) {
 function firstStationForPart(partId) {
   return state.stations.filter((st) => st.partId === partId).sort(sortStations)[0]?.id || '';
 }
-function firstSkillForStation(stationId) {
-  return state.skills
-    .filter((sk) => !stationId || sk.stationId === stationId)
-    .sort((a, b) => a.name.localeCompare(b.name))[0]?.id || '';
-}
 function getSkillLevelTemplates(skillId) {
   return state.levelTemplates
     .filter((tpl) => tpl.skillId === skillId)
     .sort((a, b) => Number(a.levelNumber) - Number(b.levelNumber) || Number(a.stepNumber) - Number(b.stepNumber));
 }
-function memberSkillSelectOptions(selected = '', stationFilter = '') {
-  return state.skills
-    .filter((skill) => !stationFilter || skill.stationId === stationFilter)
-    .slice()
-    .sort(compareSkills)
-    .map((skill) => `<option value="${skill.id}" ${selected === skill.id ? 'selected' : ''}>${escapeHtml(skill.name)}</option>`)
-    .join('');
+// Level/Step choices for a skill, e.g. [{ level: 1, step: 1 }, …], plus the
+// employee's current value when no template matches it.
+function levelStepChoices(skillId, current = null) {
+  const seen = new Set();
+  const choices = [];
+  const add = (level, step) => {
+    const key = `${level}-${step}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    choices.push({ level, step, key });
+  };
+  getSkillLevelTemplates(skillId).forEach((tpl) => add(num(tpl.levelNumber), num(tpl.stepNumber)));
+  if (!choices.length) add(1, 1);
+  if (current) add(num(current.level), num(current.step));
+  return choices.sort((a, b) => a.level - b.level || a.step - b.step);
 }
-function getMemberSkillDefaults(emp) {
-  const partId = emp?.partId || state.parts[0]?.id || '';
-  const stationId = firstStationForPart(partId) || state.stations[0]?.id || '';
-  const skillId = firstSkillForStation(stationId) || state.skills[0]?.id || '';
-  const level = levelsForSkill(skillId)[0] || 1;
-  const step = stepsForSkill(skillId, level)[0] || 1;
-  return { partId, stationId, skillId, level, step };
+
+// Skills grouped under the station they belong to, stations in part order.
+// Skills whose station no longer exists come last.
+function skillsByStation() {
+  const groups = state.stations.slice().sort(sortStations)
+    .map((station) => ({ station, skills: state.skills.filter((skill) => skill.stationId === station.id) }))
+    .filter((group) => group.skills.length);
+  const orphans = state.skills.filter((skill) => !byId(state.stations, skill.stationId));
+  if (orphans.length) groups.push({ station: null, skills: orphans });
+  return groups;
 }
-function uniqueNumbers(values) {
-  return [...new Set(values.map((v) => Number(v)).filter((v) => Number.isFinite(v)))].sort((a, b) => a - b);
+
+function renderMemberStationSkills(emp) {
+  const groups = skillsByStation();
+  if (!groups.length) return `<p class="muted small-text">${t('members.noStationsYet')}</p>`;
+  let lastPart = null;
+  return `<div class="station-skill-list">${groups.map(({ station, skills }) => {
+    const partId = station?.partId || '';
+    const partHead = partId !== lastPart ? `<div class="station-skill-part">${escapeHtml(station ? partName(partId) : t('members.otherSkills'))}</div>` : '';
+    lastPart = partId;
+    return partHead + skills.map((skill) => {
+      const current = emp.assignedSkills?.[skill.id] || null;
+      const value = current ? `${num(current.level)}-${num(current.step)}` : '';
+      const label = station ? (skills.length > 1 ? `${station.name} · ${skill.name}` : station.name) : skill.name;
+      return `<label class="station-skill-row ${current ? 'has-skill' : ''}">
+        <span>${escapeHtml(label)}</span>
+        <select data-action="member-skill-level" data-emp="${emp.id}" data-skill="${skill.id}" aria-label="${escapeHtml(label)}">
+          <option value="">${t('members.cannotDo')}</option>
+          ${levelStepChoices(skill.id, current).map((c) => `<option value="${c.key}" ${c.key === value ? 'selected' : ''}>L${c.level}-S${c.step}</option>`).join('')}
+        </select>
+      </label>`;
+    }).join('');
+  }).join('')}</div>`;
 }
-function levelsForSkill(skillId) {
-  const levels = uniqueNumbers(getSkillLevelTemplates(skillId).map((tpl) => tpl.levelNumber));
-  return levels.length ? levels : [1];
+
+// Sets (or clears, with an empty value) one employee's Level/Step for a skill.
+function setEmployeeSkillLevel(empId, skillId, value) {
+  const emp = byId(state.employees, empId);
+  if (!emp || !byId(state.skills, skillId)) return;
+  emp.assignedSkills = emp.assignedSkills || {};
+  if (!value) {
+    delete emp.assignedSkills[skillId];
+    return;
+  }
+  const [level, step] = String(value).split('-').map((n) => num(n, 1));
+  emp.assignedSkills[skillId] = { note: '', ...emp.assignedSkills[skillId], level, step };
 }
-function stepsForSkill(skillId, levelNumber) {
-  const steps = uniqueNumbers(getSkillLevelTemplates(skillId).filter((tpl) => Number(tpl.levelNumber) === Number(levelNumber)).map((tpl) => tpl.stepNumber));
-  return steps.length ? steps : [1];
-}
-function memberLevelOptions(skillId, selected = '') {
-  return levelsForSkill(skillId).map((level) => `<option value="${level}" ${String(selected) === String(level) ? 'selected' : ''}>Level ${level}</option>`).join('');
-}
-function memberStepOptions(skillId, levelNumber, selected = '') {
-  return stepsForSkill(skillId, levelNumber).map((step) => `<option value="${step}" ${String(selected) === String(step) ? 'selected' : ''}>Step ${step}</option>`).join('');
-}
+
 function compareSkills(a, b) {
   return partName(a.partId).localeCompare(partName(b.partId)) || stationName(a.stationId).localeCompare(stationName(b.stationId)) || a.name.localeCompare(b.name);
 }
@@ -1729,6 +2331,17 @@ function sortStations(a, b) {
 
 function renderSkills() {
   const el = document.getElementById('skills');
+  if (!skillsAdvancedOpen) {
+    el.innerHTML = `
+      <div class="card advanced-toggle">
+        <div>
+          <h3>${t('skills.advancedTitle')}</h3>
+          <p class="small-text">${t('skills.advancedHelp')}</p>
+        </div>
+        <button class="btn secondary small" type="button" data-action="toggle-advanced-skills" aria-expanded="false">${t('skills.advancedOpen')}</button>
+      </div>`;
+    return;
+  }
   if (!state.skills.some((skill) => skill.id === selectedSkillId)) selectedSkillId = state.skills[0]?.id || '';
   const selectedSkill = byId(state.skills, selectedSkillId);
   const selectedTemplates = selectedSkill ? getSkillLevelTemplates(selectedSkill.id) : [];
@@ -1745,9 +2358,10 @@ function renderSkills() {
   el.innerHTML = `
     <div class="section-head">
       <div>
-        <h2>${t('tabs.skills')}</h2>
+        <h2>${t('skills.advancedTitle')}</h2>
         <p>${t('skills.subtitle')}</p>
       </div>
+      <button class="btn secondary small" type="button" data-action="toggle-advanced-skills" aria-expanded="true">${t('skills.advancedClose')}</button>
     </div>
 
     <div class="card req-guide">
@@ -1759,21 +2373,21 @@ function renderSkills() {
       <section class="card skills-list-card">
         <h3>${t('skills.addSkillTitle')}</h3>
         <div class="form-row compact skill-add-row">
-          <label>Part<select id="newSkillPart" data-action="new-skill-part">${partOptions()}</select></label>
-          <label>Station<select id="newSkillStation">${stationOptions('', state.parts[0]?.id || '', true)}</select></label>
-          <label>Skill 이름<input id="newSkillName" placeholder="예: Fry section" /></label>
-          <button class="btn" data-action="add-skill">추가</button>
+          <label>${t('parts.partHeader')}<select id="newSkillPart" data-action="new-skill-part">${partOptions()}</select></label>
+          <label>${t('parts.stationHeader')}<select id="newSkillStation">${stationOptions('', state.parts[0]?.id || '', true)}</select></label>
+          <label>${t('ui.skillName')}<input id="newSkillName" placeholder="${escapeHtml(t('ui.phSkillName'))}" /></label>
+          <button class="btn" data-action="add-skill">${t('common.add')}</button>
         </div>
 
         <div class="table-wrap skills-table-wrap">
           <table class="skills-list-table">
             <thead>
               <tr>
-                <th>Part</th>
-                <th>Station</th>
-                <th>Skill</th>
-                <th>단계 수</th>
-                <th>구분</th>
+                <th>${t('parts.partHeader')}</th>
+                <th>${t('parts.stationHeader')}</th>
+                <th>${t('requirements.skill')}</th>
+                <th>${t('ui.stepCount')}</th>
+                <th>${t('ui.kind')}</th>
                 <th></th>
               </tr>
             </thead>
@@ -1788,14 +2402,14 @@ function renderSkills() {
                     <td>
                       <button class="link-btn skill-name-button" data-action="select-skill" data-id="${skill.id}">${escapeHtml(skill.name)}</button>
                     </td>
-                    <td><span class="badge ${count ? 'info' : 'warn'}">${count} steps</span></td>
-                    <td><span class="badge ${skill.isCritical ? 'danger' : ''}">${skill.isCritical ? 'Critical' : 'Normal'}</span></td>
+                    <td><span class="badge ${count ? 'info' : 'warn'}">${t('ui.stepsCount', { n: count })}</span></td>
+                    <td><span class="badge ${skill.isCritical ? 'danger' : ''}">${skill.isCritical ? t('ui.critical') : t('ui.normal')}</span></td>
                     <td class="inline-actions nowrap">
-                      <button class="btn small secondary" data-action="select-skill" data-id="${skill.id}">선택</button>
-                      <button class="btn small danger" data-action="delete-skill" data-id="${skill.id}">삭제</button>
+                      <button class="btn small secondary" data-action="select-skill" data-id="${skill.id}">${t('ui.select')}</button>
+                      <button class="btn small danger" data-action="delete-skill" data-id="${skill.id}">${t('common.delete')}</button>
                     </td>
                   </tr>`;
-              }).join('') || '<tr><td colspan="6" class="muted">아직 등록된 Skill이 없다.</td></tr>'}
+              }).join('') || `<tr><td colspan="6" class="muted">${t('skills.noSkills')}</td></tr>`}
             </tbody>
           </table>
         </div>
@@ -1815,7 +2429,7 @@ function renderSkills() {
           <div class="level-add-row clean">
               <label>Level<input data-level-skill="${selectedSkill.id}" data-level-field="level" type="number" value="1" min="0" /></label>
             <label>Step<input data-level-skill="${selectedSkill.id}" data-level-field="step" type="number" value="1" min="0" /></label>
-            <label>설명<input data-level-skill="${selectedSkill.id}" data-level-field="desc" placeholder="예: Level 2 직전 단계, 일부 확인 후 업무 가능" /></label>
+            <label>${t('ui.description')}<input data-level-skill="${selectedSkill.id}" data-level-field="desc" placeholder="${escapeHtml(t('ui.phLevelDesc'))}" /></label>
             <button class="btn small" data-action="add-level" data-skill="${selectedSkill.id}">${t('skills.addLevel')}</button>
           </div>
 
@@ -1830,23 +2444,23 @@ function renderSkills() {
                   </div>
                   <div class="table-wrap tight no-border">
                     <table class="compact-table level-detail-table">
-                      <thead><tr><th>Step</th><th>설명</th><th>가능 업무</th><th>관리</th></tr></thead>
+                      <thead><tr><th>Step</th><th>${t('ui.description')}</th><th>${t('ui.canDo')}</th><th>${t('ui.manage')}</th></tr></thead>
                       <tbody>
                         ${items.map((tpl) => `
                           <tr>
                             <td><span class="badge info">L${tpl.levelNumber} / S${tpl.stepNumber}</span></td>
                             <td>${escapeHtml(tpl.description || '')}</td>
                             <td>${escapeHtml(tpl.canDo || '') || '<span class="muted">-</span>'}</td>
-                            <td><button class="btn small danger" data-action="delete-level" data-id="${tpl.id}">삭제</button></td>
+                            <td><button class="btn small danger" data-action="delete-level" data-id="${tpl.id}">${t('common.delete')}</button></td>
                           </tr>`).join('')}
                       </tbody>
                     </table>
                   </div>
                 </div>`;
-            }).join('') : '<div class="empty-detail"><p class="muted">이 Skill에는 아직 Level / Step이 없다. 위에서 단계를 추가해라.</p></div>'}
+            }).join('') : `<div class="empty-detail"><p class="muted">${t('skills.noSkillSteps')}</p></div>`}
           </div>
         ` : `
-          <div class="empty-detail"><h3>선택된 Skill 없음</h3><p class="muted">왼쪽에서 Skill을 추가하거나 선택하면 Level / Step 관리 패널이 열린다.</p></div>
+          <div class="empty-detail"><h3>${t('skills.noSkillSelected')}</h3><p class="muted">${t('skills.noSkillSelectedText')}</p></div>
         `}
       </section>
     </div>
@@ -1875,16 +2489,16 @@ function renderMembers() {
     <div class="card">
       <h3>${t('members.addEmployeeTitle')}</h3>
       <div class="form-row">
-        <label>${t('members.name')}<input id="newEmpName" placeholder="예: Minho" /></label>
+        <label>${t('members.name')}<input id="newEmpName" placeholder="${escapeHtml(t('ui.phEmpName'))}" /></label>
         <label>${t('members.part')}<select id="newEmpPart">${partOptions(addPartDefault)}</select></label>
-        <label>${t('members.role')}<input id="newEmpRole" placeholder="예: Kitchen Staff" /></label>
+        <label>${t('members.role')}<input id="newEmpRole" placeholder="${escapeHtml(t('ui.phRole'))}" /></label>
         <label>${t('members.rate')}<input id="newEmpRate" type="number" value="28" /></label>
         <label>${t('members.maxHours')}<input id="newEmpMax" type="number" value="38" /></label>
         <button class="btn" data-action="add-employee">${t('members.addEmployee')}</button>
       </div>
     </div>
     ${grouped.map(({ part, employees }) => `
-      <h3 class="group-title"><span class="badge dark" style="background:${escapeHtml(part.color)}">${escapeHtml(part.name)}</span> ${employees.length}명</h3>
+      <h3 class="group-title"><span class="badge dark" style="background:${escapeHtml(part.color)}">${escapeHtml(part.name)}</span> ${t('ui.people', { n: employees.length })}</h3>
       <div class="grid">
         ${employees.map(renderEmployeeCard).join('') || `<p class="muted">${t('members.noEmployeesHere')}</p>`}
       </div>
@@ -1932,30 +2546,15 @@ function renderEmployeeCard(emp) {
       <div>
         <h4>${t('members.skillLevelStep')}</h4>
         <p class="small-text">${t('members.skillStepHelp')}</p>
-        ${(() => {
-          const pick = getMemberSkillDefaults(emp);
-          return `
-            <div class="form-row compact member-skill-editor">
-              <label>Part 선택<select data-action="member-skill-part" data-field="memberSkillPart" data-emp="${emp.id}">${partOptions(pick.partId)}</select></label>
-              <label>Section 선택<select data-action="member-skill-station" data-field="memberSkillStation" data-emp="${emp.id}">${stationOptions(pick.stationId, pick.partId, true)}</select></label>
-              <label>Skill 선택<select data-action="member-skill-select" data-field="memberSkillSelect" data-emp="${emp.id}">${memberSkillSelectOptions(pick.skillId, pick.stationId)}</select></label>
-              <label>Level 선택<select data-action="member-level-select" data-field="memberLevelSelect" data-emp="${emp.id}">${memberLevelOptions(pick.skillId, pick.level)}</select></label>
-              <label>Step 선택<select data-field="memberStepSelect" data-emp="${emp.id}">${memberStepOptions(pick.skillId, pick.level, pick.step)}</select></label>
-            </div>
-          `;
-        })()}
-        <button class="btn small" data-action="assign-skill" data-id="${emp.id}">${t('members.assignSkill')}</button>
-        <div style="margin-top:10px;">
-          ${Object.keys(emp.assignedSkills || {}).map((skillId) => `<button class="btn small ghost" data-action="remove-emp-skill" data-emp="${emp.id}" data-skill="${skillId}">${escapeHtml(skillName(skillId))} L${emp.assignedSkills[skillId].level}-S${emp.assignedSkills[skillId].step} ${t('members.removeSkill')}</button>`).join('')}
-        </div>
+        ${renderMemberStationSkills(emp)}
       </div>
     </div>
   `;
 }
 
-function renderDayPills(selectedDay, actionName) {
+function renderDayPills(selectedDay, actionName, withDates = false) {
   return `<div class="day-pills">
-    ${DAYS.map((day) => `<button class="day-pill ${selectedDay === day.key ? 'active' : ''}" data-action="${actionName}" data-day="${day.key}">${dayShort(day.key)}</button>`).join('')}
+    ${DAYS.map((day) => `<button class="day-pill ${selectedDay === day.key ? 'active' : ''}" data-action="${actionName}" data-day="${day.key}">${dayShort(day.key)}${withDates ? ` <span class="pill-date">${shortDate(dateForDay(day.key))}</span>` : ''}</button>`).join('')}
   </div>`;
 }
 
@@ -1978,6 +2577,7 @@ function renderRequirements() {
       <div>
         <h3>${t('requirements.daySelect')}</h3>
         ${renderDayPills(visibleDay, 'req-day')}
+        ${visibleReqs.length ? renderCopyDayControls('requirements', visibleDay) : ''}
       </div>
       <div>
         <h3>${t('requirements.addBlockTitle')}</h3>
@@ -1985,15 +2585,15 @@ function renderRequirements() {
           <label>${t('requirements.day')}<select id="newReqDay">${DAYS.map(d => `<option value="${d.key}" ${d.key === visibleDay ? 'selected' : ''}>${dayLabel(d.key)}</option>`).join('')}</select></label>
           <label>${t('requirements.start')}<input id="newReqStart" type="time" value="10:00" /></label>
           <label>${t('requirements.end')}<input id="newReqEnd" type="time" value="12:00" /></label>
-          <label>${t('requirements.label')}<input id="newReqLabel" placeholder="예: Dinner Peak" /></label>
-          <label>${t('requirements.peak')}<select id="newReqPeak"><option value="false">No</option><option value="true">Yes</option></select></label>
+          <label>${t('requirements.label')}<input id="newReqLabel" placeholder="${escapeHtml(t('ui.phBlockLabel'))}" /></label>
+          <label>${t('requirements.peak')}<select id="newReqPeak"><option value="false">${t('ui.no')}</option><option value="true">${t('ui.yes')}</option></select></label>
           <button class="btn" data-action="add-requirement">${t('requirements.addBlock')}</button>
         </div>
       </div>
     </div>
     <div class="req-day-board">
       <h3 class="group-title">${dayLabel(visibleDay)} ${t('tabs.requirements')}</h3>
-      ${visibleReqs.map(renderRequirementCard).join('') || '<div class="card"><p class="muted">이 요일에는 아직 시간 블록이 없다.</p></div>'}
+      ${visibleReqs.map(renderRequirementCard).join('') || `<div class="card"><p class="muted">${t('requirements.noBlocks')}</p></div>`}
     </div>
   `;
 }
@@ -2007,7 +2607,7 @@ function renderRequirementCard(req) {
     acc[key].count += 1;
     return acc;
   }, {});
-  const summary = Object.values(grouped).map((g) => `${partName(g.sreq.partId)} / ${stationName(g.sreq.stationId)} × ${g.count}`).join(' · ') || '자리 없음';
+  const summary = Object.values(grouped).map((g) => `${partName(g.sreq.partId)} / ${stationName(g.sreq.stationId)} × ${g.count}`).join(' · ') || t('ui.noSeatsSummary');
   return `
     <div class="card req-card simple-req-card">
       <div class="req-card-head">
@@ -2043,7 +2643,7 @@ function renderRequirementCard(req) {
 function renderSchedule() {
   const el = document.getElementById('schedule');
   const views = {
-    sheet: renderRosterSheet,
+    sheet: () => (isNarrowScreen() ? renderRosterCards() : renderRosterSheet()),
     confirmed: renderConfirmedRoster,
     member: renderScheduleMemberView,
     part: renderSchedulePartView,
@@ -2057,14 +2657,16 @@ function renderSchedule() {
         <button class="btn" type="button" title="${escapeHtml(t('schedule.autoFillHint'))}" data-action="auto-fill">${t('schedule.autoFill')}</button>
       </div>
     </div>
-    ${lastAutoFill ? `<div class="card autofill-result no-print">
-      <span>${t('schedule.autoFillResult', { filled: lastAutoFill.filled.length, skipped: lastAutoFill.skipped })}</span>
+    ${lastBulkChange ? `<div class="card autofill-result no-print">
+      <span>${t(lastBulkChange.textKey, lastBulkChange.vars)}</span>
       <div class="inline-actions">
         <button class="btn small" type="button" data-action="auto-fill-keep">${t('schedule.autoFillKeep')}</button>
         <button class="btn small secondary" type="button" data-action="auto-fill-undo">${t('schedule.autoFillUndo')}</button>
       </div>
     </div>` : ''}
-    ${scheduleView === 'sheet' ? renderDayPills(selectedScheduleDay, 'schedule-day') : ''}
+    ${renderWeekNav()}
+    ${scheduleView === 'sheet' ? renderDayPills(selectedScheduleDay, 'schedule-day', true) : ''}
+    ${scheduleView === 'sheet' && getDayRequirements(selectedScheduleDay).length ? renderCopyDayControls('assignments', selectedScheduleDay) : ''}
     ${views[scheduleView]()}
     ${recommendationContext ? renderRecommendationPanel() : ''}
     ${replacementContext ? renderReplacementPanel() : ''}
@@ -2073,14 +2675,12 @@ function renderSchedule() {
 
 function getAssignmentStatus(req, sreq, key) {
   const employeeId = state.schedule[key];
-  if (!employeeId) return { label: '미배정', className: 'danger', detail: '직원을 선택하세요.' };
+  if (!employeeId) return { code: 'unassigned', label: t('status.unassigned'), className: 'danger', detail: t('status.pickEmployee') };
   const employee = byId(state.employees, employeeId);
-  if (!employee) return { label: '직원 없음', className: 'danger', detail: '삭제된 직원입니다.' };
-  const status = getCandidateStatus(employee, req, sreq, key);
-  if (status.category === 'fit') return { label: '적합', className: 'ok', detail: status.reasons.join(' · ') };
-  if (status.category === 'partial') return { label: '주의', className: 'warn', detail: status.reasons.join(' · ') };
-  if (status.category === 'emergency') return { label: '긴급', className: 'warn', detail: status.reasons.join(' · ') };
-  return { label: '부적합', className: 'danger', detail: status.reasons.join(' · ') };
+  if (!employee) return { code: 'missingEmployee', label: t('status.missingEmployee'), className: 'danger', detail: t('status.deletedEmployee') };
+  const status = getRecommendations(req, sreq, '', key).find((rec) => rec.employee.id === employeeId);
+  const className = { fit: 'ok', partial: 'warn', emergency: 'warn' }[status.category] || 'danger';
+  return { code: status.category, label: t(`status.${status.category}`), className, detail: status.reasons.join(' · ') };
 }
 
 function employeeOptionsForRequirement(req, sreq, selected = '', ignoreKey = '') {
@@ -2089,15 +2689,15 @@ function employeeOptionsForRequirement(req, sreq, selected = '', ignoreKey = '')
     .filter((rec) => ['fit', 'partial', 'emergency'].includes(rec.category));
   const selectedEmployee = selected ? byId(state.employees, selected) : null;
   const selectedIncluded = recommendations.some((rec) => rec.employee.id === selected);
-  const options = ['<option value="">미배정</option>'];
+  const options = [`<option value="">${t('status.unassigned')}</option>`];
   if (selectedEmployee && !selectedIncluded) {
-    options.push(`<option value="${selectedEmployee.id}" selected>${escapeHtml(selectedEmployee.name)} · 현재 배정(조건 미달)</option>`);
+    options.push(`<option value="${selectedEmployee.id}" selected>${escapeHtml(selectedEmployee.name)} · ${t('status.currentBelow')}</option>`);
   }
   recommendations.forEach((rec) => {
-    const mark = rec.category === 'fit' ? '적합' : rec.category === 'partial' ? '주의' : '긴급';
+    const mark = t(`status.${rec.category}`);
     options.push(`<option value="${rec.employee.id}" ${selected === rec.employee.id ? 'selected' : ''}>${escapeHtml(rec.employee.name)} · ${mark} · ${escapeHtml(partName(rec.employee.partId))}</option>`);
   });
-  if (options.length === 1) options.push('<option disabled>조건에 맞는 직원 없음</option>');
+  if (options.length === 1) options.push(`<option disabled>${t('status.noneFits')}</option>`);
   return options.join('');
 }
 
@@ -2156,19 +2756,53 @@ function getHorizontalRosterData(dayKey) {
   return { reqs, rows };
 }
 
-function renderRosterCell(cell) {
-  if (!cell) return '<td class="empty-cell"><span>—</span></td>';
-  const { req, sreq, slotIndex, key } = cell;
+// The employee picker, status badge and recommend/replace buttons for one seat.
+function renderSeatControls({ req, sreq, slotIndex, key }, status) {
   const selected = state.schedule[key] || '';
-  const status = getAssignmentStatus(req, sreq, key);
-  return `<td class="matrix-cell ${status.className}">
-    <select class="matrix-select" data-action="assign-schedule" data-key="${key}">${employeeOptionsForRequirement(req, sreq, selected, key)}</select>
+  return `<select class="matrix-select" data-action="assign-schedule" data-key="${key}">${employeeOptionsForRequirement(req, sreq, selected, key)}</select>
     <div class="cell-meta"><span class="badge ${status.className}">${status.label}</span></div>
     <div class="matrix-actions">
-      <button class="link-btn" data-action="show-recommend" data-req="${req.id}" data-sreq="${sreq.id}" data-slot="${slotIndex}">추천</button>
-      <button class="link-btn" data-action="show-replace" data-req="${req.id}" data-sreq="${sreq.id}" data-slot="${slotIndex}" ${selected ? '' : 'disabled'}>대체</button>
+      <button class="link-btn" data-action="show-recommend" data-req="${req.id}" data-sreq="${sreq.id}" data-slot="${slotIndex}">${t('schedule.recommend')}</button>
+      <button class="link-btn" data-action="show-replace" data-req="${req.id}" data-sreq="${sreq.id}" data-slot="${slotIndex}" ${selected ? '' : 'disabled'}>${t('schedule.replace')}</button>
+    </div>`;
+}
+
+function renderRosterCell(cell) {
+  if (!cell) return '<td class="empty-cell"><span>—</span></td>';
+  const status = getAssignmentStatus(cell.req, cell.sreq, cell.key);
+  return `<td class="matrix-cell ${status.className}">${renderSeatControls(cell, status)}</td>`;
+}
+
+const NARROW_SCREEN_QUERY = '(max-width: 720px)';
+function isNarrowScreen() {
+  return Boolean(window.matchMedia?.(NARROW_SCREEN_QUERY).matches);
+}
+
+// Phone layout of the roster sheet: one card per time block, one row per seat.
+function renderRosterCards() {
+  const reqs = getDayRequirements(selectedScheduleDay);
+  return `<div class="roster-cards">
+    <div class="section-head">
+      <h3>${dayLabel(selectedScheduleDay)} ${t('schedule.sheet')}</h3>
+      <button class="btn small secondary" data-action="export-roster-csv">${t('schedule.csv')}</button>
     </div>
-  </td>`;
+    ${reqs.map((req) => {
+      const seats = [...seatsByStation(req).values()].sort((a, b) =>
+        partSortValue(a.sreq.partId) - partSortValue(b.sreq.partId) ||
+        stationSortValue(a.sreq.stationId) - stationSortValue(b.sreq.stationId));
+      return `<div class="card roster-block-card">
+        <h4>${req.startTime}–${req.endTime} · ${escapeHtml(req.label)} ${req.isPeak ? `<span class="badge danger">${t('schedule.peak')}</span>` : ''}</h4>
+        ${seats.map((seat) => {
+          const status = getAssignmentStatus(seat.req, seat.sreq, seat.key);
+          const occurrence = seats.filter((s) => s.sreq.partId === seat.sreq.partId && s.sreq.stationId === seat.sreq.stationId).indexOf(seat);
+          return `<div class="roster-seat-row ${status.className}">
+            <div class="roster-seat-name"><strong>${escapeHtml(stationName(seat.sreq.stationId))}${occurrence ? ` #${occurrence + 1}` : ''}</strong><span class="small-text">${escapeHtml(partName(seat.sreq.partId))}</span></div>
+            <div class="roster-seat-controls">${renderSeatControls(seat, status)}</div>
+          </div>`;
+        }).join('') || `<p class="muted small-text">${t('requirements.noSeats')}</p>`}
+      </div>`;
+    }).join('') || `<div class="card"><p class="muted">${t('schedule.noRequirementDay')}</p></div>`}
+  </div>`;
 }
 
 function summarizeHorizontalRow(row, reqs) {
@@ -2176,8 +2810,8 @@ function summarizeHorizontalRow(row, reqs) {
     .map((req) => row.cells[req.id])
     .filter(Boolean)
     .map((cell) => getAssignmentStatus(cell.req, cell.sreq, cell.key));
-  if (!statuses.length) return { label: '해당 없음', className: 'info', detail: '' };
-  const missing = statuses.filter((s) => s.label === '미배정').length;
+  if (!statuses.length) return { label: t('status.notApplicable'), className: 'info', detail: '' };
+  const missing = statuses.filter((s) => s.code === 'unassigned').length;
   const danger = statuses.filter((s) => s.className === 'danger').length;
   const warn = statuses.filter((s) => s.className === 'warn').length;
   const ok = statuses.filter((s) => s.className === 'ok').length;
@@ -2186,9 +2820,9 @@ function summarizeHorizontalRow(row, reqs) {
     .filter(Boolean)
     .map((cell) => `${requiredSkillName(cell.sreq)} L${cell.sreq.minLevel}-S${cell.sreq.minStep}`);
   const uniqueReqs = [...new Set(requirementSamples)];
-  if (missing || danger) return { label: `미배정/위험 ${missing || danger}`, className: 'danger', detail: uniqueReqs.join(' · ') };
-  if (warn) return { label: `주의 ${warn}`, className: 'warn', detail: uniqueReqs.join(' · ') };
-  return { label: `적합 ${ok}`, className: 'ok', detail: uniqueReqs.join(' · ') };
+  if (missing || danger) return { label: t('status.riskCount', { n: missing || danger }), className: 'danger', detail: uniqueReqs.join(' · ') };
+  if (warn) return { label: t('status.warnCount', { n: warn }), className: 'warn', detail: uniqueReqs.join(' · ') };
+  return { label: t('status.okCount', { n: ok }), className: 'ok', detail: uniqueReqs.join(' · ') };
 }
 
 function renderRosterSheet() {
@@ -2206,11 +2840,11 @@ function renderRosterSheet() {
         <table class="horizontal-roster-table">
           <thead>
             <tr>
-              <th class="sticky-col col-part">Part</th>
-              <th class="sticky-col col-station">Station</th>
-              <th class="sticky-col col-seat">Seat</th>
-              ${reqs.map((req) => `<th class="time-col"><strong>${req.startTime}–${req.endTime}</strong><br><span>${escapeHtml(req.label)}</span>${req.isPeak ? '<br><span class="badge danger">Peak</span>' : ''}</th>`).join('')}
-              <th class="status-col">Status / Required</th>
+              <th class="sticky-col col-part">${t('schedule.partHeader')}</th>
+              <th class="sticky-col col-station">${t('schedule.stationHeader')}</th>
+              <th class="sticky-col col-seat">${t('schedule.seatHeader')}</th>
+              ${reqs.map((req) => `<th class="time-col"><strong>${req.startTime}–${req.endTime}</strong><br><span>${escapeHtml(req.label)}</span>${req.isPeak ? `<br><span class="badge danger">${t('schedule.peak')}</span>` : ''}</th>`).join('')}
+              <th class="status-col">${t('schedule.statusRequired')}</th>
             </tr>
           </thead>
           <tbody>
@@ -2223,7 +2857,7 @@ function renderRosterSheet() {
                 ${reqs.map((req) => renderRosterCell(row.cells[req.id])).join('')}
                 <td class="status-col"><span class="badge ${summary.className}">${summary.label}</span><div class="status-detail wide">${escapeHtml(summary.detail)}</div></td>
               </tr>`;
-            }).join('') || `<tr><td colspan="${4 + reqs.length}" class="muted">이 요일에는 Requirements에서 추가된 자리가 없다.</td></tr>`}
+            }).join('') || `<tr><td colspan="${4 + reqs.length}" class="muted">${t('schedule.noRequirementDay')}</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -2339,7 +2973,7 @@ function renderConfirmedRoster() {
         </div>
       </div>
       <div class="confirmed-print-title print-only">
-        <h2>${t('schedule.weeklyRoster')}</h2>
+        <h2>${t('schedule.weeklyRoster')} · ${weekRangeLabel()}</h2>
         <p>SkillShift Planner</p>
       </div>
       <div class="confirmed-sections">
@@ -2351,13 +2985,13 @@ function renderConfirmedRoster() {
                 <thead>
                   <tr>
                     <th class="phase-column">${t('schedule.phase')} / ${t('schedule.time')}</th>
-                    ${DAYS.map((day) => `<th>${dayLabel(day.key)}</th>`).join('')}
+                    ${DAYS.map((day) => `<th>${dayLabel(day.key)} ${shortDate(dateForDay(day.key))}</th>`).join('')}
                   </tr>
                 </thead>
                 <tbody>
                   ${section.rows.map((row) => `
                     <tr>
-                      <td class="phase-cell"><strong>Phase ${row.phase.phaseNo}</strong><br><span>${row.phase.startTime}–${row.phase.endTime}</span><br><em>${escapeHtml(row.phase.label)}</em></td>
+                      <td class="phase-cell"><strong>${t('schedule.phase')} ${row.phase.phaseNo}</strong><br><span>${row.phase.startTime}–${row.phase.endTime}</span><br><em>${escapeHtml(row.phase.label)}</em></td>
                       ${DAYS.map((day) => renderConfirmedCell(row.cells[day.key])).join('')}
                     </tr>
                   `).join('') || `<tr><td colspan="8" class="muted">${t('schedule.noPartWork')}</td></tr>`}
@@ -2378,7 +3012,7 @@ function renderRecommendationPanel() {
   const key = assignmentKey(reqId, sreqId, slotIndex);
   const recs = getRecommendations(req, sreq, '', key);
   return `<div class="card recommend-panel">
-    <div class="section-head"><div><h3>추천 직원 · ${dayLabel(req.dayOfWeek)} ${req.startTime}–${req.endTime} / ${partName(sreq.partId)} / ${stationName(sreq.stationId)}</h3><p class="small-text">필요: ${requiredSkillName(sreq)} L${sreq.minLevel}-S${sreq.minStep}</p></div><button class="btn small secondary" data-action="close-panels">닫기</button></div>
+    <div class="section-head"><div><h3>${escapeHtml(t('recs.title', { where: `${dayLabel(req.dayOfWeek)} ${req.startTime}–${req.endTime} / ${partName(sreq.partId)} / ${stationName(sreq.stationId)}` }))}</h3><p class="small-text">${escapeHtml(t('ui.needs', { skill: `${requiredSkillName(sreq)} L${sreq.minLevel}-S${sreq.minStep}` }))}</p></div><button class="btn small secondary" data-action="close-panels">${t('common.close')}</button></div>
     ${renderRecommendationGroups(recs, key)}
   </div>`;
 }
@@ -2394,24 +3028,23 @@ function renderReplacementPanel() {
   const originalCost = originalEmp ? durationHours(req.startTime, req.endTime) * getRate(originalEmp, req.dayOfWeek) : 0;
   const recs = getRecommendations(req, sreq, original, key).map((rec) => ({ ...rec, costDiff: rec.addedCost - originalCost }));
   return `<div class="card recommend-panel">
-    <div class="section-head"><div><h3>대체근무자 추천 · ${employeeName(original)} 대체</h3><p class="small-text">${dayLabel(req.dayOfWeek)} ${req.startTime}–${req.endTime} / ${partName(sreq.partId)} / ${stationName(sreq.stationId)} · 기존 비용 ${money(originalCost)}</p></div><button class="btn small secondary" data-action="close-panels">닫기</button></div>
+    <div class="section-head"><div><h3>${escapeHtml(t('recs.replaceTitle', { name: employeeName(original) }))}</h3><p class="small-text">${dayLabel(req.dayOfWeek)} ${req.startTime}–${req.endTime} / ${escapeHtml(partName(sreq.partId))} / ${escapeHtml(stationName(sreq.stationId))} · ${t('recs.originalCost', { amount: money(originalCost) })}</p></div><button class="btn small secondary" data-action="close-panels">${t('common.close')}</button></div>
     ${renderRecommendationGroups(recs, key, true)}
   </div>`;
 }
 
 function renderRecommendationGroups(recs, key, isReplacement = false) {
-  const labels = { fit: '완전 적합', partial: '부분 적합', emergency: '긴급 대체 가능', bad: '부적합' };
   return ['fit', 'partial', 'emergency', 'bad'].map((cat) => {
     const group = recs.filter((r) => r.category === cat).slice(0, cat === 'bad' ? 5 : 8);
     if (!group.length) return '';
     const cls = cat === 'fit' ? 'ok' : cat === 'partial' ? 'warn' : cat === 'emergency' ? 'info' : 'danger';
-    return `<div style="margin-top:12px;"><h4><span class="badge ${cls}">${labels[cat]}</span></h4><div class="grid two">
+    return `<div style="margin-top:12px;"><h4><span class="badge ${cls}">${t(`recs.${cat}`)}</span></h4><div class="grid two">
       ${group.map((rec) => `<div class="card soft">
-        <h4>${escapeHtml(rec.employee.name)} <span class="badge">Score ${rec.score.toFixed(0)}</span></h4>
-        <p class="small-text">${escapeHtml(partName(rec.employee.partId))} · ${money(rec.employee.baseRate)}/h · 주간 예상 ${rec.projectedHours.toFixed(1)}h</p>
-        ${isReplacement ? `<p class="small-text">기존 대비 비용 차이: <strong>${rec.costDiff >= 0 ? '+' : ''}${money(rec.costDiff)}</strong></p>` : ''}
+        <h4>${escapeHtml(rec.employee.name)} <span class="badge">${t('recs.score', { n: rec.score.toFixed(0) })}</span></h4>
+        <p class="small-text">${escapeHtml(partName(rec.employee.partId))} · ${money(rec.employee.baseRate)}/h · ${t('recs.weekProjected', { hours: rec.projectedHours.toFixed(1) })}</p>
+        ${isReplacement ? `<p class="small-text">${t('recs.costDiff')} <strong>${rec.costDiff >= 0 ? '+' : ''}${money(rec.costDiff)}</strong></p>` : ''}
         <p class="small-text">${rec.reasons.map(escapeHtml).join('<br>')}</p>
-        ${cat !== 'bad' ? `<button class="btn small" data-action="apply-recommend" data-key="${key}" data-emp="${rec.employee.id}">이 직원 배치</button>` : ''}
+        ${cat !== 'bad' ? `<button class="btn small" data-action="apply-recommend" data-key="${key}" data-emp="${rec.employee.id}">${t('recs.apply')}</button>` : ''}
       </div>`).join('')}
     </div></div>`;
   }).join('');
@@ -2419,15 +3052,15 @@ function renderRecommendationGroups(recs, key, isReplacement = false) {
 
 function renderScheduleMemberView() {
   return `<div class="grid">${state.employees.map((emp) => {
-    const assignments = getAssignments().filter((a) => a.employeeId === emp.id).sort((a,b) => {
+    const assignments = assignmentsOf(emp.id).slice().sort((a,b) => {
       const ra = getReqById(a.reqId); const rb = getReqById(b.reqId);
-      return DAYS.findIndex(d=>d.key===ra?.dayOfWeek) - DAYS.findIndex(d=>d.key===rb?.dayOfWeek) || toMinutes(ra?.startTime) - toMinutes(rb?.startTime);
+      return dayIndex(ra?.dayOfWeek) - dayIndex(rb?.dayOfWeek) || toMinutes(ra?.startTime) - toMinutes(rb?.startTime);
     });
     return `<div class="card"><h3>${escapeHtml(emp.name)} <span class="badge info">${employeeWeeklyHours(emp.id).toFixed(1)}h</span> <span class="badge">${money(employeeWeeklyCost(emp.id))}</span></h3>
       ${assignments.map((a) => {
         const req = getReqById(a.reqId); const sreq = getStationReq(a.reqId, a.stationReqId);
         return `<span class="badge ${req?.isPeak ? 'danger' : 'info'}">${dayLabel(req?.dayOfWeek)} ${req?.startTime}–${req?.endTime} · ${stationName(sreq?.stationId)}</span>`;
-      }).join('') || '<p class="muted">배정 없음</p>'}
+      }).join('') || `<p class="muted">${t('ui.noAssignments')}</p>`}
     </div>`;
   }).join('')}</div>`;
 }
@@ -2442,11 +3075,11 @@ function renderSchedulePartView() {
       const emp = byId(state.employees, a.employeeId); const req = getReqById(a.reqId);
       return emp && req ? sum + durationHours(req.startTime, req.endTime) * getRate(emp, req.dayOfWeek) : sum;
     }, 0);
-    return `<div class="card" style="margin-bottom:14px;"><h3><span class="badge dark" style="background:${escapeHtml(part.color)}">${escapeHtml(part.name)}</span> ${partAssignments.length} assignments · ${money(cost)}</h3>
+    return `<div class="card" style="margin-bottom:14px;"><h3><span class="badge dark" style="background:${escapeHtml(part.color)}">${escapeHtml(part.name)}</span> ${t('ui.assignmentsCount', { n: partAssignments.length })} · ${money(cost)}</h3>
       ${partAssignments.map((a) => {
         const req = getReqById(a.reqId); const sreq = getStationReq(a.reqId, a.stationReqId);
         return `<span class="badge ${req?.isPeak ? 'danger' : 'info'}">${dayLabel(req?.dayOfWeek)} ${req?.startTime}–${req?.endTime} · ${stationName(sreq?.stationId)} · ${employeeName(a.employeeId)}</span>`;
-      }).join('') || '<p class="muted">배정 없음</p>'}
+      }).join('') || `<p class="muted">${t('ui.noAssignments')}</p>`}
     </div>`;
   }).join('');
 }
@@ -2487,10 +3120,10 @@ function renderValidation() {
     <div class="section-head"><div><h2>${t('tabs.validation')}</h2><p>${t('validation.subtitle')}</p></div></div>
     <div class="grid">
       ${issues.map((issue) => `<div class="card issue ${issue.severity === 'high' ? 'high' : issue.severity === 'low' ? 'low' : ''}">
-        <h3>${escapeHtml(issue.type)} <span class="badge ${issue.severity === 'high' ? 'danger' : issue.severity === 'medium' ? 'warn' : 'info'}">${issue.severity}</span></h3>
+        <h3>${escapeHtml(issue.type)} <span class="badge ${issue.severity === 'high' ? 'danger' : issue.severity === 'medium' ? 'warn' : 'info'}">${t(`validation.status${issue.severity[0].toUpperCase()}${issue.severity.slice(1)}`)}</span></h3>
         <p>${escapeHtml(issue.message)}</p>
         ${issue.req ? `<p class="small-text">${dayLabel(issue.req.dayOfWeek)} ${issue.req.startTime}–${issue.req.endTime} · ${escapeHtml(issue.req.label || '')}</p>` : ''}
-        ${issue.sreq ? `<p class="small-text">${escapeHtml(partName(issue.sreq.partId))} / ${escapeHtml(stationName(issue.sreq.stationId))} · 필요 ${escapeHtml(requiredSkillName(issue.sreq))} L${issue.sreq.minLevel}-S${issue.sreq.minStep}</p>` : ''}
+        ${issue.sreq ? `<p class="small-text">${escapeHtml(partName(issue.sreq.partId))} / ${escapeHtml(stationName(issue.sreq.stationId))} · ${escapeHtml(t('issues.needs', { skill: `${requiredSkillName(issue.sreq)} L${issue.sreq.minLevel}-S${issue.sreq.minStep}` }))}</p>` : ''}
         ${issue.req ? `<button class="btn small" type="button" title="${escapeHtml(t('validation.fixHint'))}" data-action="fix-issue" data-req="${issue.req.id}" data-sreq="${issue.sreq?.id || ''}" data-slot="${issue.slotIndex ?? ''}">${t('validation.fix')}</button>` : ''}
       </div>`).join('') || `<div class="card"><h3>${t('validation.resultTitle')}</h3><span class="badge ok">${t('validation.noIssues')}</span></div>`}
     </div>
@@ -2498,17 +3131,7 @@ function renderValidation() {
 }
 
 function renderRoadmap() {
-  const items = [
-    ['기업별 로그인 / 초대코드', '회사별 로그인 페이지와 직원 초대 코드를 먼저 두고, 관리자와 직원을 분리해서 접근을 제어한다.'],
-    ['직원용 모바일 페이지', '직원은 읽기 전용 스케줄과 본인 관련 항목만 보고, 가능 시간·휴무 요청·대체 가능 여부만 제출한다.'],
-    ['완전 자동 스케줄 생성', 'Requirements, Members, Availability, Level/Step, Labor Budget을 기준으로 주간 초안을 자동 생성하고 수동 수정도 가능하게 한다.'],
-    ['직원 성장 관리', 'Level/Step을 교육 기록과 승급 체크리스트로 확장하고, 부족 Station을 기준으로 교육 대상을 추천한다.'],
-    ['직원 의존도 분석', '특정 직원이 빠졌을 때 운영이 무너지는 구조를 감지하고 대체 가능자 부족을 경고한다.'],
-    ['실제 출퇴근 기록', '예정 스케줄과 실제 출퇴근 시간을 비교해 차이 시간과 실제 인건비를 계산한다.'],
-    ['공휴일 / Penalty Rate / Super / Tax', '현재의 단순 배율 계산을 넘어 호주 기준 penalty rate, allowance, super, tax를 설정값으로 확장한다.'],
-    ['승인 시스템', '직원이 제출한 휴무/가능 시간/대체 가능 여부는 관리자가 승인해야 스케줄과 포털에 반영되게 한다.'],
-    ['알림 기능', '스케줄 확정, 변경, 대체 요청, 인건비 초과, 필수 인력 부족 알림을 구현한다.'],
-  ];
+  const items = textFor(currentLanguage(), 'roadmap.items') || textFor('ko', 'roadmap.items') || [];
   document.getElementById('roadmap').innerHTML = `
     <div class="section-head"><div><h2>${t('tabs.roadmap')}</h2><p>${t('roadmap.subtitle')}</p></div></div>
     <div class="roadmap-list">${items.map(([title, text]) => `<div class="card"><h3>${escapeHtml(title)}</h3><p>${escapeHtml(text)}</p></div>`).join('')}</div>
@@ -2638,6 +3261,14 @@ function renderSettings() {
         </div>
       </div>
     </div>
+    <div class="card" style="margin-top: 24px;">
+      <h3>${t('settings.backupTitle')}</h3>
+      <p class="small-text">${t('settings.backupHelp')}</p>
+      <div class="inline-actions">
+        <button class="btn secondary" type="button" data-action="export-json">${t('common.exportJson')}</button>
+        <label class="btn secondary file-label">${t('common.importJson')}<input type="file" accept="application/json,.json" data-action="import-json" /></label>
+      </div>
+    </div>
     <div class="card danger-zone" style="margin-top: 24px;">
       <h3>${t('settings.dataTitle')}</h3>
       <p class="small-text">${t('settings.resetHelp')}</p>
@@ -2652,8 +3283,7 @@ function handleClick(e) {
   if (!target) return;
   const tab = target.dataset.tab;
   if (tab) {
-    activeTab = tab;
-    render();
+    showView(tab);
     return;
   }
   const action = target.dataset.action;
@@ -2664,6 +3294,7 @@ function handleClick(e) {
   if (action === 'add-station') addStation();
   if (action === 'delete-station') deleteStation(target.dataset.id);
   if (action === 'add-skill') addSkill();
+  if (action === 'toggle-advanced-skills') { skillsAdvancedOpen = !skillsAdvancedOpen; render(); }
   if (action === 'select-skill') { selectedSkillId = target.dataset.id; render(); }
   if (action === 'delete-skill') deleteSkill(target.dataset.id);
   if (action === 'add-level') addLevel(target.dataset.skill);
@@ -2671,8 +3302,6 @@ function handleClick(e) {
   if (action === 'add-employee') addEmployee();
   if (action === 'delete-employee') deleteEmployee(target.dataset.id);
   if (action === 'toggle-employee') toggleEmployee(target.dataset.id);
-  if (action === 'assign-skill') assignSkillToEmployee(target.dataset.id);
-  if (action === 'remove-emp-skill') removeEmployeeSkill(target.dataset.emp, target.dataset.skill);
   if (action === 'add-requirement') addRequirement();
   if (action === 'delete-requirement') deleteRequirement(target.dataset.id);
   if (action === 'add-station-req') addStationRequirement(target.dataset.id);
@@ -2686,19 +3315,53 @@ function handleClick(e) {
   if (action === 'show-recommend') { recommendationContext = { reqId: target.dataset.req, sreqId: target.dataset.sreq, slotIndex: Number(target.dataset.slot) }; replacementContext = null; render(); }
   if (action === 'show-replace') { replacementContext = { reqId: target.dataset.req, sreqId: target.dataset.sreq, slotIndex: Number(target.dataset.slot) }; recommendationContext = null; render(); }
   if (action === 'close-panels') { recommendationContext = null; replacementContext = null; render(); }
-  if (action === 'apply-recommend') { state.schedule[target.dataset.key] = target.dataset.emp; saveState(false); recommendationContext = null; replacementContext = null; render(); toast(t('messages.scheduled')); }
+  if (action === 'apply-recommend') { state.schedule[target.dataset.key] = target.dataset.emp; saveState(); recommendationContext = null; replacementContext = null; render(); toast(t('messages.scheduled')); }
   if (action === 'reset-all') resetState();
+  if (action === 'load-sample') loadSampleData();
+  if (action === 'export-json') exportJson();
   if (action === 'fix-issue') openIssueInRoster(target.dataset.req, target.dataset.sreq, target.dataset.slot === '' ? NaN : Number(target.dataset.slot));
   if (action === 'auto-fill') {
     const result = autoFillEmptySeats();
     if (!result.filled.length && !result.skipped) { toast(t('schedule.autoFillNothing')); return; }
-    lastAutoFill = result;
-    saveState(false);
+    lastBulkChange = {
+      textKey: 'schedule.autoFillResult',
+      vars: { filled: result.filled.length, skipped: result.skipped },
+      changes: result.filled.map(({ key, employeeId }) => ({ key, before: '', after: employeeId })),
+    };
+    saveState();
     render();
     document.querySelector('.autofill-result')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
-  if (action === 'auto-fill-keep') { lastAutoFill = null; render(); }
-  if (action === 'auto-fill-undo' && lastAutoFill) { undoAutoFill(lastAutoFill); lastAutoFill = null; saveState(false); render(); toast(t('schedule.autoFillUndone')); }
+  if (action === 'week-shift') { switchWeek(addDays(activeWeekStart(), num(target.dataset.days))); saveState(); render(); }
+  if (action === 'week-today') { switchWeek(currentWeekStart()); saveState(); render(); }
+  if (action === 'copy-previous-week') {
+    const changes = copyPreviousWeek();
+    lastBulkChange = { textKey: 'week.copiedPrevious', vars: { copied: changes.length }, changes };
+    saveState();
+    render();
+  }
+  if (action === 'auto-fill-keep') { lastBulkChange = null; render(); }
+  if (action === 'auto-fill-undo' && lastBulkChange) { undoScheduleChanges(lastBulkChange.changes); lastBulkChange = null; saveState(); render(); toast(t('schedule.autoFillUndone')); }
+  if (action === 'copy-day-assignments') {
+    const targets = selectedCopyTargets('assignments');
+    if (!targets.length) { toast(t('copy.pickDays')); return; }
+    const result = copyDayAssignments(target.dataset.day, targets);
+    if (!result.changes.length && !result.unmatched) { toast(t('copy.nothing')); return; }
+    lastBulkChange = { textKey: 'copy.assignmentsResult', vars: { copied: result.changes.length, check: result.needsCheck, unmatched: result.unmatched }, changes: result.changes };
+    saveState();
+    render();
+    document.querySelector('.autofill-result')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  if (action === 'copy-day-requirements') {
+    const targets = selectedCopyTargets('requirements');
+    if (!targets.length) { toast(t('copy.pickDays')); return; }
+    const overwrites = state.requirements.some((req) => targets.includes(req.dayOfWeek));
+    if (overwrites && !confirm(t('copy.requirementsConfirm', { days: targets.map(dayShort).join(', ') }))) return;
+    const result = copyDayRequirements(target.dataset.day, targets);
+    saveState();
+    render();
+    toast(t('copy.requirementsDone', result));
+  }
   if (action === 'copy-company-code') { copyToClipboard(deriveCompanyCode(state.settings.companyName)); }
   if (action === 'copy-feedback-email') { copyToClipboard(state.settings.feedbackEmail || ''); }
   if (action === 'copy-feedback-link') { copyToClipboard(normalizeExternalUrl(state.settings.feedbackUrl) || ''); }
@@ -2714,7 +3377,7 @@ function handleChange(e) {
     }
     if (el.type === 'checkbox' || el.dataset.settingType === 'boolean') {
       state.settings[el.dataset.setting] = el.checked;
-      saveState(false);
+      saveState();
       render();
       return;
     }
@@ -2723,8 +3386,13 @@ function handleChange(e) {
     } else {
       state.settings[el.dataset.setting] = el.value;
     }
-    saveState(false);
+    saveState();
     render();
+    return;
+  }
+  if (action === 'import-json') {
+    importJson(el.files[0]);
+    el.value = '';
     return;
   }
   if (action === 'member-part-filter') {
@@ -2736,20 +3404,10 @@ function handleChange(e) {
     refreshNewSkillStationControl();
     return;
   }
-  if (action === 'member-skill-part') {
-    refreshMemberStationControl(el.dataset.emp);
-    return;
-  }
-  if (action === 'member-skill-station') {
-    refreshMemberSkillControls(el.dataset.emp);
-    return;
-  }
-  if (action === 'member-skill-select') {
-    refreshMemberLevelControl(el.dataset.emp);
-    return;
-  }
-  if (action === 'member-level-select') {
-    refreshMemberStepControl(el.dataset.emp);
+  if (action === 'member-skill-level') {
+    setEmployeeSkillLevel(el.dataset.emp, el.dataset.skill, el.value);
+    saveState();
+    render();
     return;
   }
   if (action === 'req-part-select') {
@@ -2759,7 +3417,7 @@ function handleChange(e) {
   if (action === 'assign-schedule') {
     if (el.value) state.schedule[el.dataset.key] = el.value;
     else delete state.schedule[el.dataset.key];
-    saveState(false);
+    saveState();
     render();
     return;
   }
@@ -2771,7 +3429,7 @@ function handleChange(e) {
     if (action === 'availability-check') emp.availability[el.dataset.day].available = el.checked;
     if (action === 'availability-start') emp.availability[el.dataset.day].startTime = el.value;
     if (action === 'availability-end') emp.availability[el.dataset.day].endTime = el.value;
-    saveState(false);
+    saveState();
     render();
   }
 }
@@ -2780,26 +3438,28 @@ function addPart() {
   const name = document.getElementById('newPartName').value.trim();
   if (!name) return toast(t('messages.partNameRequired'));
   state.parts.push({ id: uid('part'), name, description: document.getElementById('newPartDesc').value.trim(), color: document.getElementById('newPartColor').value, sortOrder: state.parts.length + 1, active: true });
-  saveState(false); render(); toast(t('messages.partAdded'));
+  saveState(); render(); toast(t('messages.partAdded'));
 }
 function deletePart(id) {
   if (!confirm(t('messages.partDeleteConfirm'))) return;
   state.parts = state.parts.filter((p) => p.id !== id);
   if (selectedMemberPart === id) selectedMemberPart = 'all';
-  saveState(false); render();
+  saveState(); render();
 }
 function addStation() {
   const name = document.getElementById('newStationName').value.trim();
   if (!name) return toast(t('messages.stationNameRequired'));
   const partId = document.getElementById('newStationPart').value;
   if (!partId) return toast(t('messages.partSelectRequired'));
-  state.stations.push({ id: uid('st'), partId, name, description: document.getElementById('newStationDesc').value.trim(), requiredSkillIds: [], sortOrder: state.stations.length + 1, active: true });
-  saveState(false); render(); toast(t('messages.stationAdded'));
+  const station = { id: uid('st'), partId, name, description: document.getElementById('newStationDesc').value.trim(), requiredSkillIds: [], sortOrder: state.stations.length + 1, active: true };
+  state.stations.push(station);
+  createSkillForStation(station, `${partName(partId)} ${name}`);
+  saveState(); render(); toast(t('messages.stationAdded'));
 }
 function deleteStation(id) {
   if (!confirm(t('messages.stationDeleteConfirm'))) return;
   state.stations = state.stations.filter((s) => s.id !== id);
-  saveState(false); render();
+  saveState(); render();
 }
 function makeLevelTemplate(skillId, stationId, levelNumber, stepNumber, description, sortOrder) {
   return {
@@ -2834,6 +3494,16 @@ function createStarterLevelsForSkill(skillId, stationId = '') {
     makeLevelTemplate(skillId, stationId, levelNumber, stepNumber, description, state.levelTemplates.length + index + 1));
 }
 
+// Every station gets a skill with starter Level/Step steps, so staff can be
+// marked as able to work a station without setting up skills separately.
+function createSkillForStation(station, name) {
+  const id = uid('sk');
+  state.skills.push({ id, name, partId: station.partId, stationId: station.id, category: partName(station.partId), description: '', isCritical: true, usesLevelStep: true, active: true });
+  state.levelTemplates.push(...createStarterLevelsForSkill(id, station.id));
+  station.requiredSkillIds = Array.from(new Set([...(station.requiredSkillIds || []), id]));
+  return id;
+}
+
 function addSkill() {
   const name = document.getElementById('newSkillName').value.trim();
   if (!name) return toast(t('messages.skillNameRequired'));
@@ -2841,13 +3511,10 @@ function addSkill() {
   const stationId = document.getElementById('newSkillStation').value;
   if (!partId) return toast(t('messages.partSelectRequired'));
   if (!stationId) return toast(t('messages.stationSelectRequired'));
-  const id = uid('sk');
-  state.skills.push({ id, name, partId, stationId, category: partName(partId), description: '', isCritical: true, usesLevelStep: true, active: true });
-  state.levelTemplates.push(...createStarterLevelsForSkill(id, stationId));
   const station = byId(state.stations, stationId);
-  if (station) station.requiredSkillIds = Array.from(new Set([...(station.requiredSkillIds || []), id]));
-  selectedSkillId = id;
-  saveState(false); render(); toast(t('messages.skillAdded'));
+  if (!station) return toast(t('messages.stationSelectRequired'));
+  selectedSkillId = createSkillForStation(station, name);
+  saveState(); render(); toast(t('messages.skillAdded'));
 }
 function deleteSkill(id) {
   if (!confirm(t('messages.skillDeleteConfirm'))) return;
@@ -2855,7 +3522,7 @@ function deleteSkill(id) {
   state.levelTemplates = state.levelTemplates.filter((l) => l.skillId !== id);
   state.employees.forEach((emp) => { if (emp.assignedSkills) delete emp.assignedSkills[id]; });
   selectedSkillId = state.skills[0]?.id || '';
-  saveState(false); render();
+  saveState(); render();
 }
 function addLevel(skillId = '') {
   const targetSkillId = skillId || selectedSkillId;
@@ -2868,11 +3535,11 @@ function addLevel(skillId = '') {
   const exists = state.levelTemplates.some((tpl) => tpl.skillId === targetSkillId && Number(tpl.levelNumber) === levelNumber && Number(tpl.stepNumber) === stepNumber);
   if (exists && !confirm(t('messages.levelExistsConfirm'))) return;
   state.levelTemplates.push(makeLevelTemplate(targetSkillId, skill?.stationId, levelNumber, stepNumber, description, state.levelTemplates.length + 1));
-  saveState(false); render(); toast(t('messages.levelAdded'));
+  saveState(); render(); toast(t('messages.levelAdded'));
 }
 function deleteLevel(id) {
   state.levelTemplates = state.levelTemplates.filter((l) => l.id !== id);
-  saveState(false); render();
+  saveState(); render();
 }
 function addEmployee() {
   const name = document.getElementById('newEmpName').value.trim();
@@ -2884,19 +3551,19 @@ function addEmployee() {
     saturdayMultiplier: 1.25, sundayMultiplier: 1.5, publicHolidayMultiplier: 2.25, maxWeeklyHours: num(document.getElementById('newEmpMax').value, 38), preferredWeeklyHours: 0,
     availability: defaultAvailability('10:00', '22:00'), active: true, notes: '', assignedSkills: {}
   });
-  saveState(false); render(); toast(t('messages.employeeAdded'));
+  saveState(); render(); toast(t('messages.employeeAdded'));
 }
 function deleteEmployee(id) {
   if (!confirm(t('messages.employeeDeleteConfirm'))) return;
   state.employees = state.employees.filter((emp) => emp.id !== id);
-  Object.keys(state.schedule).forEach((key) => { if (state.schedule[key] === id) delete state.schedule[key]; });
-  saveState(false); render();
+  removeAssignmentsWhere((key, employeeId) => employeeId === id);
+  saveState(); render();
 }
 function toggleEmployee(id) {
   const emp = byId(state.employees, id);
   if (!emp) return;
   emp.active = !emp.active;
-  saveState(false); render();
+  saveState(); render();
 }
 function refreshNewSkillStationControl() {
   const partSelect = document.getElementById('newSkillPart');
@@ -2910,81 +3577,18 @@ function refreshRequirementStationControl(reqId) {
   if (!partSelect || !stationSelect) return;
   stationSelect.innerHTML = stationOptions('', partSelect.value, true);
 }
-function refreshMemberStationControl(empId) {
-  const partSelect = document.querySelector(`[data-field="memberSkillPart"][data-emp="${empId}"]`);
-  const stationSelect = document.querySelector(`[data-field="memberSkillStation"][data-emp="${empId}"]`);
-  if (!partSelect || !stationSelect) return;
-  const firstStation = firstStationForPart(partSelect.value);
-  stationSelect.innerHTML = stationOptions(firstStation, partSelect.value, true);
-  stationSelect.value = firstStation;
-  refreshMemberSkillControls(empId);
-}
-function refreshMemberSkillControls(empId) {
-  const stationSelect = document.querySelector(`[data-field="memberSkillStation"][data-emp="${empId}"]`);
-  const skillSelect = document.querySelector(`[data-field="memberSkillSelect"][data-emp="${empId}"]`);
-  if (!stationSelect || !skillSelect) return;
-  const firstSkill = firstSkillForStation(stationSelect.value);
-  skillSelect.innerHTML = memberSkillSelectOptions(firstSkill, stationSelect.value);
-  skillSelect.value = firstSkill;
-  refreshMemberLevelControl(empId);
-}
-function refreshMemberLevelControl(empId) {
-  const skillSelect = document.querySelector(`[data-field="memberSkillSelect"][data-emp="${empId}"]`);
-  const levelSelect = document.querySelector(`[data-field="memberLevelSelect"][data-emp="${empId}"]`);
-  if (!skillSelect || !levelSelect) return;
-  const skillId = skillSelect.value;
-  const firstLevel = levelsForSkill(skillId)[0] || 1;
-  levelSelect.innerHTML = memberLevelOptions(skillId, firstLevel);
-  levelSelect.value = String(firstLevel);
-  refreshMemberStepControl(empId);
-}
-function refreshMemberStepControl(empId) {
-  const skillSelect = document.querySelector(`[data-field="memberSkillSelect"][data-emp="${empId}"]`);
-  const levelSelect = document.querySelector(`[data-field="memberLevelSelect"][data-emp="${empId}"]`);
-  const stepSelect = document.querySelector(`[data-field="memberStepSelect"][data-emp="${empId}"]`);
-  if (!skillSelect || !levelSelect || !stepSelect) return;
-  const skillId = skillSelect.value;
-  const level = levelSelect.value || levelsForSkill(skillId)[0] || 1;
-  const firstStep = stepsForSkill(skillId, level)[0] || 1;
-  stepSelect.innerHTML = memberStepOptions(skillId, level, firstStep);
-  stepSelect.value = String(firstStep);
-}
-function assignSkillToEmployee(empId) {
-  const emp = byId(state.employees, empId);
-  if (!emp) return;
-  const skillSelect = document.querySelector(`[data-field="memberSkillSelect"][data-emp="${empId}"]`);
-  const levelSelect = document.querySelector(`[data-field="memberLevelSelect"][data-emp="${empId}"]`);
-  const stepSelect = document.querySelector(`[data-field="memberStepSelect"][data-emp="${empId}"]`);
-  const skillId = skillSelect?.value;
-  const levelRaw = levelSelect?.value;
-  const stepRaw = stepSelect?.value;
-  if (!skillId) return toast(t('messages.skillSelectRequired'));
-  if (!levelRaw) return toast(t('messages.levelSelectRequired'));
-  if (!stepRaw) return toast(t('messages.stepSelectRequired'));
-  const skill = byId(state.skills, skillId);
-  if (!skill) return toast(t('messages.skillNotFound'));
-  emp.assignedSkills = emp.assignedSkills || {};
-  emp.assignedSkills[skillId] = { level: num(levelRaw), step: num(stepRaw), note: '' };
-  saveState(false); render(); toast(t('messages.skillSaved', { skill: skill.name, level: levelRaw, step: stepRaw }));
-}
-function removeEmployeeSkill(empId, skillId) {
-  const emp = byId(state.employees, empId);
-  if (!emp?.assignedSkills) return;
-  delete emp.assignedSkills[skillId];
-  saveState(false); render();
-}
 function addRequirement() {
   const label = document.getElementById('newReqLabel').value.trim() || 'New Block';
   const dayOfWeek = document.getElementById('newReqDay').value;
   selectedRequirementDay = dayOfWeek;
   state.requirements.push({ id: uid('req'), dayOfWeek, startTime: document.getElementById('newReqStart').value, endTime: document.getElementById('newReqEnd').value, label, minTotalStaff: 0, recommendedTotalStaff: 0, isPeak: document.getElementById('newReqPeak').value === 'true', needsHandover: false, handoverMinutes: 0, notes: '', stationRequirements: [] });
-  saveState(false); render(); toast(t('messages.requirementAdded'));
+  saveState(); render(); toast(t('messages.requirementAdded'));
 }
 function deleteRequirement(id) {
   if (!confirm(t('messages.requirementDeleteConfirm'))) return;
   state.requirements = state.requirements.filter((req) => req.id !== id);
-  Object.keys(state.schedule).forEach((key) => { if (parseAssignmentKey(key).reqId === id) delete state.schedule[key]; });
-  saveState(false); render();
+  removeAssignmentsWhere((key) => parseAssignmentKey(key).reqId === id);
+  saveState(); render();
 }
 function addStationRequirement(reqId) {
   const req = getReqById(reqId);
@@ -2999,7 +3603,7 @@ function addStationRequirement(reqId) {
   req.stationRequirements.push({ id: uid('sreq'), partId: part, stationId: station, requiredSkillId: skill, requiredCount: 1, minLevel: level, minStep: step, needsLeader: false, canUseLowerStepAsEmergency: true });
   req.minTotalStaff = req.stationRequirements.length;
   req.recommendedTotalStaff = req.minTotalStaff;
-  saveState(false); render(); toast(t('messages.stationReqAdded'));
+  saveState(); render(); toast(t('messages.stationReqAdded'));
 }
 
 function cloneStationRequirement(reqId, sreqId) {
@@ -3009,7 +3613,7 @@ function cloneStationRequirement(reqId, sreqId) {
   req.stationRequirements.push({ ...source, id: uid('sreq'), requiredCount: 1 });
   req.minTotalStaff = req.stationRequirements.length;
   req.recommendedTotalStaff = req.minTotalStaff;
-  saveState(false); render(); toast(t('messages.stationReqCloned'));
+  saveState(); render(); toast(t('messages.stationReqCloned'));
 }
 
 function deleteStationRequirement(reqId, sreqId) {
@@ -3018,15 +3622,16 @@ function deleteStationRequirement(reqId, sreqId) {
   req.stationRequirements = req.stationRequirements.filter((r) => r.id !== sreqId);
   req.minTotalStaff = req.stationRequirements.length;
   req.recommendedTotalStaff = req.minTotalStaff;
-  Object.keys(state.schedule).forEach((key) => { const parsed = parseAssignmentKey(key); if (parsed.reqId === reqId && parsed.stationReqId === sreqId) delete state.schedule[key]; });
-  saveState(false); render();
+  removeAssignmentsWhere((key) => { const parsed = parseAssignmentKey(key); return parsed.reqId === reqId && parsed.stationReqId === sreqId; });
+  saveState(); render();
 }
 
 function exportRosterCsv() {
-  const rows = [['Day','Time','Block','Part','Station','Required Skill','Min Level','Min Step','Employee','Status']];
+  const rows = [['Date','Day','Time','Block','Part','Station','Required Skill','Min Level','Min Step','Employee','Status']];
   getRequirementSeatRows().forEach(({ req, sreq, key }) => {
     const status = getAssignmentStatus(req, sreq, key);
     rows.push([
+      dateForDay(req.dayOfWeek),
       dayLabel(req.dayOfWeek),
       `${req.startTime}-${req.endTime}`,
       req.label,
@@ -3044,7 +3649,7 @@ function exportRosterCsv() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'skillshift-roster.csv';
+  a.download = `skillshift-roster-${activeWeekStart()}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -3066,7 +3671,7 @@ function importJson(file) {
     try {
       const parsed = JSON.parse(reader.result);
       state = migrateState(parsed);
-      saveState(false);
+      saveState();
       render();
       toast(t('messages.jsonImported'));
     } catch (err) {
@@ -3089,13 +3694,8 @@ function registerServiceWorker() {
 function init() {
   document.addEventListener('click', handleClick);
   document.addEventListener('change', handleChange);
-  document.getElementById('saveBtn').addEventListener('click', () => saveState(true));
-  document.getElementById('exportBtn').addEventListener('click', exportJson);
-  document.getElementById('importFile').addEventListener('change', (e) => {
-    importJson(e.target.files[0]);
-    e.target.value = '';
-  });
   registerServiceWorker();
+  window.matchMedia?.(NARROW_SCREEN_QUERY).addEventListener?.('change', () => render());
   render();
 }
 

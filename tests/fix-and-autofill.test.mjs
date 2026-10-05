@@ -8,7 +8,7 @@ const { app, elements } = t;
 beforeEach(() => t.reset());
 
 test("seat issues carry their slot and render a fix button", () => {
-  const issue = app.calculateValidation().find((i) => i.type === "미배정");
+  const issue = app.calculateValidation().find((i) => i.kind === "unassigned");
   assert.equal(issue.slotIndex, 0);
   app.renderValidation();
   const html = elements.get("validation").innerHTML;
@@ -42,9 +42,9 @@ test("auto-fill only places fully fitting staff, without double-booking", () => 
     assert.equal(status.category, "fit", `${key} -> ${employeeId}`);
   }
   const issues = app.calculateValidation();
-  assert.equal(issues.filter((i) => i.type === "중복 배치").length, 0);
-  assert.equal(issues.filter((i) => i.type === "주간 최대시간 초과").length, 0);
-  assert.equal(issues.filter((i) => i.type === "미배정").length, skipped);
+  assert.equal(issues.filter((i) => i.kind === "doubleBooked").length, 0);
+  assert.equal(issues.filter((i) => i.kind === "overMaxHours").length, 0);
+  assert.equal(issues.filter((i) => i.kind === "unassigned").length, skipped);
 });
 
 test("auto-fill keeps existing assignments and undo only removes what it added", () => {

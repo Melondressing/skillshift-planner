@@ -68,7 +68,7 @@ function createLocalStorage(initial = {}) {
 
 // Runs app.js inside a VM with minimal browser stubs and returns its global
 // context, so its top-level functions (and state via getState/setState) can be called.
-export function loadApp({ localStorage = {} } = {}) {
+export function loadApp({ localStorage = {}, narrowScreen = false } = {}) {
   const elements = new Map();
   const documentStub = {
     getElementById(id) {
@@ -91,6 +91,7 @@ export function loadApp({ localStorage = {} } = {}) {
     console,
     window: {
       addEventListener() {},
+      matchMedia: () => ({ matches: narrowScreen, addEventListener() {} }),
     },
     document: documentStub,
     navigator: {},
