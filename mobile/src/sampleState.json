@@ -1,5 +1,5 @@
 {
-  "appVersion": 4,
+  "appVersion": 5,
   "settings": {
     "language": "ko",
     "companyName": "",
@@ -4628,7 +4628,9 @@
       ]
     }
   ],
+  "weekStart": "2026-10-05",
   "schedule": {},
+  "savedWeeks": {},
   "trainingRecords": [],
   "promotionChecklists": [],
   "attendanceRecords": [],

@@ -48,8 +48,8 @@ const I18N = {
       parts: '파트 / 스테이션',
       skills: '스킬',
       members: '직원',
-      requirements: '요구사항',
-      schedule: '스케줄 보드',
+      requirements: '필요 인원',
+      schedule: '근무표 배정',
       labor: '인건비',
       validation: '검증',
       settings: '설정',
@@ -354,6 +354,7 @@ const I18N = {
       assignmentsLabel: '{day} 배정을 다른 요일의 같은 자리에 복사:',
       button: '복사',
       pickDays: '복사할 요일을 고르세요',
+      nothing: '고른 요일의 같은 자리가 이미 똑같아요',
       requirementsConfirm: '{days}의 기존 시간 블록과 그 배정이 바뀝니다. 계속할까요?',
       requirementsDone: '{days}개 요일에 시간 블록 {blocks}개를 복사했어요',
       assignmentsResult: '{copied}자리를 복사했어요. 그중 {check}자리는 조건 확인이 필요하고, {unmatched}자리는 같은 시간 블록이 없어 건너뛰었어요.',
@@ -822,6 +823,7 @@ const I18N = {
       assignmentsLabel: 'Copy {day} assignments to the same seats on:',
       button: 'Copy',
       pickDays: 'Pick the days to copy to',
+      nothing: 'Those days already have the same people in these seats',
       requirementsConfirm: 'This replaces the time blocks and their assignments on {days}. Continue?',
       requirementsDone: 'Copied {blocks} time blocks to {days} days',
       assignmentsResult: 'Copied {copied} seats. {check} need a check, and {unmatched} were skipped because that day has no matching time block.',
@@ -3344,6 +3346,7 @@ function handleClick(e) {
     const targets = selectedCopyTargets('assignments');
     if (!targets.length) { toast(t('copy.pickDays')); return; }
     const result = copyDayAssignments(target.dataset.day, targets);
+    if (!result.changes.length && !result.unmatched) { toast(t('copy.nothing')); return; }
     lastBulkChange = { textKey: 'copy.assignmentsResult', vars: { copied: result.changes.length, check: result.needsCheck, unmatched: result.unmatched }, changes: result.changes };
     saveState();
     render();
