@@ -105,11 +105,6 @@ const I18N = {
       requirementDeleteConfirm: '시간 블록을 삭제할까요? 관련 스케줄 배정도 제거됩니다.',
       stationReqAdded: '필요 자리 1개 추가됨',
       stationReqCloned: '같은 자리 1개 추가됨',
-      skillSelectRequired: 'Skill을 선택하세요',
-      levelSelectRequired: 'Level을 선택하세요',
-      stepSelectRequired: 'Step을 선택하세요',
-      skillNotFound: 'Skill을 찾을 수 없습니다.',
-      skillSaved: '{skill} Level {level} / Step {step} 저장됨',
       levelExistsConfirm: '같은 Skill 안에 동일한 Level / Step이 이미 있습니다. 그래도 추가할까요?',
       scheduled: '배정됨',
       languageSaved: '언어가 변경되었습니다',
@@ -212,6 +207,10 @@ const I18N = {
       deleteStation: '삭제',
     },
     skills: {
+      advancedTitle: '고급: 스킬과 숙련도 단계',
+      advancedHelp: '스테이션을 추가하면 같은 이름의 스킬과 기본 Level/Step 단계가 자동으로 만들어집니다. 단계 설명을 바꾸거나 한 스테이션에 스킬을 더 두고 싶을 때만 여세요.',
+      advancedOpen: '열기',
+      advancedClose: '닫기',
       title: 'Skills / Levels',
       subtitle: '왼쪽에서 Skill을 선택하면 오른쪽에서 그 Skill에 속한 Level / Step을 관리한다. Level / Step은 Skill 밖의 별도 분류가 아니다.',
       guideTitle: '구조 정리',
@@ -222,9 +221,6 @@ const I18N = {
       noSkillSelectedText: '왼쪽에서 Skill을 추가하거나 선택하면 Level / Step 관리 패널이 열린다.',
       noSkillSteps: '이 Skill에는 아직 Level / Step이 없다. 위에서 단계를 추가해라.',
       noSkills: '아직 등록된 Skill이 없다.',
-      chooseSkill: 'Skill 선택',
-      chooseLevel: 'Level 선택',
-      chooseStep: 'Step 선택',
       addLevel: '단계 추가',
       deleteLevel: '삭제',
       deleteSkill: '삭제',
@@ -241,10 +237,11 @@ const I18N = {
       maxHours: '최대 주간시간',
       addEmployee: '직원 추가',
       availability: '근무 가능 요일/시간',
-      skillLevelStep: 'Skill별 Level / Step 지정',
-      skillStepHelp: 'Skill 안에 정의된 단계 중 하나를 선택한다.',
-      assignSkill: 'Skill 추가/갱신',
-      removeSkill: '제거',
+      skillLevelStep: '할 수 있는 스테이션',
+      skillStepHelp: '스테이션마다 숙련도(Level-Step)를 고르세요. "못함"이면 그 자리에 추천되지 않습니다.',
+      cannotDo: '못함',
+      otherSkills: '기타 스킬',
+      noStationsYet: '먼저 매장 설정에서 스테이션을 추가하세요.',
       noEmployeesHere: '이 Part에 등록된 직원 없음',
       noEmployeesVisible: '선택한 Part에 표시할 직원이 없다.',
       weekHours: '이번 주',
@@ -436,11 +433,6 @@ const I18N = {
       requirementDeleteConfirm: 'Delete this time block? Related schedule assignments will also be removed.',
       stationReqAdded: 'Added one required seat',
       stationReqCloned: 'Cloned one required seat',
-      skillSelectRequired: 'Select a Skill',
-      levelSelectRequired: 'Select a Level',
-      stepSelectRequired: 'Select a Step',
-      skillNotFound: 'Could not find the Skill',
-      skillSaved: '{skill} Level {level} / Step {step} saved',
       levelExistsConfirm: 'This Skill already has the same Level / Step. Add it anyway?',
       scheduled: 'Assigned',
       languageSaved: 'Language changed',
@@ -543,6 +535,10 @@ const I18N = {
       deleteStation: 'Delete',
     },
     skills: {
+      advancedTitle: 'Advanced: skills and proficiency steps',
+      advancedHelp: 'Adding a station creates a matching skill with default Level/Step steps. Open this only to edit step descriptions or give a station extra skills.',
+      advancedOpen: 'Open',
+      advancedClose: 'Close',
       title: 'Skills / Levels',
       subtitle: 'Select a Skill on the left, then manage its Level / Step definitions on the right. Level / Step lives inside the Skill.',
       guideTitle: 'Structure',
@@ -553,9 +549,6 @@ const I18N = {
       noSkillSelectedText: 'Add or choose a Skill on the left to open the Level / Step panel.',
       noSkillSteps: 'This Skill has no Level / Step yet. Add one above.',
       noSkills: 'No Skills yet.',
-      chooseSkill: 'Choose Skill',
-      chooseLevel: 'Choose Level',
-      chooseStep: 'Choose Step',
       addLevel: 'Add step',
       deleteLevel: 'Delete',
       deleteSkill: 'Delete',
@@ -572,10 +565,11 @@ const I18N = {
       maxHours: 'Max weekly hours',
       addEmployee: 'Add employee',
       availability: 'Availability',
-      skillLevelStep: 'Assign Skill Level / Step',
-      skillStepHelp: 'Pick one of the levels defined inside the selected Skill.',
-      assignSkill: 'Add / update Skill',
-      removeSkill: 'Remove',
+      skillLevelStep: 'Stations they can work',
+      skillStepHelp: 'Pick a proficiency (Level-Step) per station. "Can\'t" means they are never suggested there.',
+      cannotDo: 'Can\'t',
+      otherSkills: 'Other skills',
+      noStationsYet: 'Add stations in Store setup first.',
       noEmployeesHere: 'No employees in this Part',
       noEmployeesVisible: 'No employees to show for the selected Part.',
       weekHours: 'This week',
@@ -743,6 +737,7 @@ let scheduleView = 'sheet';
 let selectedScheduleDay = 'monday';
 let selectedRequirementDay = 'monday';
 let selectedMemberPart = 'all';
+let skillsAdvancedOpen = false;
 let recommendationContext = null;
 let replacementContext = null;
 let lastAutoFill = null;
@@ -1737,49 +1732,75 @@ function stationOptions(selected = '', partFilter = '', compact = false) {
 function firstStationForPart(partId) {
   return state.stations.filter((st) => st.partId === partId).sort(sortStations)[0]?.id || '';
 }
-function firstSkillForStation(stationId) {
-  return state.skills
-    .filter((sk) => !stationId || sk.stationId === stationId)
-    .sort((a, b) => a.name.localeCompare(b.name))[0]?.id || '';
-}
 function getSkillLevelTemplates(skillId) {
   return state.levelTemplates
     .filter((tpl) => tpl.skillId === skillId)
     .sort((a, b) => Number(a.levelNumber) - Number(b.levelNumber) || Number(a.stepNumber) - Number(b.stepNumber));
 }
-function memberSkillSelectOptions(selected = '', stationFilter = '') {
-  return state.skills
-    .filter((skill) => !stationFilter || skill.stationId === stationFilter)
-    .slice()
-    .sort(compareSkills)
-    .map((skill) => `<option value="${skill.id}" ${selected === skill.id ? 'selected' : ''}>${escapeHtml(skill.name)}</option>`)
-    .join('');
+// Level/Step choices for a skill, e.g. [{ level: 1, step: 1 }, …], plus the
+// employee's current value when no template matches it.
+function levelStepChoices(skillId, current = null) {
+  const seen = new Set();
+  const choices = [];
+  const add = (level, step) => {
+    const key = `${level}-${step}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    choices.push({ level, step, key });
+  };
+  getSkillLevelTemplates(skillId).forEach((tpl) => add(num(tpl.levelNumber), num(tpl.stepNumber)));
+  if (!choices.length) add(1, 1);
+  if (current) add(num(current.level), num(current.step));
+  return choices.sort((a, b) => a.level - b.level || a.step - b.step);
 }
-function getMemberSkillDefaults(emp) {
-  const partId = emp?.partId || state.parts[0]?.id || '';
-  const stationId = firstStationForPart(partId) || state.stations[0]?.id || '';
-  const skillId = firstSkillForStation(stationId) || state.skills[0]?.id || '';
-  const level = levelsForSkill(skillId)[0] || 1;
-  const step = stepsForSkill(skillId, level)[0] || 1;
-  return { partId, stationId, skillId, level, step };
+
+// Skills grouped under the station they belong to, stations in part order.
+// Skills whose station no longer exists come last.
+function skillsByStation() {
+  const groups = state.stations.slice().sort(sortStations)
+    .map((station) => ({ station, skills: state.skills.filter((skill) => skill.stationId === station.id) }))
+    .filter((group) => group.skills.length);
+  const orphans = state.skills.filter((skill) => !byId(state.stations, skill.stationId));
+  if (orphans.length) groups.push({ station: null, skills: orphans });
+  return groups;
 }
-function uniqueNumbers(values) {
-  return [...new Set(values.map((v) => Number(v)).filter((v) => Number.isFinite(v)))].sort((a, b) => a - b);
+
+function renderMemberStationSkills(emp) {
+  const groups = skillsByStation();
+  if (!groups.length) return `<p class="muted small-text">${t('members.noStationsYet')}</p>`;
+  let lastPart = null;
+  return `<div class="station-skill-list">${groups.map(({ station, skills }) => {
+    const partId = station?.partId || '';
+    const partHead = partId !== lastPart ? `<div class="station-skill-part">${escapeHtml(station ? partName(partId) : t('members.otherSkills'))}</div>` : '';
+    lastPart = partId;
+    return partHead + skills.map((skill) => {
+      const current = emp.assignedSkills?.[skill.id] || null;
+      const value = current ? `${num(current.level)}-${num(current.step)}` : '';
+      const label = station ? (skills.length > 1 ? `${station.name} · ${skill.name}` : station.name) : skill.name;
+      return `<label class="station-skill-row ${current ? 'has-skill' : ''}">
+        <span>${escapeHtml(label)}</span>
+        <select data-action="member-skill-level" data-emp="${emp.id}" data-skill="${skill.id}" aria-label="${escapeHtml(label)}">
+          <option value="">${t('members.cannotDo')}</option>
+          ${levelStepChoices(skill.id, current).map((c) => `<option value="${c.key}" ${c.key === value ? 'selected' : ''}>L${c.level}-S${c.step}</option>`).join('')}
+        </select>
+      </label>`;
+    }).join('');
+  }).join('')}</div>`;
 }
-function levelsForSkill(skillId) {
-  const levels = uniqueNumbers(getSkillLevelTemplates(skillId).map((tpl) => tpl.levelNumber));
-  return levels.length ? levels : [1];
+
+// Sets (or clears, with an empty value) one employee's Level/Step for a skill.
+function setEmployeeSkillLevel(empId, skillId, value) {
+  const emp = byId(state.employees, empId);
+  if (!emp || !byId(state.skills, skillId)) return;
+  emp.assignedSkills = emp.assignedSkills || {};
+  if (!value) {
+    delete emp.assignedSkills[skillId];
+    return;
+  }
+  const [level, step] = String(value).split('-').map((n) => num(n, 1));
+  emp.assignedSkills[skillId] = { note: '', ...emp.assignedSkills[skillId], level, step };
 }
-function stepsForSkill(skillId, levelNumber) {
-  const steps = uniqueNumbers(getSkillLevelTemplates(skillId).filter((tpl) => Number(tpl.levelNumber) === Number(levelNumber)).map((tpl) => tpl.stepNumber));
-  return steps.length ? steps : [1];
-}
-function memberLevelOptions(skillId, selected = '') {
-  return levelsForSkill(skillId).map((level) => `<option value="${level}" ${String(selected) === String(level) ? 'selected' : ''}>Level ${level}</option>`).join('');
-}
-function memberStepOptions(skillId, levelNumber, selected = '') {
-  return stepsForSkill(skillId, levelNumber).map((step) => `<option value="${step}" ${String(selected) === String(step) ? 'selected' : ''}>Step ${step}</option>`).join('');
-}
+
 function compareSkills(a, b) {
   return partName(a.partId).localeCompare(partName(b.partId)) || stationName(a.stationId).localeCompare(stationName(b.stationId)) || a.name.localeCompare(b.name);
 }
@@ -1791,6 +1812,17 @@ function sortStations(a, b) {
 
 function renderSkills() {
   const el = document.getElementById('skills');
+  if (!skillsAdvancedOpen) {
+    el.innerHTML = `
+      <div class="card advanced-toggle">
+        <div>
+          <h3>${t('skills.advancedTitle')}</h3>
+          <p class="small-text">${t('skills.advancedHelp')}</p>
+        </div>
+        <button class="btn secondary small" type="button" data-action="toggle-advanced-skills" aria-expanded="false">${t('skills.advancedOpen')}</button>
+      </div>`;
+    return;
+  }
   if (!state.skills.some((skill) => skill.id === selectedSkillId)) selectedSkillId = state.skills[0]?.id || '';
   const selectedSkill = byId(state.skills, selectedSkillId);
   const selectedTemplates = selectedSkill ? getSkillLevelTemplates(selectedSkill.id) : [];
@@ -1807,9 +1839,10 @@ function renderSkills() {
   el.innerHTML = `
     <div class="section-head">
       <div>
-        <h2>${t('tabs.skills')}</h2>
+        <h2>${t('skills.advancedTitle')}</h2>
         <p>${t('skills.subtitle')}</p>
       </div>
+      <button class="btn secondary small" type="button" data-action="toggle-advanced-skills" aria-expanded="true">${t('skills.advancedClose')}</button>
     </div>
 
     <div class="card req-guide">
@@ -1994,22 +2027,7 @@ function renderEmployeeCard(emp) {
       <div>
         <h4>${t('members.skillLevelStep')}</h4>
         <p class="small-text">${t('members.skillStepHelp')}</p>
-        ${(() => {
-          const pick = getMemberSkillDefaults(emp);
-          return `
-            <div class="form-row compact member-skill-editor">
-              <label>Part 선택<select data-action="member-skill-part" data-field="memberSkillPart" data-emp="${emp.id}">${partOptions(pick.partId)}</select></label>
-              <label>Section 선택<select data-action="member-skill-station" data-field="memberSkillStation" data-emp="${emp.id}">${stationOptions(pick.stationId, pick.partId, true)}</select></label>
-              <label>Skill 선택<select data-action="member-skill-select" data-field="memberSkillSelect" data-emp="${emp.id}">${memberSkillSelectOptions(pick.skillId, pick.stationId)}</select></label>
-              <label>Level 선택<select data-action="member-level-select" data-field="memberLevelSelect" data-emp="${emp.id}">${memberLevelOptions(pick.skillId, pick.level)}</select></label>
-              <label>Step 선택<select data-field="memberStepSelect" data-emp="${emp.id}">${memberStepOptions(pick.skillId, pick.level, pick.step)}</select></label>
-            </div>
-          `;
-        })()}
-        <button class="btn small" data-action="assign-skill" data-id="${emp.id}">${t('members.assignSkill')}</button>
-        <div style="margin-top:10px;">
-          ${Object.keys(emp.assignedSkills || {}).map((skillId) => `<button class="btn small ghost" data-action="remove-emp-skill" data-emp="${emp.id}" data-skill="${skillId}">${escapeHtml(skillName(skillId))} L${emp.assignedSkills[skillId].level}-S${emp.assignedSkills[skillId].step} ${t('members.removeSkill')}</button>`).join('')}
-        </div>
+        ${renderMemberStationSkills(emp)}
       </div>
     </div>
   `;
@@ -2733,6 +2751,7 @@ function handleClick(e) {
   if (action === 'add-station') addStation();
   if (action === 'delete-station') deleteStation(target.dataset.id);
   if (action === 'add-skill') addSkill();
+  if (action === 'toggle-advanced-skills') { skillsAdvancedOpen = !skillsAdvancedOpen; render(); }
   if (action === 'select-skill') { selectedSkillId = target.dataset.id; render(); }
   if (action === 'delete-skill') deleteSkill(target.dataset.id);
   if (action === 'add-level') addLevel(target.dataset.skill);
@@ -2740,8 +2759,6 @@ function handleClick(e) {
   if (action === 'add-employee') addEmployee();
   if (action === 'delete-employee') deleteEmployee(target.dataset.id);
   if (action === 'toggle-employee') toggleEmployee(target.dataset.id);
-  if (action === 'assign-skill') assignSkillToEmployee(target.dataset.id);
-  if (action === 'remove-emp-skill') removeEmployeeSkill(target.dataset.emp, target.dataset.skill);
   if (action === 'add-requirement') addRequirement();
   if (action === 'delete-requirement') deleteRequirement(target.dataset.id);
   if (action === 'add-station-req') addStationRequirement(target.dataset.id);
@@ -2811,20 +2828,10 @@ function handleChange(e) {
     refreshNewSkillStationControl();
     return;
   }
-  if (action === 'member-skill-part') {
-    refreshMemberStationControl(el.dataset.emp);
-    return;
-  }
-  if (action === 'member-skill-station') {
-    refreshMemberSkillControls(el.dataset.emp);
-    return;
-  }
-  if (action === 'member-skill-select') {
-    refreshMemberLevelControl(el.dataset.emp);
-    return;
-  }
-  if (action === 'member-level-select') {
-    refreshMemberStepControl(el.dataset.emp);
+  if (action === 'member-skill-level') {
+    setEmployeeSkillLevel(el.dataset.emp, el.dataset.skill, el.value);
+    saveState();
+    render();
     return;
   }
   if (action === 'req-part-select') {
@@ -2868,7 +2875,9 @@ function addStation() {
   if (!name) return toast(t('messages.stationNameRequired'));
   const partId = document.getElementById('newStationPart').value;
   if (!partId) return toast(t('messages.partSelectRequired'));
-  state.stations.push({ id: uid('st'), partId, name, description: document.getElementById('newStationDesc').value.trim(), requiredSkillIds: [], sortOrder: state.stations.length + 1, active: true });
+  const station = { id: uid('st'), partId, name, description: document.getElementById('newStationDesc').value.trim(), requiredSkillIds: [], sortOrder: state.stations.length + 1, active: true };
+  state.stations.push(station);
+  createSkillForStation(station, `${partName(partId)} ${name}`);
   saveState(); render(); toast(t('messages.stationAdded'));
 }
 function deleteStation(id) {
@@ -2909,6 +2918,16 @@ function createStarterLevelsForSkill(skillId, stationId = '') {
     makeLevelTemplate(skillId, stationId, levelNumber, stepNumber, description, state.levelTemplates.length + index + 1));
 }
 
+// Every station gets a skill with starter Level/Step steps, so staff can be
+// marked as able to work a station without setting up skills separately.
+function createSkillForStation(station, name) {
+  const id = uid('sk');
+  state.skills.push({ id, name, partId: station.partId, stationId: station.id, category: partName(station.partId), description: '', isCritical: true, usesLevelStep: true, active: true });
+  state.levelTemplates.push(...createStarterLevelsForSkill(id, station.id));
+  station.requiredSkillIds = Array.from(new Set([...(station.requiredSkillIds || []), id]));
+  return id;
+}
+
 function addSkill() {
   const name = document.getElementById('newSkillName').value.trim();
   if (!name) return toast(t('messages.skillNameRequired'));
@@ -2916,12 +2935,9 @@ function addSkill() {
   const stationId = document.getElementById('newSkillStation').value;
   if (!partId) return toast(t('messages.partSelectRequired'));
   if (!stationId) return toast(t('messages.stationSelectRequired'));
-  const id = uid('sk');
-  state.skills.push({ id, name, partId, stationId, category: partName(partId), description: '', isCritical: true, usesLevelStep: true, active: true });
-  state.levelTemplates.push(...createStarterLevelsForSkill(id, stationId));
   const station = byId(state.stations, stationId);
-  if (station) station.requiredSkillIds = Array.from(new Set([...(station.requiredSkillIds || []), id]));
-  selectedSkillId = id;
+  if (!station) return toast(t('messages.stationSelectRequired'));
+  selectedSkillId = createSkillForStation(station, name);
   saveState(); render(); toast(t('messages.skillAdded'));
 }
 function deleteSkill(id) {
@@ -2984,69 +3000,6 @@ function refreshRequirementStationControl(reqId) {
   const stationSelect = document.querySelector(`[data-req-field="station"][data-req="${reqId}"]`);
   if (!partSelect || !stationSelect) return;
   stationSelect.innerHTML = stationOptions('', partSelect.value, true);
-}
-function refreshMemberStationControl(empId) {
-  const partSelect = document.querySelector(`[data-field="memberSkillPart"][data-emp="${empId}"]`);
-  const stationSelect = document.querySelector(`[data-field="memberSkillStation"][data-emp="${empId}"]`);
-  if (!partSelect || !stationSelect) return;
-  const firstStation = firstStationForPart(partSelect.value);
-  stationSelect.innerHTML = stationOptions(firstStation, partSelect.value, true);
-  stationSelect.value = firstStation;
-  refreshMemberSkillControls(empId);
-}
-function refreshMemberSkillControls(empId) {
-  const stationSelect = document.querySelector(`[data-field="memberSkillStation"][data-emp="${empId}"]`);
-  const skillSelect = document.querySelector(`[data-field="memberSkillSelect"][data-emp="${empId}"]`);
-  if (!stationSelect || !skillSelect) return;
-  const firstSkill = firstSkillForStation(stationSelect.value);
-  skillSelect.innerHTML = memberSkillSelectOptions(firstSkill, stationSelect.value);
-  skillSelect.value = firstSkill;
-  refreshMemberLevelControl(empId);
-}
-function refreshMemberLevelControl(empId) {
-  const skillSelect = document.querySelector(`[data-field="memberSkillSelect"][data-emp="${empId}"]`);
-  const levelSelect = document.querySelector(`[data-field="memberLevelSelect"][data-emp="${empId}"]`);
-  if (!skillSelect || !levelSelect) return;
-  const skillId = skillSelect.value;
-  const firstLevel = levelsForSkill(skillId)[0] || 1;
-  levelSelect.innerHTML = memberLevelOptions(skillId, firstLevel);
-  levelSelect.value = String(firstLevel);
-  refreshMemberStepControl(empId);
-}
-function refreshMemberStepControl(empId) {
-  const skillSelect = document.querySelector(`[data-field="memberSkillSelect"][data-emp="${empId}"]`);
-  const levelSelect = document.querySelector(`[data-field="memberLevelSelect"][data-emp="${empId}"]`);
-  const stepSelect = document.querySelector(`[data-field="memberStepSelect"][data-emp="${empId}"]`);
-  if (!skillSelect || !levelSelect || !stepSelect) return;
-  const skillId = skillSelect.value;
-  const level = levelSelect.value || levelsForSkill(skillId)[0] || 1;
-  const firstStep = stepsForSkill(skillId, level)[0] || 1;
-  stepSelect.innerHTML = memberStepOptions(skillId, level, firstStep);
-  stepSelect.value = String(firstStep);
-}
-function assignSkillToEmployee(empId) {
-  const emp = byId(state.employees, empId);
-  if (!emp) return;
-  const skillSelect = document.querySelector(`[data-field="memberSkillSelect"][data-emp="${empId}"]`);
-  const levelSelect = document.querySelector(`[data-field="memberLevelSelect"][data-emp="${empId}"]`);
-  const stepSelect = document.querySelector(`[data-field="memberStepSelect"][data-emp="${empId}"]`);
-  const skillId = skillSelect?.value;
-  const levelRaw = levelSelect?.value;
-  const stepRaw = stepSelect?.value;
-  if (!skillId) return toast(t('messages.skillSelectRequired'));
-  if (!levelRaw) return toast(t('messages.levelSelectRequired'));
-  if (!stepRaw) return toast(t('messages.stepSelectRequired'));
-  const skill = byId(state.skills, skillId);
-  if (!skill) return toast(t('messages.skillNotFound'));
-  emp.assignedSkills = emp.assignedSkills || {};
-  emp.assignedSkills[skillId] = { level: num(levelRaw), step: num(stepRaw), note: '' };
-  saveState(); render(); toast(t('messages.skillSaved', { skill: skill.name, level: levelRaw, step: stepRaw }));
-}
-function removeEmployeeSkill(empId, skillId) {
-  const emp = byId(state.employees, empId);
-  if (!emp?.assignedSkills) return;
-  delete emp.assignedSkills[skillId];
-  saveState(); render();
 }
 function addRequirement() {
   const label = document.getElementById('newReqLabel').value.trim() || 'New Block';
