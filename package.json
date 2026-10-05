@@ -1,0 +1,11 @@
+{
+  "name": "skillshift-planner",
+  "private": true,
+  "scripts": {
+    "test": "node --test",
+    "export:state": "node scripts/export-default-state.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
