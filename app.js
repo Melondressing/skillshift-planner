@@ -1151,26 +1151,6 @@ function getRequirementSeatRows() {
   );
 }
 
-function employeeWeeklyHours(employeeId) {
-  return getAssignments().reduce((total, assignment) => {
-    if (assignment.employeeId !== employeeId) return total;
-    const req = getReqById(assignment.reqId);
-    if (!req) return total;
-    return total + durationHours(req.startTime, req.endTime);
-  }, 0);
-}
-
-function employeeWeeklyCost(employeeId) {
-  const employee = byId(state.employees, employeeId);
-  if (!employee) return 0;
-  return getAssignments().reduce((total, assignment) => {
-    if (assignment.employeeId !== employeeId) return total;
-    const req = getReqById(assignment.reqId);
-    if (!req) return total;
-    return total + durationHours(req.startTime, req.endTime) * getRate(employee, req.dayOfWeek);
-  }, 0);
-}
-
 function employeeWorkBreakdown(employeeId) {
   const employee = byId(state.employees, employeeId);
   const empty = {
@@ -1206,8 +1186,41 @@ function employeeWorkBreakdown(employeeId) {
   }, { ...empty });
 }
 
+function employeeWeeklyHours(employeeId) {
+  return employeeWorkBreakdown(employeeId).totalHours;
+}
+
+function employeeWeeklyCost(employeeId) {
+  return employeeWorkBreakdown(employeeId).totalCost;
+}
+
 function totalLaborCost() {
   return state.employees.reduce((total, emp) => total + employeeWeeklyCost(emp.id), 0);
+}
+
+// Hours and cost of the employees whose home Part is partId.
+function partLabor(partId) {
+  return state.employees
+    .filter((emp) => emp.partId === partId)
+    .reduce((acc, emp) => {
+      const bd = employeeWorkBreakdown(emp.id);
+      acc.hours += bd.totalHours;
+      acc.cost += bd.totalCost;
+      return acc;
+    }, { hours: 0, cost: 0 });
+}
+
+function laborSummary() {
+  const cost = totalLaborCost();
+  const budget = num(state.settings.laborBudget);
+  const ratio = budget ? (cost / budget) * 100 : 0;
+  const targetRatio = num(state.settings.targetLaborRatio) / 100;
+  const neededSales = targetRatio ? cost / targetRatio : 0;
+  const status = ratio > 100 ? 'danger' : ratio >= 90 ? 'warn' : '';
+  const budgetNote = ratio > 100
+    ? t('dashboard.overBudget', { amount: money(cost - budget) })
+    : t('dashboard.remainingBudget', { amount: money(budget - cost) });
+  return { cost, budget, ratio, neededSales, status, budgetNote };
 }
 
 function isEmployeeAvailable(employee, req) {
@@ -1289,13 +1302,15 @@ function getCandidateStatus(employee, req, stationReq, ignoreKey = '') {
     }
   }
 
-  if (hasOverlappingAssignment(employee.id, req, ignoreKey)) {
+  const overlapping = hasOverlappingAssignment(employee.id, req, ignoreKey);
+  if (overlapping) {
     score -= 90;
     reasons.push('같은 시간대 다른 배정 있음');
   }
 
   const projectedHours = employeeWeeklyHours(employee.id) + durationHours(req.startTime, req.endTime);
-  if (projectedHours > num(employee.maxWeeklyHours, 999)) {
+  const overMaxHours = projectedHours > num(employee.maxWeeklyHours, 999);
+  if (overMaxHours) {
     score -= 60;
     reasons.push(`최대 주간시간 초과 예상: ${projectedHours.toFixed(1)}h / ${employee.maxWeeklyHours}h`);
   } else {
@@ -1307,7 +1322,7 @@ function getCandidateStatus(employee, req, stationReq, ignoreKey = '') {
   reasons.push(`추가 인건비 ${money(addedCost)}`);
 
   let category = 'bad';
-  if (availability.status === 'ok' && skill.status === 'ok' && !hasOverlappingAssignment(employee.id, req, ignoreKey) && projectedHours <= num(employee.maxWeeklyHours, 999)) category = 'fit';
+  if (availability.status === 'ok' && skill.status === 'ok' && !overlapping && !overMaxHours) category = 'fit';
   else if (availability.status !== 'bad' && (skill.status === 'partial' || skill.status === 'ok') && score > 0) category = 'partial';
   else if (availability.status !== 'bad' && skill.status === 'emergency' && score > -20) category = 'emergency';
 
@@ -1420,26 +1435,18 @@ function metricCard(label, value, sub = '', status = '') {
 function renderDashboard() {
   const el = document.getElementById('dashboard');
   const totalHours = state.employees.reduce((sum, emp) => sum + employeeWeeklyHours(emp.id), 0);
-  const cost = totalLaborCost();
-  const budget = num(state.settings.laborBudget);
-  const ratio = budget ? (cost / budget) * 100 : 0;
-  const targetRatio = num(state.settings.targetLaborRatio) / 100;
-  const neededSales = targetRatio ? cost / targetRatio : 0;
+  const { cost, budget, ratio, neededSales, status, budgetNote } = laborSummary();
+  const budgetStatus = status || 'ok';
   const issues = calculateValidation();
   const highIssues = issues.filter((i) => i.severity === 'high').length;
   const missing = issues.filter((i) => i.type === '미배정').length;
   const skillIssues = issues.filter((i) => i.type.includes('Skill')).length;
   const replacementIssues = issues.filter((i) => i.type === '대체근무자 없음').length;
-  const budgetStatus = ratio > 100 ? 'danger' : ratio >= 90 ? 'warn' : 'ok';
   const assignedSlots = getAssignments().length;
   const totalSlots = getRequirementSeatRows().length;
   const completion = totalSlots ? (assignedSlots / totalSlots) * 100 : 0;
 
-  const partCosts = state.parts.map((part) => {
-    const empIds = state.employees.filter((emp) => emp.partId === part.id).map((emp) => emp.id);
-    const partCost = empIds.reduce((sum, id) => sum + employeeWeeklyCost(id), 0);
-    return `<span class="badge info">${escapeHtml(part.name)} ${money(partCost)}</span>`;
-  }).join('');
+  const partCosts = state.parts.map((part) => `<span class="badge info">${escapeHtml(part.name)} ${money(partLabor(part.id).cost)}</span>`).join('');
 
   el.innerHTML = `
     <div class="section-head">
@@ -1465,7 +1472,7 @@ function renderDashboard() {
     <div class="card" style="margin-top:14px;">
       <h3>${t('dashboard.budgetProgress')}</h3>
       <div class="progress ${budgetStatus}"><div style="width:${Math.min(ratio, 120)}%"></div></div>
-      <p class="small-text">${ratio > 100 ? t('dashboard.overBudget', { amount: money(cost - budget) }) : t('dashboard.remainingBudget', { amount: money(budget - cost) })}</p>
+      <p class="small-text">${budgetNote}</p>
     </div>
     <div class="grid two" style="margin-top:14px;">
       <div class="card"><h3>${t('dashboard.partLabor')}</h3>${partCosts || `<p class="muted">${t('common.noData')}</p>`}</div>
@@ -1553,39 +1560,16 @@ function firstSkillForStation(stationId) {
     .filter((sk) => !stationId || sk.stationId === stationId)
     .sort((a, b) => a.name.localeCompare(b.name))[0]?.id || '';
 }
-function skillOptions(selected = '', stationFilter = '', compact = false) {
-  return state.skills
-    .filter((sk) => !stationFilter || sk.stationId === stationFilter)
-    .sort((a, b) => partName(a.partId).localeCompare(partName(b.partId)) || stationName(a.stationId).localeCompare(stationName(b.stationId)) || a.name.localeCompare(b.name))
-    .map((sk) => {
-      const label = compact ? sk.name : `${partName(sk.partId)} / ${stationName(sk.stationId)} / ${sk.name}`;
-      return `<option value="${sk.id}" ${selected === sk.id ? 'selected' : ''}>${escapeHtml(label)}</option>`;
-    }).join('');
-}
 function getSkillLevelTemplates(skillId) {
   return state.levelTemplates
     .filter((tpl) => tpl.skillId === skillId)
     .sort((a, b) => Number(a.levelNumber) - Number(b.levelNumber) || Number(a.stepNumber) - Number(b.stepNumber));
 }
-function skillLevelComboOptions(selected = '') {
-  return state.skills.map((skill) => {
-    const templates = getSkillLevelTemplates(skill.id);
-    if (!templates.length) {
-      const value = `${skill.id}|1|1`;
-      return `<option value="${value}" ${selected === value ? 'selected' : ''}>${escapeHtml(skill.name)} · Level 1 / Step 1 · 단계 미정의</option>`;
-    }
-    return templates.map((tpl) => {
-      const value = `${skill.id}|${tpl.levelNumber}|${tpl.stepNumber}`;
-      const desc = tpl.description ? ` · ${tpl.description}` : '';
-      return `<option value="${value}" ${selected === value ? 'selected' : ''}>${escapeHtml(skill.name)} · Level ${tpl.levelNumber} / Step ${tpl.stepNumber}${escapeHtml(desc)}</option>`;
-    }).join('');
-  }).join('');
-}
 function memberSkillSelectOptions(selected = '', stationFilter = '') {
   return state.skills
     .filter((skill) => !stationFilter || skill.stationId === stationFilter)
     .slice()
-    .sort((a, b) => partName(a.partId).localeCompare(partName(b.partId)) || stationName(a.stationId).localeCompare(stationName(b.stationId)) || a.name.localeCompare(b.name))
+    .sort(compareSkills)
     .map((skill) => `<option value="${skill.id}" ${selected === skill.id ? 'selected' : ''}>${escapeHtml(skill.name)}</option>`)
     .join('');
 }
@@ -1614,8 +1598,8 @@ function memberLevelOptions(skillId, selected = '') {
 function memberStepOptions(skillId, levelNumber, selected = '') {
   return stepsForSkill(skillId, levelNumber).map((step) => `<option value="${step}" ${String(selected) === String(step) ? 'selected' : ''}>Step ${step}</option>`).join('');
 }
-function employeeOptions(selected = '', includeBlank = true) {
-  return `${includeBlank ? `<option value="">${t('schedule.unassigned')}</option>` : ''}${state.employees.filter(e => e.active).map((emp) => `<option value="${emp.id}" ${selected === emp.id ? 'selected' : ''}>${escapeHtml(emp.name)} · ${escapeHtml(partName(emp.partId))}</option>`).join('')}`;
+function compareSkills(a, b) {
+  return partName(a.partId).localeCompare(partName(b.partId)) || stationName(a.stationId).localeCompare(stationName(b.stationId)) || a.name.localeCompare(b.name);
 }
 function sortStations(a, b) {
   const pa = byId(state.parts, a.partId)?.sortOrder || 0;
@@ -1636,9 +1620,7 @@ function renderSkills() {
   }, {});
   const levelKeys = Object.keys(groupedLevels).sort((a, b) => Number(a) - Number(b));
 
-  const sortedSkills = state.skills
-    .slice()
-    .sort((a, b) => partName(a.partId).localeCompare(partName(b.partId)) || stationName(a.stationId).localeCompare(stationName(b.stationId)) || a.name.localeCompare(b.name));
+  const sortedSkills = state.skills.slice().sort(compareSkills);
 
   el.innerHTML = `
     <div class="section-head">
@@ -1860,9 +1842,7 @@ function renderDayPills(selectedDay, actionName) {
 function renderRequirements() {
   const el = document.getElementById('requirements');
   const visibleDay = selectedRequirementDay || 'monday';
-  const visibleReqs = state.requirements
-    .filter((req) => req.dayOfWeek === visibleDay)
-    .sort((a,b)=>toMinutes(a.startTime)-toMinutes(b.startTime));
+  const visibleReqs = getDayRequirements(visibleDay);
   el.innerHTML = `
     <div class="section-head">
       <div>
@@ -1900,9 +1880,7 @@ function renderRequirements() {
 
 function renderRequirementCard(req) {
   const rows = getRequirementSeatRows().filter((row) => row.req.id === req.id);
-  const seatCount = rows.length;
-  req.minTotalStaff = seatCount;
-  req.recommendedTotalStaff = seatCount;
+  const seats = rows.length;
   const grouped = rows.reduce((acc, row) => {
     const key = `${row.sreq.partId}__${row.sreq.stationId}__${row.sreq.minLevel}__${row.sreq.minStep}`;
     if (!acc[key]) acc[key] = { ...row, count: 0 };
@@ -1915,7 +1893,7 @@ function renderRequirementCard(req) {
       <div class="req-card-head">
         <div>
           <h3>${escapeHtml(req.label)} <span class="badge ${req.isPeak ? 'danger' : 'info'}">${req.startTime}–${req.endTime}</span></h3>
-          <p class="small-text">${t('requirements.requiredSeats')} ${seatCount} · ${escapeHtml(summary)}</p>
+          <p class="small-text">${t('requirements.requiredSeats')} ${seats} · ${escapeHtml(summary)}</p>
         </div>
         <button class="btn small danger" data-action="delete-requirement" data-id="${req.id}">${t('requirements.deleteBlock')}</button>
       </div>
@@ -1944,20 +1922,22 @@ function renderRequirementCard(req) {
 
 function renderSchedule() {
   const el = document.getElementById('schedule');
-  if (!['sheet', 'confirmed', 'member', 'part', 'time'].includes(scheduleView)) scheduleView = 'sheet';
-  const showDayTabs = scheduleView === 'sheet';
+  const views = {
+    sheet: renderRosterSheet,
+    confirmed: renderConfirmedRoster,
+    member: renderScheduleMemberView,
+    part: renderSchedulePartView,
+  };
+  if (!views[scheduleView]) scheduleView = 'sheet';
   el.innerHTML = `
     <div class="section-head">
       <div><h2>${t('tabs.schedule')}</h2><p>${t('schedule.subtitle')}</p></div>
       <div class="inline-actions">
-        <button class="btn ${scheduleView === 'sheet' ? '' : 'secondary'}" data-action="schedule-view" data-view="sheet">${t('schedule.sheet')}</button>
-        <button class="btn ${scheduleView === 'confirmed' ? '' : 'secondary'}" data-action="schedule-view" data-view="confirmed">${t('schedule.confirmed')}</button>
-        <button class="btn ${scheduleView === 'member' ? '' : 'secondary'}" data-action="schedule-view" data-view="member">${t('schedule.member')}</button>
-        <button class="btn ${scheduleView === 'part' ? '' : 'secondary'}" data-action="schedule-view" data-view="part">${t('schedule.part')}</button>
+        ${Object.keys(views).map((view) => `<button class="btn ${scheduleView === view ? '' : 'secondary'}" data-action="schedule-view" data-view="${view}">${t(`schedule.${view}`)}</button>`).join('')}
       </div>
     </div>
-    ${showDayTabs ? renderDayPills(selectedScheduleDay, 'schedule-day') : ''}
-    ${scheduleView === 'sheet' ? renderRosterSheet() : scheduleView === 'confirmed' ? renderConfirmedRoster() : scheduleView === 'member' ? renderScheduleMemberView() : scheduleView === 'part' ? renderSchedulePartView() : renderScheduleTimeView()}
+    ${scheduleView === 'sheet' ? renderDayPills(selectedScheduleDay, 'schedule-day') : ''}
+    ${views[scheduleView]()}
     ${recommendationContext ? renderRecommendationPanel() : ''}
     ${replacementContext ? renderReplacementPanel() : ''}
   `;
@@ -2123,14 +2103,6 @@ function renderRosterSheet() {
   `;
 }
 
-function partCategory(partId) {
-  const name = (partName(partId) || '').toLowerCase();
-  if (name.includes('kitchen') || name.includes('주방')) return 'kitchen';
-  if (name.includes('hall') || name.includes('홀') || name.includes('barista') || name.includes('바리스타') || name === 'bar' || name.includes(' bar') || name.includes('바')) return 'hallbarista';
-  return 'other';
-}
-
-
 function phaseKeyFromReq(req) {
   return `${req.startTime}__${req.endTime}__${req.label || ''}`;
 }
@@ -2270,50 +2242,6 @@ function renderConfirmedRoster() {
     </div>
   `;
 }
-function renderScheduleTimeView() {
-  return DAYS.map((day) => {
-    const reqs = state.requirements.filter((req) => req.dayOfWeek === day.key).sort((a,b)=>toMinutes(a.startTime)-toMinutes(b.startTime));
-    return `<div class="schedule-day"><h3 class="group-title">${dayLabel(day.key)}</h3><div class="grid">${reqs.map(renderScheduleSlot).join('') || `<p class="muted">${t('schedule.noTimeBlocks')}</p>`}</div></div>`;
-  }).join('');
-}
-
-function renderScheduleSlot(req) {
-  const slotIssues = calculateValidation().filter((issue) => issue.req?.id === req.id);
-  const status = slotIssues.some(i => i.severity === 'high') ? 'danger' : slotIssues.length ? 'warn' : 'ok';
-  return `
-    <div class="card slot-card ${status}">
-      <div class="section-head" style="margin-bottom:4px;">
-        <div><h3>${escapeHtml(req.label)} <span class="badge ${req.isPeak ? 'danger' : 'info'}">${req.startTime}–${req.endTime}</span></h3><p class="small-text">${dayLabel(req.dayOfWeek)} · ${req.isPeak ? t('schedule.peak') : t('schedule.normal')} · ${durationHours(req.startTime, req.endTime).toFixed(1)}h</p></div>
-        <span class="badge ${status === 'ok' ? 'ok' : status === 'warn' ? 'warn' : 'danger'}">${status === 'ok' ? t('schedule.ok') : status === 'warn' ? t('schedule.caution') : t('schedule.urgent')}</span>
-      </div>
-      ${req.stationRequirements.map((sreq) => renderStationAssignment(req, sreq)).join('')}
-    </div>
-  `;
-}
-
-function renderStationAssignment(req, sreq) {
-  const slots = Array.from({ length: Number(sreq.requiredCount || 1) }, (_, i) => i);
-  return `
-    <div class="station-row">
-      <div>
-        <strong>${escapeHtml(partName(sreq.partId))} / ${escapeHtml(stationName(sreq.stationId))}</strong>
-        <p class="small-text">${escapeHtml(requiredSkillName(sreq))} · Min L${sreq.minLevel}-S${sreq.minStep} · ${sreq.requiredCount || 1}명</p>
-      </div>
-      <div class="assignment-list">
-        ${slots.map((slotIndex) => {
-          const key = assignmentKey(req.id, sreq.id, slotIndex);
-          const assigned = state.schedule[key] || '';
-          return `<div class="assignment-box">
-            <select data-action="assign-schedule" data-key="${key}">${employeeOptionsForRequirement(req, sreq, assigned)}</select>
-            <button class="btn small secondary" data-action="show-recommend" data-req="${req.id}" data-sreq="${sreq.id}" data-slot="${slotIndex}">${t('schedule.recommend')}</button>
-            <button class="btn small ghost" data-action="show-replace" data-req="${req.id}" data-sreq="${sreq.id}" data-slot="${slotIndex}" ${assigned ? '' : 'disabled'}>${t('schedule.replace')}</button>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>
-  `;
-}
-
 function renderRecommendationPanel() {
   const { reqId, sreqId, slotIndex } = recommendationContext;
   const req = getReqById(reqId);
@@ -2396,12 +2324,7 @@ function renderSchedulePartView() {
 }
 
 function renderLabor() {
-  const cost = totalLaborCost();
-  const budget = num(state.settings.laborBudget);
-  const ratio = budget ? (cost / budget) * 100 : 0;
-  const targetRatio = num(state.settings.targetLaborRatio) / 100;
-  const neededSales = targetRatio ? cost / targetRatio : 0;
-  const status = ratio > 100 ? 'danger' : ratio >= 90 ? 'warn' : '';
+  const { cost, budget, ratio, neededSales, status, budgetNote } = laborSummary();
 
   const employeeRows = state.employees.map((emp) => {
     const bd = employeeWorkBreakdown(emp.id);
@@ -2417,10 +2340,8 @@ function renderLabor() {
     </tr>`;
   }).join('');
   const partRows = state.parts.map((part) => {
-    const ids = state.employees.filter((e) => e.partId === part.id).map((e) => e.id);
-    const h = ids.reduce((sum, id) => sum + employeeWeeklyHours(id), 0);
-    const c = ids.reduce((sum, id) => sum + employeeWeeklyCost(id), 0);
-    return `<tr><td>${escapeHtml(part.name)}</td><td>${h.toFixed(1)}h</td><td>${money(c)}</td></tr>`;
+    const { hours, cost: partCost } = partLabor(part.id);
+    return `<tr><td>${escapeHtml(part.name)}</td><td>${hours.toFixed(1)}h</td><td>${money(partCost)}</td></tr>`;
   }).join('');
 
   const el = document.getElementById('labor');
@@ -2428,7 +2349,7 @@ function renderLabor() {
     <div class="section-head"><div><h2>${t('tabs.labor')}</h2><p>${t('labor.subtitle')}</p></div></div>
     <div class="grid four">
       ${metricCard(t('labor.labor'), money(cost), t('labor.usageBase'), status)}
-      ${metricCard(t('labor.budget'), money(budget), ratio > 100 ? t('dashboard.overBudget', { amount: money(cost - budget) }) : t('dashboard.remainingBudget', { amount: money(budget - cost) }))}
+      ${metricCard(t('labor.budget'), money(budget), budgetNote)}
       ${metricCard(t('labor.usage'), `${ratio.toFixed(1)}%`, t('labor.usageBase'), status)}
       ${metricCard(t('labor.neededSales'), money(neededSales), t('labor.ratioBase', { ratio: state.settings.targetLaborRatio }))}
     </div>
@@ -2742,17 +2663,8 @@ function deleteStation(id) {
   state.stations = state.stations.filter((s) => s.id !== id);
   saveState(false); render();
 }
-function createStarterLevelsForSkill(skillId, stationId = '') {
-  const base = [
-    [1, 1, '기본 개념을 배우는 단계'],
-    [1, 2, '반복 업무와 기본 흐름을 일부 수행할 수 있는 단계'],
-    [1, 3, '대부분의 흐름을 알고 몇 가지 확인을 통해 업무 가능'],
-    [1, 4, 'Level 2 직전 단계. 약간의 어시스트를 제외하면 대부분 수행 가능'],
-    [2, 1, '일반 시간대 단독 업무가 가능한 단계'],
-    [3, 1, '피크타임 핵심 업무가 가능한 단계'],
-    [4, 1, '리더와 교육 담당이 가능한 단계'],
-  ];
-  return base.map(([levelNumber, stepNumber, description], index) => ({
+function makeLevelTemplate(skillId, stationId, levelNumber, stepNumber, description, sortOrder) {
+  return {
     id: uid('lvl'),
     skillId,
     levelNumber,
@@ -2767,8 +2679,21 @@ function createStarterLevelsForSkill(skillId, stationId = '') {
     needsSupervisor: levelNumber < 2,
     allowedStations: [stationId].filter(Boolean),
     nextPromotionCriteria: '',
-    sortOrder: state.levelTemplates.length + index + 1,
-  }));
+    sortOrder,
+  };
+}
+function createStarterLevelsForSkill(skillId, stationId = '') {
+  const base = [
+    [1, 1, '기본 개념을 배우는 단계'],
+    [1, 2, '반복 업무와 기본 흐름을 일부 수행할 수 있는 단계'],
+    [1, 3, '대부분의 흐름을 알고 몇 가지 확인을 통해 업무 가능'],
+    [1, 4, 'Level 2 직전 단계. 약간의 어시스트를 제외하면 대부분 수행 가능'],
+    [2, 1, '일반 시간대 단독 업무가 가능한 단계'],
+    [3, 1, '피크타임 핵심 업무가 가능한 단계'],
+    [4, 1, '리더와 교육 담당이 가능한 단계'],
+  ];
+  return base.map(([levelNumber, stepNumber, description], index) =>
+    makeLevelTemplate(skillId, stationId, levelNumber, stepNumber, description, state.levelTemplates.length + index + 1));
 }
 
 function addSkill() {
@@ -2797,29 +2722,14 @@ function deleteSkill(id) {
 function addLevel(skillId = '') {
   const targetSkillId = skillId || selectedSkillId;
   if (!targetSkillId) return;
-  const levelNumber = num(document.querySelector(`[data-level-skill="${targetSkillId}"][data-level-field="level"]`)?.value ?? document.getElementById('newLevelNumber')?.value, 1);
-  const stepNumber = num(document.querySelector(`[data-level-skill="${targetSkillId}"][data-level-field="step"]`)?.value ?? document.getElementById('newStepNumber')?.value, 1);
-  const description = (document.querySelector(`[data-level-skill="${targetSkillId}"][data-level-field="desc"]`)?.value || document.getElementById('newLevelDesc')?.value || '').trim() || '운영자가 설명을 작성하세요.';
+  const field = (name) => document.querySelector(`[data-level-skill="${targetSkillId}"][data-level-field="${name}"]`)?.value;
+  const levelNumber = num(field('level'), 1);
+  const stepNumber = num(field('step'), 1);
+  const description = (field('desc') || '').trim() || '운영자가 설명을 작성하세요.';
   const skill = byId(state.skills, targetSkillId);
   const exists = state.levelTemplates.some((tpl) => tpl.skillId === targetSkillId && Number(tpl.levelNumber) === levelNumber && Number(tpl.stepNumber) === stepNumber);
   if (exists && !confirm(t('messages.levelExistsConfirm'))) return;
-  state.levelTemplates.push({
-    id: uid('lvl'),
-    skillId: targetSkillId,
-    levelNumber,
-    levelName: `Level ${levelNumber}`,
-    stepNumber,
-    stepName: `Step ${stepNumber}`,
-    description,
-    canDo: '',
-    cannotDoYet: '',
-    canWorkAlone: levelNumber >= 2,
-    canWorkPeakTime: levelNumber >= 3,
-    needsSupervisor: levelNumber < 2,
-    allowedStations: [skill?.stationId].filter(Boolean),
-    nextPromotionCriteria: '',
-    sortOrder: state.levelTemplates.length + 1
-  });
+  state.levelTemplates.push(makeLevelTemplate(targetSkillId, skill?.stationId, levelNumber, stepNumber, description, state.levelTemplates.length + 1));
   saveState(false); render(); toast(t('messages.levelAdded'));
 }
 function deleteLevel(id) {
