@@ -1,0 +1,17 @@
+# Only the web app is served by the Cloudflare Worker (see wrangler.jsonc).
+# Everything else in the repo stays private.
+.git
+.github
+.gitignore
+.nojekyll
+.assetsignore
+.wrangler
+.DS_Store
+node_modules
+README.md
+package.json
+package-lock.json
+wrangler.jsonc
+mobile
+scripts
+tests

@@ -1,0 +1,11 @@
+{
+  // Cloudflare Worker that serves the static planner app from the repo root.
+  // Files listed in .assetsignore are not uploaded.
+  "name": "skillshift-planner",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "."
+  },
+  // Required by `wrangler preview`, which Workers Builds runs for PR branches.
+  "previews": {}
+}
