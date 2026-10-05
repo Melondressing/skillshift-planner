@@ -116,6 +116,11 @@ const I18N = {
       subtitle: '언어 전환, 기본 표시값, 광고/피드백 링크, 접근 준비, 저장/복원 정책을 관리한다.',
       languageLabel: '언어 전환',
       languageHelp: '앱의 주요 버튼과 섹션 제목을 한국어 또는 영어로 바꾼다. 저장된 데이터 이름은 그대로 유지된다.',
+      themeLabel: '화면 밝기',
+      themeHelp: '기본은 눈부심을 줄인 부드러운 밝은 화면이다. 자동은 휴대폰이나 컴퓨터 설정을 따른다. 이 기기에만 저장된다.',
+      themeAuto: '자동 (기기 설정)',
+      themeLight: '밝게 (기본)',
+      themeDark: '어둡게',
       laborTitle: '인건비 기준',
       budgetLabel: '목표 인건비',
       budgetHelp: '대시보드와 인건비 계산의 기준값이다.',
@@ -585,6 +590,11 @@ const I18N = {
       subtitle: 'Manage language, default display values, access prep, ad/feedback links, and save/restore behavior.',
       languageLabel: 'Language switch',
       languageHelp: 'Switch the main app buttons and section titles between Korean and English. Saved data names stay unchanged.',
+      themeLabel: 'Appearance',
+      themeHelp: 'The default is a soft light screen with less glare. Auto follows your phone or computer setting. Saved on this device only.',
+      themeAuto: 'Auto (device setting)',
+      themeLight: 'Light (default)',
+      themeDark: 'Dark',
       laborTitle: 'Labor settings',
       budgetLabel: 'Target labor budget',
       budgetHelp: 'Used as the baseline for the dashboard and labor calculations.',
@@ -988,6 +998,43 @@ function t(path, vars = {}) {
   const value = textFor(lang, path) ?? textFor('ko', path) ?? path;
   if (typeof value !== 'string') return path;
   return value.replace(/\{(\w+)\}/g, (_, key) => String(vars[key] ?? ''));
+}
+
+// Screen brightness is a per-device preference, kept outside the roster data so
+// it survives a reset and is not part of backups. index.html applies it before
+// first paint. The soft light theme is the default; 'auto' follows
+// prefers-color-scheme.
+const THEME_KEY = 'skillshift_theme';
+const THEME_COLORS = { light: '#f7f5f1', dark: '#272e39' };
+
+function currentTheme() {
+  try {
+    const value = localStorage.getItem(THEME_KEY);
+    return value === 'dark' || value === 'auto' ? value : 'light';
+  } catch {
+    return 'light';
+  }
+}
+
+function applyTheme() {
+  const theme = currentTheme();
+  document.documentElement.dataset.theme = theme;
+  document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
+    const auto = (meta.media || '').includes('dark') ? 'dark' : 'light';
+    meta.content = THEME_COLORS[theme === 'auto' ? auto : theme];
+  });
+}
+
+function setTheme(theme) {
+  try {
+    if (theme === 'dark' || theme === 'auto') localStorage.setItem(THEME_KEY, theme);
+    else localStorage.removeItem(THEME_KEY);
+  } catch {
+    // Storage can be blocked; the choice then lasts until the page reloads.
+    document.documentElement.dataset.theme = theme;
+  }
+  applyTheme();
+  render();
 }
 
 function setLanguage(lang) {
@@ -2060,6 +2107,7 @@ function render() {
   renderCache = new Map();
   try {
     syncDocumentLanguage();
+    applyTheme();
     renderTabs();
     const visible = findView(activeTab).panels;
     Object.entries(PANEL_RENDERERS).forEach(([id, draw]) => {
@@ -3141,6 +3189,7 @@ function renderRoadmap() {
 function renderSettings() {
   const el = document.getElementById('settings');
   const lang = currentLanguage();
+  const theme = currentTheme();
   const companyName = String(state.settings.companyName || '').trim();
   const companyCode = deriveCompanyCode(companyName);
   const employeePortalEnabled = Boolean(state.settings.employeePortalEnabled);
@@ -3163,6 +3212,16 @@ function renderSettings() {
           <select data-setting="language">
             <option value="ko" ${lang === 'ko' ? 'selected' : ''}>${t('common.korean')}</option>
             <option value="en" ${lang === 'en' ? 'selected' : ''}>${t('common.english')}</option>
+          </select>
+        </label>
+      </div>
+      <div class="card">
+        <h3>${t('settings.themeLabel')}</h3>
+        <p class="small-text">${t('settings.themeHelp')}</p>
+        <label class="small-text" style="display:grid; gap:6px; max-width: 260px;">
+          ${t('settings.themeLabel')}
+          <select data-setting="theme">
+            ${['light', 'dark', 'auto'].map((value) => `<option value="${value}" ${theme === value ? 'selected' : ''}>${t(`settings.theme${value[0].toUpperCase()}${value.slice(1)}`)}</option>`).join('')}
           </select>
         </label>
       </div>
@@ -3373,6 +3432,10 @@ function handleChange(e) {
   if (el.dataset.setting) {
     if (el.dataset.setting === 'language') {
       setLanguage(el.value);
+      return;
+    }
+    if (el.dataset.setting === 'theme') {
+      setTheme(el.value);
       return;
     }
     if (el.type === 'checkbox' || el.dataset.settingType === 'boolean') {
