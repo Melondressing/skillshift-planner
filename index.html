@@ -1,12 +1,20 @@
 <!doctype html>
-<html lang="ko">
+<html lang="ko" data-theme="light">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#111827" />
+  <meta name="theme-color" content="#f7f5f1" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#f7f5f1" media="(prefers-color-scheme: dark)" />
+  <script>
+    // Apply a saved light/dark choice before the first paint to avoid a flash.
+    try {
+      var savedTheme = localStorage.getItem('skillshift_theme');
+      document.documentElement.dataset.theme = savedTheme === 'dark' || savedTheme === 'auto' ? savedTheme : 'light';
+    } catch (e) {}
+  </script>
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="SkillShift" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <title>SkillShift Planner</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icon.svg" type="image/svg+xml" />
@@ -15,9 +23,12 @@
 </head>
 <body>
   <header class="app-header">
-    <div>
-      <h1>SkillShift Planner</h1>
-      <p id="headerSubtitle">파트 · 스테이션 · Level/Step 기반 근무표 & 인건비 관리</p>
+    <div class="brand">
+      <img class="brand-mark" src="icon.svg" alt="" width="36" height="36" />
+      <div>
+        <h1>SkillShift Planner</h1>
+        <p id="headerSubtitle">파트 · 스테이션 · Level/Step 기반 근무표 & 인건비 관리</p>
+      </div>
     </div>
     <div class="header-actions">
       <span id="saveStatus" class="save-status" role="status">자동 저장됨</span>
