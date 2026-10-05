@@ -911,3 +911,7 @@ tr:last-child td { border-bottom: 0; }
 .station-skill-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 8px; border-radius: 10px; background: var(--panel-soft); }
 .station-skill-row.has-skill { background: #ecfdf5; }
 .station-skill-row select { width: auto; min-width: 96px; }
+.copy-day-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 10px 0 14px; }
+.copy-day-targets { display: flex; gap: 4px; flex-wrap: wrap; }
+.copy-day-chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 999px; font-size: 13px; cursor: pointer; }
+.copy-day-chip input { width: auto; margin: 0; }

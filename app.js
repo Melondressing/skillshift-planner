@@ -323,7 +323,16 @@ const I18N = {
       autoFillNothing: '채울 빈 자리가 없어요.',
       autoFillKeep: '확인',
       autoFillUndo: '취소',
-      autoFillUndone: '자동 채우기를 취소했어요.',
+      autoFillUndone: '되돌렸어요.',
+    },
+    copy: {
+      requirementsLabel: '{day} 시간 블록을 다른 요일에도 똑같이:',
+      assignmentsLabel: '{day} 배정을 다른 요일의 같은 자리에 복사:',
+      button: '복사',
+      pickDays: '복사할 요일을 고르세요',
+      requirementsConfirm: '{days}의 기존 시간 블록과 그 배정이 바뀝니다. 계속할까요?',
+      requirementsDone: '{days}개 요일에 시간 블록 {blocks}개를 복사했어요',
+      assignmentsResult: '{copied}자리를 복사했어요. 그중 {check}자리는 조건 확인이 필요하고, {unmatched}자리는 같은 시간 블록이 없어 건너뛰었어요.',
     },
     labor: {
       title: 'Labor Cost',
@@ -651,7 +660,16 @@ const I18N = {
       autoFillNothing: 'There are no empty seats to fill.',
       autoFillKeep: 'Keep',
       autoFillUndo: 'Undo',
-      autoFillUndone: 'Auto-fill undone.',
+      autoFillUndone: 'Undone.',
+    },
+    copy: {
+      requirementsLabel: 'Use the {day} time blocks on other days too:',
+      assignmentsLabel: 'Copy {day} assignments to the same seats on:',
+      button: 'Copy',
+      pickDays: 'Pick the days to copy to',
+      requirementsConfirm: 'This replaces the time blocks and their assignments on {days}. Continue?',
+      requirementsDone: 'Copied {blocks} time blocks to {days} days',
+      assignmentsResult: 'Copied {copied} seats. {check} need a check, and {unmatched} were skipped because that day has no matching time block.',
     },
     labor: {
       title: 'Labor Cost',
@@ -740,7 +758,8 @@ let selectedMemberPart = 'all';
 let skillsAdvancedOpen = false;
 let recommendationContext = null;
 let replacementContext = null;
-let lastAutoFill = null;
+// The last bulk roster change (auto-fill or day copy), kept so it can be undone.
+let lastBulkChange = null;
 
 // Derived data (assignments, labor, recommendations, validation) shared by
 // every panel in one render pass. It only exists while render() runs, so
@@ -1079,7 +1098,7 @@ function resetState() {
   scheduleView = 'sheet';
   recommendationContext = null;
   replacementContext = null;
-  lastAutoFill = null;
+  lastBulkChange = null;
   saveState();
   render();
   toast(t('messages.resetDone'));
@@ -1469,11 +1488,101 @@ function autoFillEmptySeats() {
   return { filled, skipped };
 }
 
+// Restores each seat to what it was before a bulk change, unless it has
+// been edited by hand since.
+function undoScheduleChanges(changes) {
+  changes.forEach(({ key, before, after }) => {
+    if (state.schedule[key] !== after) return;
+    if (before) state.schedule[key] = before;
+    else delete state.schedule[key];
+  });
+}
+
 // Removes auto-filled assignments that haven't been changed since.
 function undoAutoFill(result) {
-  result.filled.forEach(({ key, employeeId }) => {
-    if (state.schedule[key] === employeeId) delete state.schedule[key];
+  undoScheduleChanges(result.filled.map(({ key, employeeId }) => ({ key, before: '', after: employeeId })));
+}
+
+// Seats of one time block keyed by part/station and how many times that
+// station appears in the block, e.g. "part_hall__st_floor__1" for the 2nd
+// floor seat. Used to line up the same seat across days.
+function seatsByStation(req) {
+  const counts = {};
+  const seats = new Map();
+  (req.stationRequirements || []).forEach((sreq) => {
+    for (let slotIndex = 0; slotIndex < seatCount(sreq); slotIndex += 1) {
+      const pair = `${sreq.partId}__${sreq.stationId}`;
+      const occurrence = counts[pair] || 0;
+      counts[pair] = occurrence + 1;
+      seats.set(`${pair}__${occurrence}`, { req, sreq, slotIndex, key: assignmentKey(req.id, sreq.id, slotIndex) });
+    }
   });
+  return seats;
+}
+
+// Copies one day's time blocks (and their seats) to other days, replacing
+// the blocks and assignments those days had.
+function copyDayRequirements(fromDay, toDays) {
+  const source = getDayRequirements(fromDay);
+  const targets = toDays.filter((day) => day !== fromDay);
+  const removedIds = new Set(state.requirements.filter((req) => targets.includes(req.dayOfWeek)).map((req) => req.id));
+  state.requirements = state.requirements.filter((req) => !removedIds.has(req.id));
+  Object.keys(state.schedule).forEach((key) => { if (removedIds.has(parseAssignmentKey(key).reqId)) delete state.schedule[key]; });
+  targets.forEach((day) => {
+    source.forEach((req) => {
+      state.requirements.push({
+        ...req,
+        id: uid('req'),
+        dayOfWeek: day,
+        stationRequirements: req.stationRequirements.map((sreq) => ({ ...sreq, id: uid('sreq') })),
+      });
+    });
+  });
+  return { blocks: source.length * targets.length, days: targets.length };
+}
+
+// Copies who works which seat on one day to the same seats (same time block
+// and station) on other days. Empty source seats leave the target alone.
+function copyDayAssignments(fromDay, toDays) {
+  const sourceByPhase = new Map(getDayRequirements(fromDay).map((req) => [phaseKeyFromReq(req), seatsByStation(req)]));
+  const changes = [];
+  let unmatched = 0;
+  toDays.filter((day) => day !== fromDay).forEach((day) => {
+    const targetByPhase = new Map(getDayRequirements(day).map((req) => [phaseKeyFromReq(req), seatsByStation(req)]));
+    sourceByPhase.forEach((sourceSeats, phase) => {
+      const targetSeats = targetByPhase.get(phase);
+      sourceSeats.forEach((seat, seatId) => {
+        const employeeId = state.schedule[seat.key];
+        if (!employeeId) return;
+        const target = targetSeats?.get(seatId);
+        if (!target) { unmatched += 1; return; }
+        const before = state.schedule[target.key] || '';
+        if (before === employeeId) return;
+        state.schedule[target.key] = employeeId;
+        changes.push({ key: target.key, before, after: employeeId });
+      });
+    });
+  });
+  const needsCheck = changes.filter(({ key, after }) => {
+    const { reqId, stationReqId } = parseAssignmentKey(key);
+    const employee = byId(state.employees, after);
+    return !employee || getCandidateStatus(employee, getReqById(reqId), getStationReq(reqId, stationReqId), key).category !== 'fit';
+  }).length;
+  return { changes, unmatched, needsCheck };
+}
+
+function selectedCopyTargets(kind) {
+  return [...document.querySelectorAll(`[data-copy-target="${kind}"]:checked`)].map((el) => el.value);
+}
+
+function renderCopyDayControls(kind, fromDay) {
+  return `<div class="copy-day-row no-print">
+    <span class="small-text">${t(`copy.${kind}Label`, { day: dayLabel(fromDay) })}</span>
+    <div class="copy-day-targets">
+      ${DAYS.filter((day) => day.key !== fromDay).map((day) => `<label class="copy-day-chip"><input type="checkbox" data-copy-target="${kind}" value="${day.key}" /> ${dayShort(day.key)}</label>`).join('')}
+    </div>
+    <button class="btn small secondary" type="button" data-action="copy-day-${kind}" data-day="${fromDay}">${t('copy.button')}</button>
+  </div>`;
 }
 
 // Opens the roster on the issue's day with the recommendation panel (empty
@@ -2058,6 +2167,7 @@ function renderRequirements() {
       <div>
         <h3>${t('requirements.daySelect')}</h3>
         ${renderDayPills(visibleDay, 'req-day')}
+        ${visibleReqs.length ? renderCopyDayControls('requirements', visibleDay) : ''}
       </div>
       <div>
         <h3>${t('requirements.addBlockTitle')}</h3>
@@ -2137,14 +2247,15 @@ function renderSchedule() {
         <button class="btn" type="button" title="${escapeHtml(t('schedule.autoFillHint'))}" data-action="auto-fill">${t('schedule.autoFill')}</button>
       </div>
     </div>
-    ${lastAutoFill ? `<div class="card autofill-result no-print">
-      <span>${t('schedule.autoFillResult', { filled: lastAutoFill.filled.length, skipped: lastAutoFill.skipped })}</span>
+    ${lastBulkChange ? `<div class="card autofill-result no-print">
+      <span>${t(lastBulkChange.textKey, lastBulkChange.vars)}</span>
       <div class="inline-actions">
         <button class="btn small" type="button" data-action="auto-fill-keep">${t('schedule.autoFillKeep')}</button>
         <button class="btn small secondary" type="button" data-action="auto-fill-undo">${t('schedule.autoFillUndo')}</button>
       </div>
     </div>` : ''}
     ${scheduleView === 'sheet' ? renderDayPills(selectedScheduleDay, 'schedule-day') : ''}
+    ${scheduleView === 'sheet' && getDayRequirements(selectedScheduleDay).length ? renderCopyDayControls('assignments', selectedScheduleDay) : ''}
     ${views[scheduleView]()}
     ${recommendationContext ? renderRecommendationPanel() : ''}
     ${replacementContext ? renderReplacementPanel() : ''}
@@ -2779,13 +2890,36 @@ function handleClick(e) {
   if (action === 'auto-fill') {
     const result = autoFillEmptySeats();
     if (!result.filled.length && !result.skipped) { toast(t('schedule.autoFillNothing')); return; }
-    lastAutoFill = result;
+    lastBulkChange = {
+      textKey: 'schedule.autoFillResult',
+      vars: { filled: result.filled.length, skipped: result.skipped },
+      changes: result.filled.map(({ key, employeeId }) => ({ key, before: '', after: employeeId })),
+    };
     saveState();
     render();
     document.querySelector('.autofill-result')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
-  if (action === 'auto-fill-keep') { lastAutoFill = null; render(); }
-  if (action === 'auto-fill-undo' && lastAutoFill) { undoAutoFill(lastAutoFill); lastAutoFill = null; saveState(); render(); toast(t('schedule.autoFillUndone')); }
+  if (action === 'auto-fill-keep') { lastBulkChange = null; render(); }
+  if (action === 'auto-fill-undo' && lastBulkChange) { undoScheduleChanges(lastBulkChange.changes); lastBulkChange = null; saveState(); render(); toast(t('schedule.autoFillUndone')); }
+  if (action === 'copy-day-assignments') {
+    const targets = selectedCopyTargets('assignments');
+    if (!targets.length) { toast(t('copy.pickDays')); return; }
+    const result = copyDayAssignments(target.dataset.day, targets);
+    lastBulkChange = { textKey: 'copy.assignmentsResult', vars: { copied: result.changes.length, check: result.needsCheck, unmatched: result.unmatched }, changes: result.changes };
+    saveState();
+    render();
+    document.querySelector('.autofill-result')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  if (action === 'copy-day-requirements') {
+    const targets = selectedCopyTargets('requirements');
+    if (!targets.length) { toast(t('copy.pickDays')); return; }
+    const overwrites = state.requirements.some((req) => targets.includes(req.dayOfWeek));
+    if (overwrites && !confirm(t('copy.requirementsConfirm', { days: targets.map(dayShort).join(', ') }))) return;
+    const result = copyDayRequirements(target.dataset.day, targets);
+    saveState();
+    render();
+    toast(t('copy.requirementsDone', result));
+  }
   if (action === 'copy-company-code') { copyToClipboard(deriveCompanyCode(state.settings.companyName)); }
   if (action === 'copy-feedback-email') { copyToClipboard(state.settings.feedbackEmail || ''); }
   if (action === 'copy-feedback-link') { copyToClipboard(normalizeExternalUrl(state.settings.feedbackUrl) || ''); }
