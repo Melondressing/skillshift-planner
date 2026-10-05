@@ -318,6 +318,13 @@ const I18N = {
       rosterHint: '시간을 가로축에 둔 배치표다. 왼쪽 Part/Station 행을 보고, 각 시간대 칸에서 조건에 맞는 직원만 선택한다.',
       confirmedHint: 'PDF 출력용 로스터다. 요일은 가로축, Phase는 세로축이며 Part별로 한 페이지씩 출력되도록 압축했다.',
       rosterHintShort: '시간을 가로축에 둔 배치표다.',
+      autoFill: '빈 자리 자동 채우기',
+      autoFillHint: '일주일 전체의 빈 자리에 완전 적합한 직원 중 1순위를 넣습니다.',
+      autoFillResult: '{filled}자리를 채웠어요. {skipped}자리는 완전 적합한 직원이 없어 비워 뒀어요.',
+      autoFillNothing: '채울 빈 자리가 없어요.',
+      autoFillKeep: '확인',
+      autoFillUndo: '취소',
+      autoFillUndone: '자동 채우기를 취소했어요.',
     },
     labor: {
       title: 'Labor Cost',
@@ -344,6 +351,8 @@ const I18N = {
       subtitle: '미배정, Skill/Level 부족, 가능 시간 위반, 중복 배치, 목표 인건비 초과를 검사한다.',
       resultTitle: '검증 결과',
       noIssues: '현재 주요 문제 없음',
+      fix: '고치기',
+      fixHint: '근무표에서 이 자리를 열고 추천 직원을 보여줍니다.',
       statusHigh: 'high',
       statusMedium: 'medium',
       statusLow: 'low',
@@ -638,6 +647,13 @@ const I18N = {
       rosterHint: 'A horizontal work grid with time across the top. Use the left-side Part/Station rows and pick only the employees who fit each slot.',
       confirmedHint: 'PDF output roster with days across the top and phases down the side, compressed to one page per Part.',
       rosterHintShort: 'A horizontal work grid with time across the top.',
+      autoFill: 'Auto-fill empty seats',
+      autoFillHint: 'Puts the top fully-fitting staff member into every empty seat this week.',
+      autoFillResult: 'Filled {filled} seats. {skipped} seats had no fully-fitting staff and were left empty.',
+      autoFillNothing: 'There are no empty seats to fill.',
+      autoFillKeep: 'Keep',
+      autoFillUndo: 'Undo',
+      autoFillUndone: 'Auto-fill undone.',
     },
     labor: {
       title: 'Labor Cost',
@@ -664,6 +680,8 @@ const I18N = {
       subtitle: 'Check for unassigned seats, skill/level shortages, availability conflicts, duplicate assignments, and labor budget overruns.',
       resultTitle: 'Validation result',
       noIssues: 'No major issues right now',
+      fix: 'Fix',
+      fixHint: 'Opens this seat in the roster with recommended staff.',
       statusHigh: 'high',
       statusMedium: 'medium',
       statusLow: 'low',
@@ -719,6 +737,7 @@ let selectedRequirementDay = 'monday';
 let selectedMemberPart = 'all';
 let recommendationContext = null;
 let replacementContext = null;
+let lastAutoFill = null;
 
 function uid(prefix = 'id') {
   return `${prefix}_${Math.random().toString(36).slice(2, 9)}_${Date.now().toString(36)}`;
@@ -1045,6 +1064,7 @@ function resetState() {
   scheduleView = 'sheet';
   recommendationContext = null;
   replacementContext = null;
+  lastAutoFill = null;
   saveState(false);
   render();
   toast(t('messages.resetDone'));
@@ -1354,7 +1374,9 @@ function getCandidateStatus(employee, req, stationReq, ignoreKey = '') {
     reasons.push('같은 시간대 다른 배정 있음');
   }
 
-  const projectedHours = employeeWeeklyHours(employee.id) + durationHours(req.startTime, req.endTime);
+  // An employee already sitting in the seat being checked has its hours counted once.
+  const alreadyInSeat = Boolean(ignoreKey) && state.schedule[ignoreKey] === employee.id;
+  const projectedHours = employeeWeeklyHours(employee.id) + (alreadyInSeat ? 0 : durationHours(req.startTime, req.endTime));
   const overMaxHours = projectedHours > num(employee.maxWeeklyHours, 999);
   if (overMaxHours) {
     score -= 60;
@@ -1392,6 +1414,56 @@ function getRecommendations(req, stationReq, excludeEmployeeId = '', ignoreKey =
     .sort((a, b) => b.score - a.score);
 }
 
+// Fills every empty seat with the highest-scoring fully fitting ('fit')
+// employee, one seat at a time so later picks see earlier ones (overlaps,
+// weekly hours). Returns what was filled so it can be undone.
+function autoFillEmptySeats() {
+  const filled = [];
+  let skipped = 0;
+  const dayOrder = (key) => DAYS.findIndex((d) => d.key === key);
+  const reqs = [...state.requirements].sort((a, b) =>
+    dayOrder(a.dayOfWeek) - dayOrder(b.dayOfWeek) || toMinutes(a.startTime) - toMinutes(b.startTime));
+  reqs.forEach((req) => {
+    req.stationRequirements.forEach((sreq) => {
+      for (let i = 0; i < seatCount(sreq); i += 1) {
+        const key = assignmentKey(req.id, sreq.id, i);
+        if (state.schedule[key]) continue;
+        const best = getRecommendations(req, sreq, '', key).find((rec) => rec.category === 'fit');
+        if (!best) { skipped += 1; continue; }
+        state.schedule[key] = best.employee.id;
+        filled.push({ key, employeeId: best.employee.id });
+      }
+    });
+  });
+  return { filled, skipped };
+}
+
+// Removes auto-filled assignments that haven't been changed since.
+function undoAutoFill(result) {
+  result.filled.forEach(({ key, employeeId }) => {
+    if (state.schedule[key] === employeeId) delete state.schedule[key];
+  });
+}
+
+// Opens the roster on the issue's day with the recommendation panel (empty
+// seat) or the replacement panel (seat with a problem assignment).
+function openIssueInRoster(reqId, sreqId, slotIndex) {
+  const req = getReqById(reqId);
+  if (!req) return;
+  activeTab = 'roster';
+  scheduleView = 'sheet';
+  selectedScheduleDay = req.dayOfWeek;
+  recommendationContext = null;
+  replacementContext = null;
+  if (sreqId && Number.isInteger(slotIndex)) {
+    const context = { reqId, sreqId, slotIndex };
+    if (state.schedule[assignmentKey(reqId, sreqId, slotIndex)]) replacementContext = context;
+    else recommendationContext = context;
+  }
+  render();
+  document.querySelector('.recommend-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 function calculateValidation() {
   const issues = [];
 
@@ -1400,28 +1472,29 @@ function calculateValidation() {
       for (let i = 0; i < seatCount(sreq); i += 1) {
         const key = assignmentKey(req.id, sreq.id, i);
         const employeeId = state.schedule[key];
+        const seat = { req, sreq, slotIndex: i };
         if (!employeeId) {
-          issues.push({ severity: 'high', type: '미배정', req, sreq, message: `${dayLabel(req.dayOfWeek)} ${req.startTime}–${req.endTime} / ${partName(sreq.partId)} / ${stationName(sreq.stationId)} 미배정` });
+          issues.push({ ...seat, severity: 'high', type: '미배정', message: `${dayLabel(req.dayOfWeek)} ${req.startTime}–${req.endTime} / ${partName(sreq.partId)} / ${stationName(sreq.stationId)} 미배정` });
           continue;
         }
         const employee = byId(state.employees, employeeId);
         if (!employee) {
-          issues.push({ severity: 'high', type: '직원 없음', req, sreq, message: `삭제된 직원이 배정되어 있습니다.` });
+          issues.push({ ...seat, severity: 'high', type: '직원 없음', message: `삭제된 직원이 배정되어 있습니다.` });
           continue;
         }
         const availability = isEmployeeAvailable(employee, req);
         if (availability.status !== 'ok') {
-          issues.push({ severity: availability.status === 'partial' ? 'medium' : 'high', type: '가능 시간 위반', req, sreq, employee, message: `${employee.name}: ${availability.reason}` });
+          issues.push({ ...seat, severity: availability.status === 'partial' ? 'medium' : 'high', type: '가능 시간 위반', employee, message: `${employee.name}: ${availability.reason}` });
         }
         const skill = compareLevelStep(employee, sreq);
         if (skill.status === 'bad') {
-          issues.push({ severity: 'high', type: 'Skill / Level 부족', req, sreq, employee, message: `${employee.name}: ${skill.reason}` });
+          issues.push({ ...seat, severity: 'high', type: 'Skill / Level 부족', employee, message: `${employee.name}: ${skill.reason}` });
         } else if (skill.status !== 'ok') {
-          issues.push({ severity: 'medium', type: 'Skill / Level 주의', req, sreq, employee, message: `${employee.name}: ${skill.reason}` });
+          issues.push({ ...seat, severity: 'medium', type: 'Skill / Level 주의', employee, message: `${employee.name}: ${skill.reason}` });
         }
         const replacements = getRecommendations(req, sreq, employee.id, key).filter((r) => ['fit', 'partial', 'emergency'].includes(r.category));
         if (!replacements.length) {
-          issues.push({ severity: 'medium', type: '대체근무자 없음', req, sreq, employee, message: `${employee.name} 결근 시 대체 가능자가 없습니다.` });
+          issues.push({ ...seat, severity: 'medium', type: '대체근무자 없음', employee, message: `${employee.name} 결근 시 대체 가능자가 없습니다.` });
         }
       }
     });
@@ -1981,8 +2054,16 @@ function renderSchedule() {
       <div><h2>${t('tabs.schedule')}</h2><p>${t('schedule.subtitle')}</p></div>
       <div class="inline-actions">
         ${Object.keys(views).map((view) => `<button class="btn ${scheduleView === view ? '' : 'secondary'}" data-action="schedule-view" data-view="${view}">${t(`schedule.${view}`)}</button>`).join('')}
+        <button class="btn" type="button" title="${escapeHtml(t('schedule.autoFillHint'))}" data-action="auto-fill">${t('schedule.autoFill')}</button>
       </div>
     </div>
+    ${lastAutoFill ? `<div class="card autofill-result no-print">
+      <span>${t('schedule.autoFillResult', { filled: lastAutoFill.filled.length, skipped: lastAutoFill.skipped })}</span>
+      <div class="inline-actions">
+        <button class="btn small" type="button" data-action="auto-fill-keep">${t('schedule.autoFillKeep')}</button>
+        <button class="btn small secondary" type="button" data-action="auto-fill-undo">${t('schedule.autoFillUndo')}</button>
+      </div>
+    </div>` : ''}
     ${scheduleView === 'sheet' ? renderDayPills(selectedScheduleDay, 'schedule-day') : ''}
     ${views[scheduleView]()}
     ${recommendationContext ? renderRecommendationPanel() : ''}
@@ -2410,6 +2491,7 @@ function renderValidation() {
         <p>${escapeHtml(issue.message)}</p>
         ${issue.req ? `<p class="small-text">${dayLabel(issue.req.dayOfWeek)} ${issue.req.startTime}–${issue.req.endTime} · ${escapeHtml(issue.req.label || '')}</p>` : ''}
         ${issue.sreq ? `<p class="small-text">${escapeHtml(partName(issue.sreq.partId))} / ${escapeHtml(stationName(issue.sreq.stationId))} · 필요 ${escapeHtml(requiredSkillName(issue.sreq))} L${issue.sreq.minLevel}-S${issue.sreq.minStep}</p>` : ''}
+        ${issue.req ? `<button class="btn small" type="button" title="${escapeHtml(t('validation.fixHint'))}" data-action="fix-issue" data-req="${issue.req.id}" data-sreq="${issue.sreq?.id || ''}" data-slot="${issue.slotIndex ?? ''}">${t('validation.fix')}</button>` : ''}
       </div>`).join('') || `<div class="card"><h3>${t('validation.resultTitle')}</h3><span class="badge ok">${t('validation.noIssues')}</span></div>`}
     </div>
   `;
@@ -2606,6 +2688,17 @@ function handleClick(e) {
   if (action === 'close-panels') { recommendationContext = null; replacementContext = null; render(); }
   if (action === 'apply-recommend') { state.schedule[target.dataset.key] = target.dataset.emp; saveState(false); recommendationContext = null; replacementContext = null; render(); toast(t('messages.scheduled')); }
   if (action === 'reset-all') resetState();
+  if (action === 'fix-issue') openIssueInRoster(target.dataset.req, target.dataset.sreq, target.dataset.slot === '' ? NaN : Number(target.dataset.slot));
+  if (action === 'auto-fill') {
+    const result = autoFillEmptySeats();
+    if (!result.filled.length && !result.skipped) { toast(t('schedule.autoFillNothing')); return; }
+    lastAutoFill = result;
+    saveState(false);
+    render();
+    document.querySelector('.autofill-result')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  if (action === 'auto-fill-keep') { lastAutoFill = null; render(); }
+  if (action === 'auto-fill-undo' && lastAutoFill) { undoAutoFill(lastAutoFill); lastAutoFill = null; saveState(false); render(); toast(t('schedule.autoFillUndone')); }
   if (action === 'copy-company-code') { copyToClipboard(deriveCompanyCode(state.settings.companyName)); }
   if (action === 'copy-feedback-email') { copyToClipboard(state.settings.feedbackEmail || ''); }
   if (action === 'copy-feedback-link') { copyToClipboard(normalizeExternalUrl(state.settings.feedbackUrl) || ''); }

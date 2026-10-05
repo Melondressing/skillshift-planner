@@ -1,0 +1,65 @@
+import { test, beforeEach } from "node:test";
+import assert from "node:assert/strict";
+import { setupApp, plain, MON_OPENING, MON_LUNCH_PEAK, HOT } from "./helpers.mjs";
+
+const t = setupApp();
+const { app, elements } = t;
+
+beforeEach(() => t.reset());
+
+test("seat issues carry their slot and render a fix button", () => {
+  const issue = app.calculateValidation().find((i) => i.type === "미배정");
+  assert.equal(issue.slotIndex, 0);
+  app.renderValidation();
+  const html = elements.get("validation").innerHTML;
+  assert.match(html, new RegExp(`data-action="fix-issue" data-req="${issue.req.id}" data-sreq="${issue.sreq.id}" data-slot="0"`));
+});
+
+test("fixing an empty seat opens the roster on that day with recommendations", () => {
+  const sreq = HOT(MON_LUNCH_PEAK).replace("monday", "saturday");
+  app.openIssueInRoster("req_saturday_2", sreq, 0);
+  app.render();
+  const html = elements.get("schedule").innerHTML;
+  assert.match(html, /추천 직원 · 토요일 11:30–14:30/);
+  assert.match(elements.get("tabs").innerHTML, /tab-btn active" data-tab="roster"/);
+});
+
+test("fixing an assigned seat opens the replacement panel", () => {
+  t.assign(MON_LUNCH_PEAK, HOT(MON_LUNCH_PEAK), "emp_yuri"); // below the required level
+  app.openIssueInRoster(MON_LUNCH_PEAK, HOT(MON_LUNCH_PEAK), 0);
+  assert.match(elements.get("schedule").innerHTML, /대체근무자 추천 · 유리 대체/);
+});
+
+test("auto-fill only places fully fitting staff, without double-booking", () => {
+  const { filled, skipped } = app.autoFillEmptySeats();
+  assert.ok(filled.length > 0);
+  const total = app.getRequirementSeatRows().length;
+  assert.equal(filled.length + skipped, total);
+  for (const { key, employeeId } of filled) {
+    const { reqId, stationReqId } = app.parseAssignmentKey(key);
+    const req = t.req(reqId);
+    const status = app.getCandidateStatus(t.employee(employeeId), req, t.sreq(reqId, stationReqId), key);
+    assert.equal(status.category, "fit", `${key} -> ${employeeId}`);
+  }
+  const issues = app.calculateValidation();
+  assert.equal(issues.filter((i) => i.type === "중복 배치").length, 0);
+  assert.equal(issues.filter((i) => i.type === "주간 최대시간 초과").length, 0);
+  assert.equal(issues.filter((i) => i.type === "미배정").length, skipped);
+});
+
+test("auto-fill keeps existing assignments and undo only removes what it added", () => {
+  const manual = t.assign(MON_OPENING, `sreq_monday_0_0_0`, "emp_yuri");
+  const result = app.autoFillEmptySeats();
+  assert.equal(t.getState().schedule[manual], "emp_yuri");
+  assert.ok(!result.filled.some((f) => f.key === manual));
+  const changed = result.filled[0];
+  t.getState().schedule[changed.key] = "emp_soo"; // edited by hand after auto-fill
+  app.undoAutoFill(result);
+  assert.deepEqual(plain(t.getState().schedule), { [manual]: "emp_yuri", [changed.key]: "emp_soo" });
+});
+
+test("an assigned employee's own seat is not counted twice toward weekly hours", () => {
+  const key = t.assign(MON_LUNCH_PEAK, HOT(MON_LUNCH_PEAK), "emp_minjun");
+  const status = app.getCandidateStatus(t.employee("emp_minjun"), t.req(MON_LUNCH_PEAK), t.sreq(MON_LUNCH_PEAK, HOT(MON_LUNCH_PEAK)), key);
+  assert.equal(status.projectedHours, 3);
+});
