@@ -88,18 +88,18 @@ const I18N = {
       invalidJson: '백업 파일을 읽을 수 없습니다.',
       copied: '복사됨',
       copyFailed: '복사에 실패했습니다',
-      partNameRequired: 'Part 이름을 입력하세요',
-      partSelectRequired: 'Part를 먼저 선택하세요',
-      partAdded: 'Part 추가됨',
-      partDeleteConfirm: 'Part를 삭제할까요? 관련 직원/스테이션 연결은 남을 수 있습니다.',
-      stationNameRequired: 'Station 이름을 입력하세요',
-      stationSelectRequired: 'Station을 먼저 선택하세요',
-      stationAdded: 'Station 추가됨',
-      stationDeleteConfirm: 'Station을 삭제할까요?',
-      skillNameRequired: 'Skill 이름을 입력하세요',
-      skillAdded: 'Skill 추가됨',
-      skillDeleteConfirm: 'Skill을 삭제할까요? 직원에게 부여된 해당 Skill도 제거됩니다.',
-      levelAdded: 'Skill 단계 추가됨',
+      partNameRequired: '파트 이름을 입력하세요',
+      partSelectRequired: '파트를 먼저 선택하세요',
+      partAdded: '파트 추가됨',
+      partDeleteConfirm: '파트를 삭제할까요? 관련 직원/스테이션 연결은 남을 수 있습니다.',
+      stationNameRequired: '스테이션 이름을 입력하세요',
+      stationSelectRequired: '스테이션을 먼저 선택하세요',
+      stationAdded: '스테이션 추가됨',
+      stationDeleteConfirm: '스테이션을 삭제할까요?',
+      skillNameRequired: '스킬 이름을 입력하세요',
+      skillAdded: '스킬 추가됨',
+      skillDeleteConfirm: '스킬을 삭제할까요? 직원에게 부여된 해당 스킬도 제거됩니다.',
+      levelAdded: '스킬 단계 추가됨',
       employeeNameRequired: '직원 이름을 입력하세요',
       employeeAdded: '직원 추가됨',
       employeeDeleteConfirm: '직원을 삭제할까요? 해당 직원의 스케줄 배정도 제거됩니다.',
@@ -107,7 +107,7 @@ const I18N = {
       requirementDeleteConfirm: '시간 블록을 삭제할까요? 관련 스케줄 배정도 제거됩니다.',
       stationReqAdded: '필요 자리 1개 추가됨',
       stationReqCloned: '같은 자리 1개 추가됨',
-      levelExistsConfirm: '같은 Skill 안에 동일한 Level / Step이 이미 있습니다. 그래도 추가할까요?',
+      levelExistsConfirm: '같은 스킬 안에 동일한 Level / Step이 이미 있습니다. 그래도 추가할까요?',
       scheduled: '배정됨',
       languageSaved: '언어가 변경되었습니다',
     },
@@ -160,7 +160,7 @@ const I18N = {
       uiPreview: 'UI 미리보기',
     },
     dashboard: {
-      title: 'Dashboard',
+      title: '요약',
       subtitle: '이번 주 스케줄의 운영 가능성, 인건비, 부족한 스테이션을 한눈에 확인한다.',
       budgetEdit: '목표 인건비 수정',
       ratioEdit: '목표 인건비율 수정 %',
@@ -185,26 +185,26 @@ const I18N = {
       currentSchedule: '현재 스케줄 기준',
       budgetTarget: '목표 {amount}',
       budgetRatioBase: '목표 인건비율 {ratio}% 기준',
-      slotsAssigned: '{assigned}/{total} slots 배정',
+      slotsAssigned: '{assigned}/{total} 자리 배정',
       goalMet: '목표 이내',
       goalExceeded: '목표 초과',
     },
     parts: {
-      title: 'Parts / Stations',
-      subtitle: 'Part는 큰 부서, Station은 실제 배치 위치다. 예: 주방 → 준비, 화구, 프라이, 패스, 세척 / 홀 → 플로어, 캐셔, 러너.',
-      partAddTitle: 'Part 추가',
-      stationAddTitle: 'Station 추가',
-      partName: 'Part 이름',
-      stationName: 'Station 이름',
+      title: '파트 / 스테이션',
+      subtitle: '파트는 큰 부서, 스테이션은 실제 배치 위치다. 예: 주방 → 준비, 화구, 프라이, 패스, 세척 / 홀 → 플로어, 캐셔, 러너.',
+      partAddTitle: '파트 추가',
+      stationAddTitle: '스테이션 추가',
+      partName: '파트 이름',
+      stationName: '스테이션 이름',
       description: '설명',
       color: '색상',
-      active: 'Active',
-      inactive: 'Inactive',
-      partHeader: 'Part',
-      stationHeader: 'Station',
+      active: '활성',
+      inactive: '비활성',
+      partHeader: '파트',
+      stationHeader: '스테이션',
       statusHeader: '상태',
-      noParts: '등록된 Part가 없다.',
-      noStations: '등록된 Station이 없다.',
+      noParts: '등록된 파트가 없다.',
+      noStations: '등록된 스테이션이 없다.',
       deletePart: '삭제',
       deleteStation: '삭제',
     },
@@ -213,27 +213,27 @@ const I18N = {
       advancedHelp: '스테이션을 추가하면 같은 이름의 스킬과 기본 Level/Step 단계가 자동으로 만들어집니다. 단계 설명을 바꾸거나 한 스테이션에 스킬을 더 두고 싶을 때만 여세요.',
       advancedOpen: '열기',
       advancedClose: '닫기',
-      title: 'Skills / Levels',
-      subtitle: '왼쪽에서 Skill을 선택하면 오른쪽에서 그 Skill에 속한 Level / Step을 관리한다. Level / Step은 Skill 밖의 별도 분류가 아니다.',
+      title: '스킬 / 숙련도',
+      subtitle: '왼쪽에서 스킬을 선택하면 오른쪽에서 그 스킬에 속한 Level / Step을 관리한다. Level / Step은 스킬 밖의 별도 분류가 아니다.',
       guideTitle: '구조 정리',
-      guideText: 'Station은 근무 위치, Skill은 그 위치에서 필요한 업무 능력, Level / Step은 선택한 Skill 안에서의 숙련 단계다. 예: Fry section → Level 1 / Step 4.',
-      addSkillTitle: 'Skill 추가',
+      guideText: '스테이션은 근무 위치, 스킬은 그 위치에서 필요한 업무 능력, Level / Step은 선택한 스킬 안에서의 숙련 단계다. 예: 프라이 → Level 1 / Step 4.',
+      addSkillTitle: '스킬 추가',
       addStepTitle: 'Level / Step 추가',
-      noSkillSelected: '선택된 Skill 없음',
-      noSkillSelectedText: '왼쪽에서 Skill을 추가하거나 선택하면 Level / Step 관리 패널이 열린다.',
-      noSkillSteps: '이 Skill에는 아직 Level / Step이 없다. 위에서 단계를 추가해라.',
-      noSkills: '아직 등록된 Skill이 없다.',
+      noSkillSelected: '선택된 스킬 없음',
+      noSkillSelectedText: '왼쪽에서 스킬을 추가하거나 선택하면 Level / Step 관리 패널이 열린다.',
+      noSkillSteps: '이 스킬에는 아직 Level / Step이 없다. 위에서 단계를 추가해라.',
+      noSkills: '아직 등록된 스킬이 없다.',
       addLevel: '단계 추가',
       deleteLevel: '삭제',
       deleteSkill: '삭제',
     },
     members: {
-      title: 'Members',
-      subtitle: '직원별 Part, 가능 요일/시간, 가능 Skill, Level/Step을 관리한다. Part 필터는 Parts 탭의 추가/삭제와 자동 연동된다.',
-      partFilter: '보기 Part',
+      title: '직원',
+      subtitle: '직원별 파트, 가능 요일/시간, 가능 스킬, Level/Step을 관리한다. 파트 필터는 파트 탭의 추가/삭제와 자동 연동된다.',
+      partFilter: '보기 파트',
       addEmployeeTitle: '직원 추가',
       name: '이름',
-      part: 'Part',
+      part: '파트',
       role: '역할',
       rate: '시급',
       maxHours: '최대 주간시간',
@@ -244,8 +244,8 @@ const I18N = {
       cannotDo: '못함',
       otherSkills: '기타 스킬',
       noStationsYet: '먼저 매장 설정에서 스테이션을 추가하세요.',
-      noEmployeesHere: '이 Part에 등록된 직원 없음',
-      noEmployeesVisible: '선택한 Part에 표시할 직원이 없다.',
+      noEmployeesHere: '이 파트에 등록된 직원 없음',
+      noEmployeesVisible: '선택한 파트에 표시할 직원이 없다.',
       weekHours: '이번 주',
       max: '최대',
       weekday: '평일',
@@ -255,10 +255,10 @@ const I18N = {
       activate: '활성',
     },
     requirements: {
-      title: 'Requirements',
-      subtitle: '요일별 시간 블록 안에 필요한 실제 자리만 한 줄씩 추가한다. 같은 자리가 2명 필요하면 같은 Station을 두 번 추가한다.',
+      title: '필요 인원',
+      subtitle: '요일별 시간 블록 안에 필요한 실제 자리만 한 줄씩 추가한다. 같은 자리가 2명 필요하면 같은 스테이션을 두 번 추가한다.',
       guideTitle: '입력 방식',
-      guideText: '예: 디너 피크에 Kitchen/Fry 2명이 필요하면 Kitchen / Fry 자리를 두 번 추가한다. Schedule Board에는 두 줄이 자동 생성되고, 각 줄마다 조건에 맞는 직원만 선택된다.',
+      guideText: '예: 디너 피크에 주방/프라이 2명이 필요하면 주방/프라이 자리를 두 번 추가한다. 근무표 배정에는 두 줄이 자동 생성되고, 각 줄마다 조건에 맞는 직원만 선택된다.',
       daySelect: '요일 선택',
       addBlockTitle: '시간 블록 추가',
       day: '요일',
@@ -275,28 +275,28 @@ const I18N = {
       deleteBlock: '블록 삭제',
       deleteSeat: '삭제',
       noSeats: '필요 자리를 한 줄씩 추가하세요.',
-      part: 'Part',
-      station: 'Section',
-      skill: '자동 Skill',
-      min: 'Min',
+      part: '파트',
+      station: '스테이션',
+      skill: '자동 스킬',
+      min: '최소',
     },
     schedule: {
-      title: 'Schedule Board',
-      subtitle: 'Roster Sheet는 왼쪽에 Part/Station, 위쪽에 시간대를 두는 가로형 스프레드시트다. 조건에 맞지 않는 직원은 드롭다운에서 숨긴다.',
-      sheet: 'Roster Sheet',
+      title: '근무표 배정',
+      subtitle: '배치표는 왼쪽에 파트/스테이션, 위쪽에 시간대를 두는 가로형 스프레드시트다. 조건에 맞지 않는 직원은 드롭다운에서 숨긴다.',
+      sheet: '배치표',
       confirmed: '확정 근무표',
       member: '직원별',
       part: '파트별',
       csv: 'CSV 내보내기',
       print: 'PDF용 인쇄',
       dayLabel: '요일',
-      noRequirementDay: '이 요일에는 Requirements에서 추가된 자리가 없다.',
+      noRequirementDay: '이 요일에는 필요 인원에서 추가된 자리가 없다.',
       noTimeBlocks: '시간 블록 없음',
-      statusRequired: 'Status / Required',
-      partHeader: 'Part',
-      stationHeader: 'Station',
-      seatHeader: 'Seat',
-      requiredHeader: 'Status / Required',
+      statusRequired: '상태 / 필요 조건',
+      partHeader: '파트',
+      stationHeader: '스테이션',
+      seatHeader: '자리',
+      requiredHeader: '상태 / 필요 조건',
       recommend: '추천',
       replace: '대체',
       assigned: '정상',
@@ -306,18 +306,18 @@ const I18N = {
       ok: '적합',
       caution: '주의',
       urgent: '긴급',
-      noRequirements: 'Requirements에 시간 블록이 없다.',
-      weeklyRoster: 'Weekly Roster',
+      noRequirements: '필요 인원에 시간 블록이 없다.',
+      weeklyRoster: '주간 근무표',
       printTitle: '월–일 전체 확정 근무표',
-      printSubtitle: 'PDF 출력용 로스터다. 요일은 가로축, Phase는 세로축이며 Part별로 한 페이지씩 출력되도록 압축했다.',
+      printSubtitle: 'PDF 출력용 로스터다. 요일은 가로축, 시간대는 세로축이며 파트별로 한 페이지씩 출력되도록 압축했다.',
       noPartWork: '이 카테고리에 배정할 업무가 없다.',
-      phase: 'Phase',
-      time: 'Time',
-      peak: 'Peak',
-      normal: 'Normal',
-      schedulePreview: 'Schedule preview',
-      rosterHint: '시간을 가로축에 둔 배치표다. 왼쪽 Part/Station 행을 보고, 각 시간대 칸에서 조건에 맞는 직원만 선택한다.',
-      confirmedHint: 'PDF 출력용 로스터다. 요일은 가로축, Phase는 세로축이며 Part별로 한 페이지씩 출력되도록 압축했다.',
+      phase: '시간대',
+      time: '시간',
+      peak: '피크',
+      normal: '일반',
+      schedulePreview: '근무표 미리보기',
+      rosterHint: '시간을 가로축에 둔 배치표다. 왼쪽 파트/스테이션 행을 보고, 각 시간대 칸에서 조건에 맞는 직원만 선택한다.',
+      confirmedHint: 'PDF 출력용 로스터다. 요일은 가로축, 시간대는 세로축이며 파트별로 한 페이지씩 출력되도록 압축했다.',
       rosterHintShort: '시간을 가로축에 둔 배치표다.',
       autoFill: '빈 자리 자동 채우기',
       autoFillHint: '일주일 전체의 빈 자리에 완전 적합한 직원 중 1순위를 넣습니다.',
@@ -359,14 +359,14 @@ const I18N = {
       assignmentsResult: '{copied}자리를 복사했어요. 그중 {check}자리는 조건 확인이 필요하고, {unmatched}자리는 같은 시간 블록이 없어 건너뛰었어요.',
     },
     labor: {
-      title: 'Labor Cost',
+      title: '인건비',
       subtitle: '스케줄 배정 결과를 기준으로 직원별 평일/토/일 근무시간과 파트별 인건비를 계산한다.',
       budget: '목표 인건비',
       usage: '사용률',
       neededSales: '필요 매출',
       progress: '목표 대비 진행률',
       employee: '직원',
-      part: 'Part',
+      part: '파트',
       weekday: '평일',
       saturday: '토',
       sunday: '일',
@@ -379,19 +379,128 @@ const I18N = {
       ratioBase: '{ratio}% 인건비율 기준',
     },
     validation: {
-      title: 'Validation',
-      subtitle: '미배정, Skill/Level 부족, 가능 시간 위반, 중복 배치, 목표 인건비 초과를 검사한다.',
+      title: '검증',
+      subtitle: '미배정, 스킬/Level 부족, 가능 시간 위반, 중복 배치, 목표 인건비 초과를 검사한다.',
       resultTitle: '검증 결과',
       noIssues: '현재 주요 문제 없음',
       fix: '고치기',
       fixHint: '근무표에서 이 자리를 열고 추천 직원을 보여줍니다.',
-      statusHigh: 'high',
-      statusMedium: 'medium',
-      statusLow: 'low',
+      statusHigh: '높음',
+      statusMedium: '중간',
+      statusLow: '낮음',
+    },
+    ui: {
+      unknownPart: '알 수 없는 파트',
+      unknownStation: '알 수 없는 스테이션',
+      unknownSkill: '알 수 없는 스킬',
+      unassigned: '미배정',
+      noLinkedSkill: '연결된 스킬 없음',
+      people: '{n}명',
+      yes: '예',
+      no: '아니요',
+      phPartName: '예: 주방',
+      phPartDesc: '예: 조리 파트',
+      phStationName: '예: 화구',
+      phStationDesc: '예: 메인 조리',
+      phSkillName: '예: 프라이',
+      phLevelDesc: '예: Level 2 직전 단계, 일부 확인 후 업무 가능',
+      phEmpName: '예: 민호',
+      phRole: '예: 주방 직원',
+      phBlockLabel: '예: 디너 피크',
+      skillName: '스킬 이름',
+      stepCount: '단계 수',
+      kind: '구분',
+      critical: '필수',
+      normal: '일반',
+      stepsCount: '{n}단계',
+      select: '선택',
+      description: '설명',
+      canDo: '가능 업무',
+      manage: '관리',
+      noSeatsSummary: '자리 없음',
+      noAssignments: '배정 없음',
+      assignmentsCount: '{n}건 배정',
+      needs: '필요: {skill}',
+    },
+    status: {
+      unassigned: '미배정',
+      missingEmployee: '직원 없음',
+      pickEmployee: '직원을 선택하세요.',
+      deletedEmployee: '삭제된 직원입니다.',
+      fit: '적합',
+      partial: '주의',
+      emergency: '긴급',
+      bad: '부적합',
+      notApplicable: '해당 없음',
+      riskCount: '미배정/위험 {n}',
+      warnCount: '주의 {n}',
+      okCount: '적합 {n}',
+      currentBelow: '현재 배정(조건 미달)',
+      noneFits: '조건에 맞는 직원 없음',
+    },
+    recs: {
+      title: '추천 직원 · {where}',
+      replaceTitle: '대체근무자 추천 · {name} 대체',
+      originalCost: '기존 비용 {amount}',
+      fit: '완전 적합',
+      partial: '부분 적합',
+      emergency: '긴급 대체 가능',
+      bad: '부적합',
+      score: '점수 {n}',
+      weekProjected: '주간 예상 {hours}h',
+      costDiff: '기존 대비 비용 차이:',
+      apply: '이 직원 배치',
+    },
+    reasons: {
+      dayUnavailable: '{day} 근무 불가능',
+      available: '{start}–{end} 가능',
+      partialAvailable: '부분 가능: {start}–{end}',
+      timeUnavailable: '시간 불가: {start}–{end}',
+      noSkill: '필수 스킬 없음',
+      meets: 'Level {level} - Step {step}: 요구 조건 충족',
+      stepShort: 'Level은 맞지만 Step 부족: 현재 Step {step}, 필요 Step {minStep}',
+      emergency: '한 Level 아래지만 높은 Step: Level {level} - Step {step}',
+      tooLow: '숙련도 부족: Level {level} - Step {step}, 필요 Level {minLevel} - Step {minStep}',
+      inactive: '비활성 직원',
+      peakOk: '피크타임 가능',
+      peakCheck: '피크타임 가능 여부 확인 필요',
+      overlap: '같은 시간대 다른 배정 있음',
+      overMax: '최대 주간시간 초과 예상: {hours}h / {max}h',
+      weekly: '주간 예상 {hours}h / {max}h',
+      addedCost: '추가 인건비 {amount}',
+    },
+    issues: {
+      unassigned: '미배정',
+      missingEmployee: '직원 없음',
+      availability: '가능 시간 위반',
+      skillShort: '스킬 / Level 부족',
+      skillCaution: '스킬 / Level 주의',
+      noReplacement: '대체근무자 없음',
+      doubleBooked: '중복 배치',
+      overMaxHours: '주간 최대시간 초과',
+      overBudget: '목표 인건비 초과',
+      unassignedMsg: '{when} / {part} / {station} 미배정',
+      missingEmployeeMsg: '삭제된 직원이 배정되어 있습니다.',
+      noReplacementMsg: '{name} 결근 시 대체 가능자가 없습니다.',
+      doubleBookedMsg: '{name}: 같은 시간 블록에 {count}번 배정됨',
+      overMaxMsg: '{name}: {hours}h / 최대 {max}h',
+      overBudgetMsg: '현재 인건비 {cost} / 목표 {budget}',
+      needs: '필요 {skill}',
     },
     roadmap: {
-      title: 'Roadmap',
+      title: '로드맵',
       subtitle: '지금 구현하지 않는 기능을 앱 내부에 남겨두는 개발 메모다.',
+      items: [
+        ['기업별 로그인 / 초대코드', '회사별 로그인 페이지와 직원 초대 코드를 먼저 두고, 관리자와 직원을 분리해서 접근을 제어한다.'],
+        ['직원용 모바일 페이지', '직원은 읽기 전용 스케줄과 본인 관련 항목만 보고, 가능 시간·휴무 요청·대체 가능 여부만 제출한다.'],
+        ['완전 자동 스케줄 생성', '필요 인원, 직원, 가능 시간, Level/Step, 목표 인건비를 기준으로 주간 초안을 자동 생성하고 수동 수정도 가능하게 한다.'],
+        ['직원 성장 관리', 'Level/Step을 교육 기록과 승급 체크리스트로 확장하고, 부족한 스테이션을 기준으로 교육 대상을 추천한다.'],
+        ['직원 의존도 분석', '특정 직원이 빠졌을 때 운영이 무너지는 구조를 감지하고 대체 가능자 부족을 경고한다.'],
+        ['실제 출퇴근 기록', '예정 스케줄과 실제 출퇴근 시간을 비교해 차이 시간과 실제 인건비를 계산한다.'],
+        ['공휴일 / 가산 수당 / 연금 / 세금', '현재의 단순 배율 계산을 넘어 호주 기준 penalty rate, allowance, super, tax를 설정값으로 확장한다.'],
+        ['승인 시스템', '직원이 제출한 휴무/가능 시간/대체 가능 여부는 관리자가 승인해야 스케줄과 포털에 반영되게 한다.'],
+        ['알림 기능', '스케줄 확정, 변경, 대체 요청, 인건비 초과, 필수 인력 부족 알림을 구현한다.'],
+      ],
     },
   },
   en: {
@@ -748,9 +857,118 @@ const I18N = {
       statusMedium: 'medium',
       statusLow: 'low',
     },
+    ui: {
+      unknownPart: 'Unknown part',
+      unknownStation: 'Unknown station',
+      unknownSkill: 'Unknown skill',
+      unassigned: 'Unassigned',
+      noLinkedSkill: 'No linked skill',
+      people: '{n} people',
+      yes: 'Yes',
+      no: 'No',
+      phPartName: 'e.g. Kitchen',
+      phPartDesc: 'e.g. Cooking',
+      phStationName: 'e.g. Grill',
+      phStationDesc: 'e.g. Main cooking',
+      phSkillName: 'e.g. Fry',
+      phLevelDesc: 'e.g. Almost Level 2; works with a few checks',
+      phEmpName: 'e.g. Alex',
+      phRole: 'e.g. Kitchen staff',
+      phBlockLabel: 'e.g. Dinner peak',
+      skillName: 'Skill name',
+      stepCount: 'Steps',
+      kind: 'Type',
+      critical: 'Critical',
+      normal: 'Normal',
+      stepsCount: '{n} steps',
+      select: 'Select',
+      description: 'Description',
+      canDo: 'Can do',
+      manage: 'Manage',
+      noSeatsSummary: 'No seats',
+      noAssignments: 'No assignments',
+      assignmentsCount: '{n} assignments',
+      needs: 'Needs: {skill}',
+    },
+    status: {
+      unassigned: 'Unassigned',
+      missingEmployee: 'Missing employee',
+      pickEmployee: 'Pick an employee.',
+      deletedEmployee: 'This employee was deleted.',
+      fit: 'Fit',
+      partial: 'Caution',
+      emergency: 'Emergency',
+      bad: 'Not fit',
+      notApplicable: 'N/A',
+      riskCount: 'Unassigned/risk {n}',
+      warnCount: 'Caution {n}',
+      okCount: 'Fit {n}',
+      currentBelow: 'current (below requirements)',
+      noneFits: 'No one fits',
+    },
+    recs: {
+      title: 'Suggested staff · {where}',
+      replaceTitle: 'Replacement for {name}',
+      originalCost: 'Current cost {amount}',
+      fit: 'Full fit',
+      partial: 'Partial fit',
+      emergency: 'Emergency cover',
+      bad: 'Not fit',
+      score: 'Score {n}',
+      weekProjected: 'Week projected {hours}h',
+      costDiff: 'Cost difference:',
+      apply: 'Assign',
+    },
+    reasons: {
+      dayUnavailable: 'Not available on {day}',
+      available: 'Available {start}–{end}',
+      partialAvailable: 'Partly available: {start}–{end}',
+      timeUnavailable: 'Not available then: {start}–{end}',
+      noSkill: 'Missing required skill',
+      meets: 'Level {level} - Step {step}: meets requirement',
+      stepShort: 'Level matches but Step is short: Step {step}, needs Step {minStep}',
+      emergency: 'One Level below but high Step: Level {level} - Step {step}',
+      tooLow: 'Not skilled enough: Level {level} - Step {step}, needs Level {minLevel} - Step {minStep}',
+      inactive: 'Inactive employee',
+      peakOk: 'Can work peak',
+      peakCheck: 'Check peak readiness',
+      overlap: 'Already assigned at this time',
+      overMax: 'Would exceed max weekly hours: {hours}h / {max}h',
+      weekly: 'Week projected {hours}h / {max}h',
+      addedCost: 'Added labor {amount}',
+    },
+    issues: {
+      unassigned: 'Unassigned',
+      missingEmployee: 'Missing employee',
+      availability: 'Availability conflict',
+      skillShort: 'Skill / Level short',
+      skillCaution: 'Skill / Level caution',
+      noReplacement: 'No replacement',
+      doubleBooked: 'Double booked',
+      overMaxHours: 'Over max weekly hours',
+      overBudget: 'Over labor budget',
+      unassignedMsg: '{when} / {part} / {station} unassigned',
+      missingEmployeeMsg: 'A deleted employee is assigned here.',
+      noReplacementMsg: 'No one can cover if {name} is absent.',
+      doubleBookedMsg: '{name}: assigned {count} times in the same time block',
+      overMaxMsg: '{name}: {hours}h / max {max}h',
+      overBudgetMsg: 'Labor {cost} / budget {budget}',
+      needs: 'Needs {skill}',
+    },
     roadmap: {
       title: 'Roadmap',
       subtitle: 'A living note inside the app for features not implemented yet.',
+      items: [
+        ['Company login / invite codes', 'A login page per company and employee invite codes, with managers and staff kept apart.'],
+        ['Employee mobile page', 'Staff see a read-only schedule and their own items, and only submit availability, leave requests and cover offers.'],
+        ['Fully automatic scheduling', 'Draft the week from requirements, staff, availability, Level/Step and the labor budget, then edit by hand.'],
+        ['Staff growth', 'Extend Level/Step with training records and promotion checklists, and suggest who to train for short-handed stations.'],
+        ['Dependency analysis', 'Detect where operations break if one person is missing and warn when cover is thin.'],
+        ['Time clock', 'Compare scheduled and actual hours to get the difference and real labor cost.'],
+        ['Public holidays / penalty rates / super / tax', 'Go beyond simple multipliers with Australian penalty rates, allowances, super and tax as settings.'],
+        ['Approvals', 'Leave, availability and cover offers from staff take effect only after a manager approves them.'],
+        ['Notifications', 'Notify on roster publish, changes, cover requests, budget overruns and missing critical staff.'],
+      ],
     },
   },
 };
@@ -1205,10 +1423,10 @@ function toast(message) {
 }
 
 function byId(list, id) { return list.find((item) => item.id === id); }
-function partName(id) { return byId(state.parts, id)?.name || 'Unknown Part'; }
-function stationName(id) { return byId(state.stations, id)?.name || 'Unknown Station'; }
-function skillName(id) { return byId(state.skills, id)?.name || 'Unknown Skill'; }
-function employeeName(id) { return byId(state.employees, id)?.name || 'Unassigned'; }
+function partName(id) { return byId(state.parts, id)?.name || t('ui.unknownPart'); }
+function stationName(id) { return byId(state.stations, id)?.name || t('ui.unknownStation'); }
+function skillName(id) { return byId(state.skills, id)?.name || t('ui.unknownSkill'); }
+function employeeName(id) { return byId(state.employees, id)?.name || t('ui.unassigned'); }
 function dayLabel(key) { return DAYS.find((d) => d.key === key)?.[currentLanguage()]?.label || key; }
 function dayShort(key) { return DAYS.find((d) => d.key === key)?.[currentLanguage()]?.short || key; }
 function money(value) { return `${state.settings.currency}${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`; }
@@ -1330,7 +1548,7 @@ function getRequiredSkillId(stationReq) {
 }
 function requiredSkillName(stationReq) {
   const skillId = getRequiredSkillId(stationReq);
-  return skillId ? skillName(skillId) : 'Station linked skill 없음';
+  return skillId ? skillName(skillId) : t('ui.noLinkedSkill');
 }
 function seatCount(sreq) {
   return Math.max(1, Number(sreq.requiredCount || 1));
@@ -1435,14 +1653,14 @@ function laborSummary() {
 
 function isEmployeeAvailable(employee, req) {
   const av = employee.availability?.[req.dayOfWeek];
-  if (!av || !av.available) return { status: 'bad', reason: `${dayLabel(req.dayOfWeek)} 근무 불가능` };
+  if (!av || !av.available) return { status: 'bad', reason: t('reasons.dayUnavailable', { day: dayLabel(req.dayOfWeek) }) };
   const reqStart = toMinutes(req.startTime);
   const reqEnd = toMinutes(req.endTime);
   const avStart = toMinutes(av.startTime);
   const avEnd = toMinutes(av.endTime);
-  if (avStart <= reqStart && avEnd >= reqEnd) return { status: 'ok', reason: `${av.startTime}–${av.endTime} 가능` };
-  if (avEnd > reqStart && avStart < reqEnd) return { status: 'partial', reason: `부분 가능: ${av.startTime}–${av.endTime}` };
-  return { status: 'bad', reason: `시간 불가: ${av.startTime}–${av.endTime}` };
+  if (avStart <= reqStart && avEnd >= reqEnd) return { status: 'ok', reason: t('reasons.available', { start: av.startTime, end: av.endTime }) };
+  if (avEnd > reqStart && avStart < reqEnd) return { status: 'partial', reason: t('reasons.partialAvailable', { start: av.startTime, end: av.endTime }) };
+  return { status: 'bad', reason: t('reasons.timeUnavailable', { start: av.startTime, end: av.endTime }) };
 }
 
 function hasOverlappingAssignment(employeeId, req, ignoreKey = '') {
@@ -1464,29 +1682,29 @@ function highestStepForSkillLevel(skillId, levelNumber) {
 function compareLevelStep(employee, stationReq) {
   const requiredSkillId = getRequiredSkillId(stationReq);
   const assigned = employee.assignedSkills?.[requiredSkillId];
-  if (!assigned) return { status: 'bad', reason: '필수 Skill 없음', score: -100 };
+  if (!assigned) return { status: 'bad', reason: t('reasons.noSkill'), score: -100 };
   const level = num(assigned.level);
   const step = num(assigned.step);
   const minLevel = num(stationReq.minLevel);
   const minStep = num(stationReq.minStep);
 
   if (level > minLevel || (level === minLevel && step >= minStep)) {
-    return { status: 'ok', reason: `Level ${level} - Step ${step}: 요구 조건 충족`, score: 50 + (level - minLevel) * 10 + (step - minStep) };
+    return { status: 'ok', reason: t('reasons.meets', { level, step }), score: 50 + (level - minLevel) * 10 + (step - minStep) };
   }
   if (level === minLevel && step < minStep) {
-    return { status: 'partial', reason: `Level은 맞지만 Step 부족: 현재 Step ${step}, 필요 Step ${minStep}`, score: 20 - (minStep - step) };
+    return { status: 'partial', reason: t('reasons.stepShort', { step, minStep }), score: 20 - (minStep - step) };
   }
   if (stationReq.canUseLowerStepAsEmergency && level === minLevel - 1) {
     const maxStep = highestStepForSkillLevel(requiredSkillId, level);
     if (step >= Math.max(3, maxStep - 1)) {
-      return { status: 'emergency', reason: `한 Level 아래지만 높은 Step: Level ${level} - Step ${step}`, score: 8 };
+      return { status: 'emergency', reason: t('reasons.emergency', { level, step }), score: 8 };
     }
   }
-  return { status: 'bad', reason: `숙련도 부족: Level ${level} - Step ${step}, 필요 Level ${minLevel} - Step ${minStep}`, score: -40 };
+  return { status: 'bad', reason: t('reasons.tooLow', { level, step, minLevel, minStep }), score: -40 };
 }
 
 function getCandidateStatus(employee, req, stationReq, ignoreKey = '') {
-  if (!employee.active) return { category: 'bad', score: -999, reasons: ['비활성 직원'] };
+  if (!employee.active) return { category: 'bad', score: -999, reasons: [t('reasons.inactive')] };
   const reasons = [];
   let score = 0;
 
@@ -1504,9 +1722,9 @@ function getCandidateStatus(employee, req, stationReq, ignoreKey = '') {
     const template = getEmployeeLevelTemplate(employee, getRequiredSkillId(stationReq));
     if (template?.canWorkPeakTime) {
       score += 8;
-      reasons.push('피크타임 가능');
+      reasons.push(t('reasons.peakOk'));
     } else if (skill.status === 'ok') {
-      reasons.push('피크타임 가능 여부 확인 필요');
+      reasons.push(t('reasons.peakCheck'));
       score -= 5;
     }
   }
@@ -1514,7 +1732,7 @@ function getCandidateStatus(employee, req, stationReq, ignoreKey = '') {
   const overlapping = hasOverlappingAssignment(employee.id, req, ignoreKey);
   if (overlapping) {
     score -= 90;
-    reasons.push('같은 시간대 다른 배정 있음');
+    reasons.push(t('reasons.overlap'));
   }
 
   // An employee already sitting in the seat being checked has its hours counted once.
@@ -1523,14 +1741,14 @@ function getCandidateStatus(employee, req, stationReq, ignoreKey = '') {
   const overMaxHours = projectedHours > num(employee.maxWeeklyHours, 999);
   if (overMaxHours) {
     score -= 60;
-    reasons.push(`최대 주간시간 초과 예상: ${projectedHours.toFixed(1)}h / ${employee.maxWeeklyHours}h`);
+    reasons.push(t('reasons.overMax', { hours: projectedHours.toFixed(1), max: employee.maxWeeklyHours }));
   } else {
     score += 5;
-    reasons.push(`주간 예상 ${projectedHours.toFixed(1)}h / ${employee.maxWeeklyHours}h`);
+    reasons.push(t('reasons.weekly', { hours: projectedHours.toFixed(1), max: employee.maxWeeklyHours }));
   }
 
   const addedCost = durationHours(req.startTime, req.endTime) * getRate(employee, req.dayOfWeek);
-  reasons.push(`추가 인건비 ${money(addedCost)}`);
+  reasons.push(t('reasons.addedCost', { amount: money(addedCost) }));
 
   let category = 'bad';
   if (availability.status === 'ok' && skill.status === 'ok' && !overlapping && !overMaxHours) category = 'fit';
@@ -1756,6 +1974,8 @@ function calculateValidation() {
 }
 function computeValidation() {
   const issues = [];
+  // kind is a stable code for logic; type is its label in the current language.
+  const issue = (kind, fields) => issues.push({ kind, type: t(`issues.${kind}`), ...fields });
   const assignmentsByReq = getAssignments().reduce((acc, a) => {
     (acc[a.reqId] ||= []).push(a);
     return acc;
@@ -1768,27 +1988,27 @@ function computeValidation() {
         const employeeId = state.schedule[key];
         const seat = { req, sreq, slotIndex: i };
         if (!employeeId) {
-          issues.push({ ...seat, severity: 'high', type: '미배정', message: `${dayLabel(req.dayOfWeek)} ${req.startTime}–${req.endTime} / ${partName(sreq.partId)} / ${stationName(sreq.stationId)} 미배정` });
+          issue('unassigned', { ...seat, severity: 'high', message: t('issues.unassignedMsg', { when: `${dayLabel(req.dayOfWeek)} ${req.startTime}–${req.endTime}`, part: partName(sreq.partId), station: stationName(sreq.stationId) }) });
           continue;
         }
         const employee = byId(state.employees, employeeId);
         if (!employee) {
-          issues.push({ ...seat, severity: 'high', type: '직원 없음', message: `삭제된 직원이 배정되어 있습니다.` });
+          issue('missingEmployee', { ...seat, severity: 'high', message: t('issues.missingEmployeeMsg') });
           continue;
         }
         const availability = isEmployeeAvailable(employee, req);
         if (availability.status !== 'ok') {
-          issues.push({ ...seat, severity: availability.status === 'partial' ? 'medium' : 'high', type: '가능 시간 위반', employee, message: `${employee.name}: ${availability.reason}` });
+          issue('availability', { ...seat, severity: availability.status === 'partial' ? 'medium' : 'high', employee, message: `${employee.name}: ${availability.reason}` });
         }
         const skill = compareLevelStep(employee, sreq);
         if (skill.status === 'bad') {
-          issues.push({ ...seat, severity: 'high', type: 'Skill / Level 부족', employee, message: `${employee.name}: ${skill.reason}` });
+          issue('skillShort', { ...seat, severity: 'high', employee, message: `${employee.name}: ${skill.reason}` });
         } else if (skill.status !== 'ok') {
-          issues.push({ ...seat, severity: 'medium', type: 'Skill / Level 주의', employee, message: `${employee.name}: ${skill.reason}` });
+          issue('skillCaution', { ...seat, severity: 'medium', employee, message: `${employee.name}: ${skill.reason}` });
         }
         const replacements = getRecommendations(req, sreq, employee.id, key).filter((r) => ['fit', 'partial', 'emergency'].includes(r.category));
         if (!replacements.length) {
-          issues.push({ ...seat, severity: 'medium', type: '대체근무자 없음', employee, message: `${employee.name} 결근 시 대체 가능자가 없습니다.` });
+          issue('noReplacement', { ...seat, severity: 'medium', employee, message: t('issues.noReplacementMsg', { name: employee.name }) });
         }
       }
     });
@@ -1799,7 +2019,7 @@ function computeValidation() {
     }, {});
     Object.entries(duplicates).forEach(([employeeId, count]) => {
       if (count > 1) {
-        issues.push({ severity: 'high', type: '중복 배치', req, message: `${employeeName(employeeId)}가 같은 시간 블록에 ${count}번 배정되었습니다.` });
+        issue('doubleBooked', { severity: 'high', req, message: t('issues.doubleBookedMsg', { name: employeeName(employeeId), count }) });
       }
     });
   });
@@ -1807,13 +2027,13 @@ function computeValidation() {
   state.employees.forEach((emp) => {
     const hours = employeeWeeklyHours(emp.id);
     if (hours > num(emp.maxWeeklyHours, 999)) {
-      issues.push({ severity: 'high', type: '주간 최대시간 초과', employee: emp, message: `${emp.name}: ${hours.toFixed(1)}h / 최대 ${emp.maxWeeklyHours}h` });
+      issue('overMaxHours', { severity: 'high', employee: emp, message: t('issues.overMaxMsg', { name: emp.name, hours: hours.toFixed(1), max: emp.maxWeeklyHours }) });
     }
   });
 
   const totalCost = totalLaborCost();
   if (state.settings.laborBudget && totalCost > state.settings.laborBudget) {
-    issues.push({ severity: 'high', type: '목표 인건비 초과', message: `현재 인건비 ${money(totalCost)} / 목표 ${money(state.settings.laborBudget)}` });
+    issue('overBudget', { severity: 'high', message: t('issues.overBudgetMsg', { cost: money(totalCost), budget: money(state.settings.laborBudget) }) });
   }
 
   return issues;
@@ -1878,9 +2098,9 @@ function renderDashboard() {
   const budgetStatus = status || 'ok';
   const issues = calculateValidation();
   const highIssues = issues.filter((i) => i.severity === 'high').length;
-  const missing = issues.filter((i) => i.type === '미배정').length;
-  const skillIssues = issues.filter((i) => i.type.includes('Skill')).length;
-  const replacementIssues = issues.filter((i) => i.type === '대체근무자 없음').length;
+  const missing = issues.filter((i) => i.kind === 'unassigned').length;
+  const skillIssues = issues.filter((i) => i.kind === 'skillShort' || i.kind === 'skillCaution').length;
+  const replacementIssues = issues.filter((i) => i.kind === 'noReplacement').length;
   const assignedSlots = getAssignments().length;
   const totalSlots = getRequirementSeatRows().length;
   const completion = totalSlots ? (assignedSlots / totalSlots) * 100 : 0;
@@ -1968,8 +2188,8 @@ function renderParts() {
       <div class="card">
         <h3>${t('parts.partAddTitle')}</h3>
         <div class="form-row compact">
-          <label>${t('parts.partName')}<input id="newPartName" placeholder="예: Kitchen" /></label>
-          <label>${t('parts.description')}<input id="newPartDesc" placeholder="예: 주방 파트" /></label>
+          <label>${t('parts.partName')}<input id="newPartName" placeholder="${escapeHtml(t('ui.phPartName'))}" /></label>
+          <label>${t('parts.description')}<input id="newPartDesc" placeholder="${escapeHtml(t('ui.phPartDesc'))}" /></label>
           <label>${t('parts.color')}<input id="newPartColor" type="color" value="#2563eb" /></label>
           <button class="btn" data-action="add-part">${t('common.add')}</button>
         </div>
@@ -1987,8 +2207,8 @@ function renderParts() {
         <h3>${t('parts.stationAddTitle')}</h3>
         <div class="form-row compact">
           <label>${t('parts.partHeader')}<select id="newStationPart">${partOptions()}</select></label>
-          <label>${t('parts.stationName')}<input id="newStationName" placeholder="예: Hot" /></label>
-          <label>${t('parts.description')}<input id="newStationDesc" placeholder="예: 핫 섹션" /></label>
+          <label>${t('parts.stationName')}<input id="newStationName" placeholder="${escapeHtml(t('ui.phStationName'))}" /></label>
+          <label>${t('parts.description')}<input id="newStationDesc" placeholder="${escapeHtml(t('ui.phStationDesc'))}" /></label>
           <button class="btn" data-action="add-station">${t('common.add')}</button>
         </div>
         <div class="table-wrap"><table><thead><tr><th>${t('parts.partHeader')}</th><th>${t('parts.stationHeader')}</th><th>${t('parts.description')}</th><th></th></tr></thead><tbody>
@@ -2151,21 +2371,21 @@ function renderSkills() {
       <section class="card skills-list-card">
         <h3>${t('skills.addSkillTitle')}</h3>
         <div class="form-row compact skill-add-row">
-          <label>Part<select id="newSkillPart" data-action="new-skill-part">${partOptions()}</select></label>
-          <label>Station<select id="newSkillStation">${stationOptions('', state.parts[0]?.id || '', true)}</select></label>
-          <label>Skill 이름<input id="newSkillName" placeholder="예: Fry section" /></label>
-          <button class="btn" data-action="add-skill">추가</button>
+          <label>${t('parts.partHeader')}<select id="newSkillPart" data-action="new-skill-part">${partOptions()}</select></label>
+          <label>${t('parts.stationHeader')}<select id="newSkillStation">${stationOptions('', state.parts[0]?.id || '', true)}</select></label>
+          <label>${t('ui.skillName')}<input id="newSkillName" placeholder="${escapeHtml(t('ui.phSkillName'))}" /></label>
+          <button class="btn" data-action="add-skill">${t('common.add')}</button>
         </div>
 
         <div class="table-wrap skills-table-wrap">
           <table class="skills-list-table">
             <thead>
               <tr>
-                <th>Part</th>
-                <th>Station</th>
-                <th>Skill</th>
-                <th>단계 수</th>
-                <th>구분</th>
+                <th>${t('parts.partHeader')}</th>
+                <th>${t('parts.stationHeader')}</th>
+                <th>${t('requirements.skill')}</th>
+                <th>${t('ui.stepCount')}</th>
+                <th>${t('ui.kind')}</th>
                 <th></th>
               </tr>
             </thead>
@@ -2180,14 +2400,14 @@ function renderSkills() {
                     <td>
                       <button class="link-btn skill-name-button" data-action="select-skill" data-id="${skill.id}">${escapeHtml(skill.name)}</button>
                     </td>
-                    <td><span class="badge ${count ? 'info' : 'warn'}">${count} steps</span></td>
-                    <td><span class="badge ${skill.isCritical ? 'danger' : ''}">${skill.isCritical ? 'Critical' : 'Normal'}</span></td>
+                    <td><span class="badge ${count ? 'info' : 'warn'}">${t('ui.stepsCount', { n: count })}</span></td>
+                    <td><span class="badge ${skill.isCritical ? 'danger' : ''}">${skill.isCritical ? t('ui.critical') : t('ui.normal')}</span></td>
                     <td class="inline-actions nowrap">
-                      <button class="btn small secondary" data-action="select-skill" data-id="${skill.id}">선택</button>
-                      <button class="btn small danger" data-action="delete-skill" data-id="${skill.id}">삭제</button>
+                      <button class="btn small secondary" data-action="select-skill" data-id="${skill.id}">${t('ui.select')}</button>
+                      <button class="btn small danger" data-action="delete-skill" data-id="${skill.id}">${t('common.delete')}</button>
                     </td>
                   </tr>`;
-              }).join('') || '<tr><td colspan="6" class="muted">아직 등록된 Skill이 없다.</td></tr>'}
+              }).join('') || `<tr><td colspan="6" class="muted">${t('skills.noSkills')}</td></tr>`}
             </tbody>
           </table>
         </div>
@@ -2207,7 +2427,7 @@ function renderSkills() {
           <div class="level-add-row clean">
               <label>Level<input data-level-skill="${selectedSkill.id}" data-level-field="level" type="number" value="1" min="0" /></label>
             <label>Step<input data-level-skill="${selectedSkill.id}" data-level-field="step" type="number" value="1" min="0" /></label>
-            <label>설명<input data-level-skill="${selectedSkill.id}" data-level-field="desc" placeholder="예: Level 2 직전 단계, 일부 확인 후 업무 가능" /></label>
+            <label>${t('ui.description')}<input data-level-skill="${selectedSkill.id}" data-level-field="desc" placeholder="${escapeHtml(t('ui.phLevelDesc'))}" /></label>
             <button class="btn small" data-action="add-level" data-skill="${selectedSkill.id}">${t('skills.addLevel')}</button>
           </div>
 
@@ -2222,23 +2442,23 @@ function renderSkills() {
                   </div>
                   <div class="table-wrap tight no-border">
                     <table class="compact-table level-detail-table">
-                      <thead><tr><th>Step</th><th>설명</th><th>가능 업무</th><th>관리</th></tr></thead>
+                      <thead><tr><th>Step</th><th>${t('ui.description')}</th><th>${t('ui.canDo')}</th><th>${t('ui.manage')}</th></tr></thead>
                       <tbody>
                         ${items.map((tpl) => `
                           <tr>
                             <td><span class="badge info">L${tpl.levelNumber} / S${tpl.stepNumber}</span></td>
                             <td>${escapeHtml(tpl.description || '')}</td>
                             <td>${escapeHtml(tpl.canDo || '') || '<span class="muted">-</span>'}</td>
-                            <td><button class="btn small danger" data-action="delete-level" data-id="${tpl.id}">삭제</button></td>
+                            <td><button class="btn small danger" data-action="delete-level" data-id="${tpl.id}">${t('common.delete')}</button></td>
                           </tr>`).join('')}
                       </tbody>
                     </table>
                   </div>
                 </div>`;
-            }).join('') : '<div class="empty-detail"><p class="muted">이 Skill에는 아직 Level / Step이 없다. 위에서 단계를 추가해라.</p></div>'}
+            }).join('') : `<div class="empty-detail"><p class="muted">${t('skills.noSkillSteps')}</p></div>`}
           </div>
         ` : `
-          <div class="empty-detail"><h3>선택된 Skill 없음</h3><p class="muted">왼쪽에서 Skill을 추가하거나 선택하면 Level / Step 관리 패널이 열린다.</p></div>
+          <div class="empty-detail"><h3>${t('skills.noSkillSelected')}</h3><p class="muted">${t('skills.noSkillSelectedText')}</p></div>
         `}
       </section>
     </div>
@@ -2267,16 +2487,16 @@ function renderMembers() {
     <div class="card">
       <h3>${t('members.addEmployeeTitle')}</h3>
       <div class="form-row">
-        <label>${t('members.name')}<input id="newEmpName" placeholder="예: Minho" /></label>
+        <label>${t('members.name')}<input id="newEmpName" placeholder="${escapeHtml(t('ui.phEmpName'))}" /></label>
         <label>${t('members.part')}<select id="newEmpPart">${partOptions(addPartDefault)}</select></label>
-        <label>${t('members.role')}<input id="newEmpRole" placeholder="예: Kitchen Staff" /></label>
+        <label>${t('members.role')}<input id="newEmpRole" placeholder="${escapeHtml(t('ui.phRole'))}" /></label>
         <label>${t('members.rate')}<input id="newEmpRate" type="number" value="28" /></label>
         <label>${t('members.maxHours')}<input id="newEmpMax" type="number" value="38" /></label>
         <button class="btn" data-action="add-employee">${t('members.addEmployee')}</button>
       </div>
     </div>
     ${grouped.map(({ part, employees }) => `
-      <h3 class="group-title"><span class="badge dark" style="background:${escapeHtml(part.color)}">${escapeHtml(part.name)}</span> ${employees.length}명</h3>
+      <h3 class="group-title"><span class="badge dark" style="background:${escapeHtml(part.color)}">${escapeHtml(part.name)}</span> ${t('ui.people', { n: employees.length })}</h3>
       <div class="grid">
         ${employees.map(renderEmployeeCard).join('') || `<p class="muted">${t('members.noEmployeesHere')}</p>`}
       </div>
@@ -2363,15 +2583,15 @@ function renderRequirements() {
           <label>${t('requirements.day')}<select id="newReqDay">${DAYS.map(d => `<option value="${d.key}" ${d.key === visibleDay ? 'selected' : ''}>${dayLabel(d.key)}</option>`).join('')}</select></label>
           <label>${t('requirements.start')}<input id="newReqStart" type="time" value="10:00" /></label>
           <label>${t('requirements.end')}<input id="newReqEnd" type="time" value="12:00" /></label>
-          <label>${t('requirements.label')}<input id="newReqLabel" placeholder="예: Dinner Peak" /></label>
-          <label>${t('requirements.peak')}<select id="newReqPeak"><option value="false">No</option><option value="true">Yes</option></select></label>
+          <label>${t('requirements.label')}<input id="newReqLabel" placeholder="${escapeHtml(t('ui.phBlockLabel'))}" /></label>
+          <label>${t('requirements.peak')}<select id="newReqPeak"><option value="false">${t('ui.no')}</option><option value="true">${t('ui.yes')}</option></select></label>
           <button class="btn" data-action="add-requirement">${t('requirements.addBlock')}</button>
         </div>
       </div>
     </div>
     <div class="req-day-board">
       <h3 class="group-title">${dayLabel(visibleDay)} ${t('tabs.requirements')}</h3>
-      ${visibleReqs.map(renderRequirementCard).join('') || '<div class="card"><p class="muted">이 요일에는 아직 시간 블록이 없다.</p></div>'}
+      ${visibleReqs.map(renderRequirementCard).join('') || `<div class="card"><p class="muted">${t('requirements.noBlocks')}</p></div>`}
     </div>
   `;
 }
@@ -2385,7 +2605,7 @@ function renderRequirementCard(req) {
     acc[key].count += 1;
     return acc;
   }, {});
-  const summary = Object.values(grouped).map((g) => `${partName(g.sreq.partId)} / ${stationName(g.sreq.stationId)} × ${g.count}`).join(' · ') || '자리 없음';
+  const summary = Object.values(grouped).map((g) => `${partName(g.sreq.partId)} / ${stationName(g.sreq.stationId)} × ${g.count}`).join(' · ') || t('ui.noSeatsSummary');
   return `
     <div class="card req-card simple-req-card">
       <div class="req-card-head">
@@ -2453,14 +2673,12 @@ function renderSchedule() {
 
 function getAssignmentStatus(req, sreq, key) {
   const employeeId = state.schedule[key];
-  if (!employeeId) return { label: '미배정', className: 'danger', detail: '직원을 선택하세요.' };
+  if (!employeeId) return { code: 'unassigned', label: t('status.unassigned'), className: 'danger', detail: t('status.pickEmployee') };
   const employee = byId(state.employees, employeeId);
-  if (!employee) return { label: '직원 없음', className: 'danger', detail: '삭제된 직원입니다.' };
+  if (!employee) return { code: 'missingEmployee', label: t('status.missingEmployee'), className: 'danger', detail: t('status.deletedEmployee') };
   const status = getRecommendations(req, sreq, '', key).find((rec) => rec.employee.id === employeeId);
-  if (status.category === 'fit') return { label: '적합', className: 'ok', detail: status.reasons.join(' · ') };
-  if (status.category === 'partial') return { label: '주의', className: 'warn', detail: status.reasons.join(' · ') };
-  if (status.category === 'emergency') return { label: '긴급', className: 'warn', detail: status.reasons.join(' · ') };
-  return { label: '부적합', className: 'danger', detail: status.reasons.join(' · ') };
+  const className = { fit: 'ok', partial: 'warn', emergency: 'warn' }[status.category] || 'danger';
+  return { code: status.category, label: t(`status.${status.category}`), className, detail: status.reasons.join(' · ') };
 }
 
 function employeeOptionsForRequirement(req, sreq, selected = '', ignoreKey = '') {
@@ -2469,15 +2687,15 @@ function employeeOptionsForRequirement(req, sreq, selected = '', ignoreKey = '')
     .filter((rec) => ['fit', 'partial', 'emergency'].includes(rec.category));
   const selectedEmployee = selected ? byId(state.employees, selected) : null;
   const selectedIncluded = recommendations.some((rec) => rec.employee.id === selected);
-  const options = ['<option value="">미배정</option>'];
+  const options = [`<option value="">${t('status.unassigned')}</option>`];
   if (selectedEmployee && !selectedIncluded) {
-    options.push(`<option value="${selectedEmployee.id}" selected>${escapeHtml(selectedEmployee.name)} · 현재 배정(조건 미달)</option>`);
+    options.push(`<option value="${selectedEmployee.id}" selected>${escapeHtml(selectedEmployee.name)} · ${t('status.currentBelow')}</option>`);
   }
   recommendations.forEach((rec) => {
-    const mark = rec.category === 'fit' ? '적합' : rec.category === 'partial' ? '주의' : '긴급';
+    const mark = t(`status.${rec.category}`);
     options.push(`<option value="${rec.employee.id}" ${selected === rec.employee.id ? 'selected' : ''}>${escapeHtml(rec.employee.name)} · ${mark} · ${escapeHtml(partName(rec.employee.partId))}</option>`);
   });
-  if (options.length === 1) options.push('<option disabled>조건에 맞는 직원 없음</option>');
+  if (options.length === 1) options.push(`<option disabled>${t('status.noneFits')}</option>`);
   return options.join('');
 }
 
@@ -2542,8 +2760,8 @@ function renderSeatControls({ req, sreq, slotIndex, key }, status) {
   return `<select class="matrix-select" data-action="assign-schedule" data-key="${key}">${employeeOptionsForRequirement(req, sreq, selected, key)}</select>
     <div class="cell-meta"><span class="badge ${status.className}">${status.label}</span></div>
     <div class="matrix-actions">
-      <button class="link-btn" data-action="show-recommend" data-req="${req.id}" data-sreq="${sreq.id}" data-slot="${slotIndex}">추천</button>
-      <button class="link-btn" data-action="show-replace" data-req="${req.id}" data-sreq="${sreq.id}" data-slot="${slotIndex}" ${selected ? '' : 'disabled'}>대체</button>
+      <button class="link-btn" data-action="show-recommend" data-req="${req.id}" data-sreq="${sreq.id}" data-slot="${slotIndex}">${t('schedule.recommend')}</button>
+      <button class="link-btn" data-action="show-replace" data-req="${req.id}" data-sreq="${sreq.id}" data-slot="${slotIndex}" ${selected ? '' : 'disabled'}>${t('schedule.replace')}</button>
     </div>`;
 }
 
@@ -2590,8 +2808,8 @@ function summarizeHorizontalRow(row, reqs) {
     .map((req) => row.cells[req.id])
     .filter(Boolean)
     .map((cell) => getAssignmentStatus(cell.req, cell.sreq, cell.key));
-  if (!statuses.length) return { label: '해당 없음', className: 'info', detail: '' };
-  const missing = statuses.filter((s) => s.label === '미배정').length;
+  if (!statuses.length) return { label: t('status.notApplicable'), className: 'info', detail: '' };
+  const missing = statuses.filter((s) => s.code === 'unassigned').length;
   const danger = statuses.filter((s) => s.className === 'danger').length;
   const warn = statuses.filter((s) => s.className === 'warn').length;
   const ok = statuses.filter((s) => s.className === 'ok').length;
@@ -2600,9 +2818,9 @@ function summarizeHorizontalRow(row, reqs) {
     .filter(Boolean)
     .map((cell) => `${requiredSkillName(cell.sreq)} L${cell.sreq.minLevel}-S${cell.sreq.minStep}`);
   const uniqueReqs = [...new Set(requirementSamples)];
-  if (missing || danger) return { label: `미배정/위험 ${missing || danger}`, className: 'danger', detail: uniqueReqs.join(' · ') };
-  if (warn) return { label: `주의 ${warn}`, className: 'warn', detail: uniqueReqs.join(' · ') };
-  return { label: `적합 ${ok}`, className: 'ok', detail: uniqueReqs.join(' · ') };
+  if (missing || danger) return { label: t('status.riskCount', { n: missing || danger }), className: 'danger', detail: uniqueReqs.join(' · ') };
+  if (warn) return { label: t('status.warnCount', { n: warn }), className: 'warn', detail: uniqueReqs.join(' · ') };
+  return { label: t('status.okCount', { n: ok }), className: 'ok', detail: uniqueReqs.join(' · ') };
 }
 
 function renderRosterSheet() {
@@ -2620,11 +2838,11 @@ function renderRosterSheet() {
         <table class="horizontal-roster-table">
           <thead>
             <tr>
-              <th class="sticky-col col-part">Part</th>
-              <th class="sticky-col col-station">Station</th>
-              <th class="sticky-col col-seat">Seat</th>
-              ${reqs.map((req) => `<th class="time-col"><strong>${req.startTime}–${req.endTime}</strong><br><span>${escapeHtml(req.label)}</span>${req.isPeak ? '<br><span class="badge danger">Peak</span>' : ''}</th>`).join('')}
-              <th class="status-col">Status / Required</th>
+              <th class="sticky-col col-part">${t('schedule.partHeader')}</th>
+              <th class="sticky-col col-station">${t('schedule.stationHeader')}</th>
+              <th class="sticky-col col-seat">${t('schedule.seatHeader')}</th>
+              ${reqs.map((req) => `<th class="time-col"><strong>${req.startTime}–${req.endTime}</strong><br><span>${escapeHtml(req.label)}</span>${req.isPeak ? `<br><span class="badge danger">${t('schedule.peak')}</span>` : ''}</th>`).join('')}
+              <th class="status-col">${t('schedule.statusRequired')}</th>
             </tr>
           </thead>
           <tbody>
@@ -2637,7 +2855,7 @@ function renderRosterSheet() {
                 ${reqs.map((req) => renderRosterCell(row.cells[req.id])).join('')}
                 <td class="status-col"><span class="badge ${summary.className}">${summary.label}</span><div class="status-detail wide">${escapeHtml(summary.detail)}</div></td>
               </tr>`;
-            }).join('') || `<tr><td colspan="${4 + reqs.length}" class="muted">이 요일에는 Requirements에서 추가된 자리가 없다.</td></tr>`}
+            }).join('') || `<tr><td colspan="${4 + reqs.length}" class="muted">${t('schedule.noRequirementDay')}</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -2771,7 +2989,7 @@ function renderConfirmedRoster() {
                 <tbody>
                   ${section.rows.map((row) => `
                     <tr>
-                      <td class="phase-cell"><strong>Phase ${row.phase.phaseNo}</strong><br><span>${row.phase.startTime}–${row.phase.endTime}</span><br><em>${escapeHtml(row.phase.label)}</em></td>
+                      <td class="phase-cell"><strong>${t('schedule.phase')} ${row.phase.phaseNo}</strong><br><span>${row.phase.startTime}–${row.phase.endTime}</span><br><em>${escapeHtml(row.phase.label)}</em></td>
                       ${DAYS.map((day) => renderConfirmedCell(row.cells[day.key])).join('')}
                     </tr>
                   `).join('') || `<tr><td colspan="8" class="muted">${t('schedule.noPartWork')}</td></tr>`}
@@ -2792,7 +3010,7 @@ function renderRecommendationPanel() {
   const key = assignmentKey(reqId, sreqId, slotIndex);
   const recs = getRecommendations(req, sreq, '', key);
   return `<div class="card recommend-panel">
-    <div class="section-head"><div><h3>추천 직원 · ${dayLabel(req.dayOfWeek)} ${req.startTime}–${req.endTime} / ${partName(sreq.partId)} / ${stationName(sreq.stationId)}</h3><p class="small-text">필요: ${requiredSkillName(sreq)} L${sreq.minLevel}-S${sreq.minStep}</p></div><button class="btn small secondary" data-action="close-panels">닫기</button></div>
+    <div class="section-head"><div><h3>${escapeHtml(t('recs.title', { where: `${dayLabel(req.dayOfWeek)} ${req.startTime}–${req.endTime} / ${partName(sreq.partId)} / ${stationName(sreq.stationId)}` }))}</h3><p class="small-text">${escapeHtml(t('ui.needs', { skill: `${requiredSkillName(sreq)} L${sreq.minLevel}-S${sreq.minStep}` }))}</p></div><button class="btn small secondary" data-action="close-panels">${t('common.close')}</button></div>
     ${renderRecommendationGroups(recs, key)}
   </div>`;
 }
@@ -2808,24 +3026,23 @@ function renderReplacementPanel() {
   const originalCost = originalEmp ? durationHours(req.startTime, req.endTime) * getRate(originalEmp, req.dayOfWeek) : 0;
   const recs = getRecommendations(req, sreq, original, key).map((rec) => ({ ...rec, costDiff: rec.addedCost - originalCost }));
   return `<div class="card recommend-panel">
-    <div class="section-head"><div><h3>대체근무자 추천 · ${employeeName(original)} 대체</h3><p class="small-text">${dayLabel(req.dayOfWeek)} ${req.startTime}–${req.endTime} / ${partName(sreq.partId)} / ${stationName(sreq.stationId)} · 기존 비용 ${money(originalCost)}</p></div><button class="btn small secondary" data-action="close-panels">닫기</button></div>
+    <div class="section-head"><div><h3>${escapeHtml(t('recs.replaceTitle', { name: employeeName(original) }))}</h3><p class="small-text">${dayLabel(req.dayOfWeek)} ${req.startTime}–${req.endTime} / ${escapeHtml(partName(sreq.partId))} / ${escapeHtml(stationName(sreq.stationId))} · ${t('recs.originalCost', { amount: money(originalCost) })}</p></div><button class="btn small secondary" data-action="close-panels">${t('common.close')}</button></div>
     ${renderRecommendationGroups(recs, key, true)}
   </div>`;
 }
 
 function renderRecommendationGroups(recs, key, isReplacement = false) {
-  const labels = { fit: '완전 적합', partial: '부분 적합', emergency: '긴급 대체 가능', bad: '부적합' };
   return ['fit', 'partial', 'emergency', 'bad'].map((cat) => {
     const group = recs.filter((r) => r.category === cat).slice(0, cat === 'bad' ? 5 : 8);
     if (!group.length) return '';
     const cls = cat === 'fit' ? 'ok' : cat === 'partial' ? 'warn' : cat === 'emergency' ? 'info' : 'danger';
-    return `<div style="margin-top:12px;"><h4><span class="badge ${cls}">${labels[cat]}</span></h4><div class="grid two">
+    return `<div style="margin-top:12px;"><h4><span class="badge ${cls}">${t(`recs.${cat}`)}</span></h4><div class="grid two">
       ${group.map((rec) => `<div class="card soft">
-        <h4>${escapeHtml(rec.employee.name)} <span class="badge">Score ${rec.score.toFixed(0)}</span></h4>
-        <p class="small-text">${escapeHtml(partName(rec.employee.partId))} · ${money(rec.employee.baseRate)}/h · 주간 예상 ${rec.projectedHours.toFixed(1)}h</p>
-        ${isReplacement ? `<p class="small-text">기존 대비 비용 차이: <strong>${rec.costDiff >= 0 ? '+' : ''}${money(rec.costDiff)}</strong></p>` : ''}
+        <h4>${escapeHtml(rec.employee.name)} <span class="badge">${t('recs.score', { n: rec.score.toFixed(0) })}</span></h4>
+        <p class="small-text">${escapeHtml(partName(rec.employee.partId))} · ${money(rec.employee.baseRate)}/h · ${t('recs.weekProjected', { hours: rec.projectedHours.toFixed(1) })}</p>
+        ${isReplacement ? `<p class="small-text">${t('recs.costDiff')} <strong>${rec.costDiff >= 0 ? '+' : ''}${money(rec.costDiff)}</strong></p>` : ''}
         <p class="small-text">${rec.reasons.map(escapeHtml).join('<br>')}</p>
-        ${cat !== 'bad' ? `<button class="btn small" data-action="apply-recommend" data-key="${key}" data-emp="${rec.employee.id}">이 직원 배치</button>` : ''}
+        ${cat !== 'bad' ? `<button class="btn small" data-action="apply-recommend" data-key="${key}" data-emp="${rec.employee.id}">${t('recs.apply')}</button>` : ''}
       </div>`).join('')}
     </div></div>`;
   }).join('');
@@ -2841,7 +3058,7 @@ function renderScheduleMemberView() {
       ${assignments.map((a) => {
         const req = getReqById(a.reqId); const sreq = getStationReq(a.reqId, a.stationReqId);
         return `<span class="badge ${req?.isPeak ? 'danger' : 'info'}">${dayLabel(req?.dayOfWeek)} ${req?.startTime}–${req?.endTime} · ${stationName(sreq?.stationId)}</span>`;
-      }).join('') || '<p class="muted">배정 없음</p>'}
+      }).join('') || `<p class="muted">${t('ui.noAssignments')}</p>`}
     </div>`;
   }).join('')}</div>`;
 }
@@ -2856,11 +3073,11 @@ function renderSchedulePartView() {
       const emp = byId(state.employees, a.employeeId); const req = getReqById(a.reqId);
       return emp && req ? sum + durationHours(req.startTime, req.endTime) * getRate(emp, req.dayOfWeek) : sum;
     }, 0);
-    return `<div class="card" style="margin-bottom:14px;"><h3><span class="badge dark" style="background:${escapeHtml(part.color)}">${escapeHtml(part.name)}</span> ${partAssignments.length} assignments · ${money(cost)}</h3>
+    return `<div class="card" style="margin-bottom:14px;"><h3><span class="badge dark" style="background:${escapeHtml(part.color)}">${escapeHtml(part.name)}</span> ${t('ui.assignmentsCount', { n: partAssignments.length })} · ${money(cost)}</h3>
       ${partAssignments.map((a) => {
         const req = getReqById(a.reqId); const sreq = getStationReq(a.reqId, a.stationReqId);
         return `<span class="badge ${req?.isPeak ? 'danger' : 'info'}">${dayLabel(req?.dayOfWeek)} ${req?.startTime}–${req?.endTime} · ${stationName(sreq?.stationId)} · ${employeeName(a.employeeId)}</span>`;
-      }).join('') || '<p class="muted">배정 없음</p>'}
+      }).join('') || `<p class="muted">${t('ui.noAssignments')}</p>`}
     </div>`;
   }).join('');
 }
@@ -2901,10 +3118,10 @@ function renderValidation() {
     <div class="section-head"><div><h2>${t('tabs.validation')}</h2><p>${t('validation.subtitle')}</p></div></div>
     <div class="grid">
       ${issues.map((issue) => `<div class="card issue ${issue.severity === 'high' ? 'high' : issue.severity === 'low' ? 'low' : ''}">
-        <h3>${escapeHtml(issue.type)} <span class="badge ${issue.severity === 'high' ? 'danger' : issue.severity === 'medium' ? 'warn' : 'info'}">${issue.severity}</span></h3>
+        <h3>${escapeHtml(issue.type)} <span class="badge ${issue.severity === 'high' ? 'danger' : issue.severity === 'medium' ? 'warn' : 'info'}">${t(`validation.status${issue.severity[0].toUpperCase()}${issue.severity.slice(1)}`)}</span></h3>
         <p>${escapeHtml(issue.message)}</p>
         ${issue.req ? `<p class="small-text">${dayLabel(issue.req.dayOfWeek)} ${issue.req.startTime}–${issue.req.endTime} · ${escapeHtml(issue.req.label || '')}</p>` : ''}
-        ${issue.sreq ? `<p class="small-text">${escapeHtml(partName(issue.sreq.partId))} / ${escapeHtml(stationName(issue.sreq.stationId))} · 필요 ${escapeHtml(requiredSkillName(issue.sreq))} L${issue.sreq.minLevel}-S${issue.sreq.minStep}</p>` : ''}
+        ${issue.sreq ? `<p class="small-text">${escapeHtml(partName(issue.sreq.partId))} / ${escapeHtml(stationName(issue.sreq.stationId))} · ${escapeHtml(t('issues.needs', { skill: `${requiredSkillName(issue.sreq)} L${issue.sreq.minLevel}-S${issue.sreq.minStep}` }))}</p>` : ''}
         ${issue.req ? `<button class="btn small" type="button" title="${escapeHtml(t('validation.fixHint'))}" data-action="fix-issue" data-req="${issue.req.id}" data-sreq="${issue.sreq?.id || ''}" data-slot="${issue.slotIndex ?? ''}">${t('validation.fix')}</button>` : ''}
       </div>`).join('') || `<div class="card"><h3>${t('validation.resultTitle')}</h3><span class="badge ok">${t('validation.noIssues')}</span></div>`}
     </div>
@@ -2912,17 +3129,7 @@ function renderValidation() {
 }
 
 function renderRoadmap() {
-  const items = [
-    ['기업별 로그인 / 초대코드', '회사별 로그인 페이지와 직원 초대 코드를 먼저 두고, 관리자와 직원을 분리해서 접근을 제어한다.'],
-    ['직원용 모바일 페이지', '직원은 읽기 전용 스케줄과 본인 관련 항목만 보고, 가능 시간·휴무 요청·대체 가능 여부만 제출한다.'],
-    ['완전 자동 스케줄 생성', 'Requirements, Members, Availability, Level/Step, Labor Budget을 기준으로 주간 초안을 자동 생성하고 수동 수정도 가능하게 한다.'],
-    ['직원 성장 관리', 'Level/Step을 교육 기록과 승급 체크리스트로 확장하고, 부족 Station을 기준으로 교육 대상을 추천한다.'],
-    ['직원 의존도 분석', '특정 직원이 빠졌을 때 운영이 무너지는 구조를 감지하고 대체 가능자 부족을 경고한다.'],
-    ['실제 출퇴근 기록', '예정 스케줄과 실제 출퇴근 시간을 비교해 차이 시간과 실제 인건비를 계산한다.'],
-    ['공휴일 / Penalty Rate / Super / Tax', '현재의 단순 배율 계산을 넘어 호주 기준 penalty rate, allowance, super, tax를 설정값으로 확장한다.'],
-    ['승인 시스템', '직원이 제출한 휴무/가능 시간/대체 가능 여부는 관리자가 승인해야 스케줄과 포털에 반영되게 한다.'],
-    ['알림 기능', '스케줄 확정, 변경, 대체 요청, 인건비 초과, 필수 인력 부족 알림을 구현한다.'],
-  ];
+  const items = textFor(currentLanguage(), 'roadmap.items') || textFor('ko', 'roadmap.items') || [];
   document.getElementById('roadmap').innerHTML = `
     <div class="section-head"><div><h2>${t('tabs.roadmap')}</h2><p>${t('roadmap.subtitle')}</p></div></div>
     <div class="roadmap-list">${items.map(([title, text]) => `<div class="card"><h3>${escapeHtml(title)}</h3><p>${escapeHtml(text)}</p></div>`).join('')}</div>

@@ -6,7 +6,7 @@ const t = setupApp();
 const { app } = t;
 beforeEach(() => t.reset());
 
-const budgetIssue = () => app.calculateValidation().find((i) => i.type === "목표 인건비 초과");
+const budgetIssue = () => app.calculateValidation().find((i) => i.kind === "overBudget");
 
 test("durationHours handles normal, zero-length and reversed blocks", () => {
   assert.equal(app.durationHours("11:30", "14:30"), 3);
