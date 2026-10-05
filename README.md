@@ -42,6 +42,16 @@ python3 -m http.server 8000
 
 Then open `http://localhost:8000` in your browser.
 
+## Tests
+
+Tests use Node's built-in test runner (Node 20+), with no dependencies to install. They load `app.js` in a sandbox with small browser stubs and cover staff recommendations, roster validation and labor cost.
+
+```bash
+npm test
+```
+
+`npm run export:state` regenerates `mobile/src/sampleState.json` from the app's default state. CI runs both on every pull request.
+
 ## Install on mobile
 
 - On iPhone or iPad: open the site in Safari and use Share -> Add to Home Screen.
