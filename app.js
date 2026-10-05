@@ -57,9 +57,10 @@ const I18N = {
       subtitle: '파트 · 스테이션 · Level/Step 기반 근무표 & 인건비 관리',
     },
     common: {
-      save: '저장',
-      exportJson: 'JSON 내보내기',
-      importJson: 'JSON 가져오기',
+      autoSaved: '자동 저장됨',
+      autoSavedAt: '자동 저장됨 · {time}',
+      exportJson: '백업 파일 받기',
+      importJson: '백업 불러오기',
       resetAll: '전체 초기화',
       copy: '복사',
       add: '추가',
@@ -79,11 +80,10 @@ const I18N = {
       noItems: '표시할 항목이 없다.',
     },
     messages: {
-      saved: '저장됨',
       resetConfirm: '모든 입력 데이터를 삭제하고 빈 상태로 되돌릴까요? 현재 데이터는 삭제됩니다.',
       resetDone: '모든 입력 데이터가 삭제되었습니다',
-      jsonImported: 'JSON 가져오기 완료',
-      invalidJson: 'JSON 파일을 읽을 수 없습니다.',
+      jsonImported: '백업을 불러왔어요',
+      invalidJson: '백업 파일을 읽을 수 없습니다.',
       copied: '복사됨',
       copyFailed: '복사에 실패했습니다',
       partNameRequired: 'Part 이름을 입력하세요',
@@ -154,7 +154,9 @@ const I18N = {
       feedbackOpenLink: '질문 링크 열기',
       roadmapLink: '앞으로 추가될 기능 보기',
       dataTitle: '데이터 초기화',
-      resetHelp: '직원, 근무표, 필요 인원 등 입력한 내용을 모두 지웁니다. 되돌릴 수 없으니 먼저 JSON 내보내기로 백업하세요.',
+      backupTitle: '백업',
+      backupHelp: '모든 변경은 이 기기의 브라우저에 자동 저장됩니다. 다른 기기로 옮기거나 만일을 대비하려면 백업 파일을 받아 두세요.',
+      resetHelp: '직원, 근무표, 필요 인원 등 입력한 내용을 모두 지웁니다. 되돌릴 수 없으니 먼저 위에서 백업 파일을 받아 두세요.',
       current: '현재 언어',
       koreanLabel: '한국어',
       englishLabel: '영어',
@@ -386,9 +388,10 @@ const I18N = {
       subtitle: 'Shift scheduling and labor cost management based on Parts, Stations, and Level/Step',
     },
     common: {
-      save: 'Save',
-      exportJson: 'Export JSON',
-      importJson: 'Import JSON',
+      autoSaved: 'Saved automatically',
+      autoSavedAt: 'Saved automatically · {time}',
+      exportJson: 'Download backup file',
+      importJson: 'Restore from backup',
       resetAll: 'Reset All',
       copy: 'Copy',
       add: 'Add',
@@ -408,7 +411,6 @@ const I18N = {
       noItems: 'Nothing to show.',
     },
     messages: {
-      saved: 'Saved',
       resetConfirm: 'Clear all input data and return to a blank state? Your current data will be deleted.',
       resetDone: 'All input data has been cleared',
       jsonImported: 'JSON import complete',
@@ -483,7 +485,9 @@ const I18N = {
       feedbackOpenLink: 'Open question link',
       roadmapLink: 'See planned features',
       dataTitle: 'Reset data',
-      resetHelp: 'Deletes everything you entered, including staff, roster and requirements. This cannot be undone, so export a JSON backup first.',
+      backupTitle: 'Backup',
+      backupHelp: 'Every change is saved automatically in this browser. Download a backup file to move to another device or to be safe.',
+      resetHelp: 'Deletes everything you entered, including staff, roster and requirements. This cannot be undone, so download a backup file above first.',
       current: 'Current language',
       koreanLabel: 'Korean',
       englishLabel: 'English',
@@ -710,7 +714,7 @@ function t(path, vars = {}) {
 
 function setLanguage(lang) {
   state.settings.language = lang === 'en' ? 'en' : 'ko';
-  saveState(false);
+  saveState();
   render();
   toast(t('messages.languageSaved'));
 }
@@ -720,12 +724,16 @@ function syncDocumentLanguage() {
   document.title = `SkillShift Planner · ${t(findView(activeTab).labelKey)}`;
   const subtitle = document.getElementById('headerSubtitle');
   if (subtitle) subtitle.textContent = t('header.subtitle');
-  const importLabel = document.getElementById('importLabel');
-  if (importLabel) importLabel.textContent = t('common.importJson');
-  const saveBtn = document.getElementById('saveBtn');
-  if (saveBtn) saveBtn.textContent = t('common.save');
-  const exportBtn = document.getElementById('exportBtn');
-  if (exportBtn) exportBtn.textContent = t('common.exportJson');
+  renderSaveStatus();
+}
+
+let lastSavedAt = null;
+function renderSaveStatus() {
+  const el = document.getElementById('saveStatus');
+  if (!el) return;
+  el.textContent = lastSavedAt
+    ? t('common.autoSavedAt', { time: lastSavedAt.toLocaleTimeString(currentLanguage(), { hour: '2-digit', minute: '2-digit' }) })
+    : t('common.autoSaved');
 }
 
 let state = loadState();
@@ -1057,9 +1065,11 @@ function loadState() {
   }
 }
 
-function saveState(show = true) {
+// Every change is saved right away; the header shows when it last happened.
+function saveState() {
   localStorage.setItem(STORE_KEY, JSON.stringify(state));
-  if (show) toast(t('messages.saved'));
+  lastSavedAt = new Date();
+  renderSaveStatus();
 }
 
 function resetState() {
@@ -1075,7 +1085,7 @@ function resetState() {
   recommendationContext = null;
   replacementContext = null;
   lastAutoFill = null;
-  saveState(false);
+  saveState();
   render();
   toast(t('messages.resetDone'));
 }
@@ -2690,6 +2700,14 @@ function renderSettings() {
         </div>
       </div>
     </div>
+    <div class="card" style="margin-top: 24px;">
+      <h3>${t('settings.backupTitle')}</h3>
+      <p class="small-text">${t('settings.backupHelp')}</p>
+      <div class="inline-actions">
+        <button class="btn secondary" type="button" data-action="export-json">${t('common.exportJson')}</button>
+        <label class="btn secondary file-label">${t('common.importJson')}<input type="file" accept="application/json,.json" data-action="import-json" /></label>
+      </div>
+    </div>
     <div class="card danger-zone" style="margin-top: 24px;">
       <h3>${t('settings.dataTitle')}</h3>
       <p class="small-text">${t('settings.resetHelp')}</p>
@@ -2737,19 +2755,20 @@ function handleClick(e) {
   if (action === 'show-recommend') { recommendationContext = { reqId: target.dataset.req, sreqId: target.dataset.sreq, slotIndex: Number(target.dataset.slot) }; replacementContext = null; render(); }
   if (action === 'show-replace') { replacementContext = { reqId: target.dataset.req, sreqId: target.dataset.sreq, slotIndex: Number(target.dataset.slot) }; recommendationContext = null; render(); }
   if (action === 'close-panels') { recommendationContext = null; replacementContext = null; render(); }
-  if (action === 'apply-recommend') { state.schedule[target.dataset.key] = target.dataset.emp; saveState(false); recommendationContext = null; replacementContext = null; render(); toast(t('messages.scheduled')); }
+  if (action === 'apply-recommend') { state.schedule[target.dataset.key] = target.dataset.emp; saveState(); recommendationContext = null; replacementContext = null; render(); toast(t('messages.scheduled')); }
   if (action === 'reset-all') resetState();
+  if (action === 'export-json') exportJson();
   if (action === 'fix-issue') openIssueInRoster(target.dataset.req, target.dataset.sreq, target.dataset.slot === '' ? NaN : Number(target.dataset.slot));
   if (action === 'auto-fill') {
     const result = autoFillEmptySeats();
     if (!result.filled.length && !result.skipped) { toast(t('schedule.autoFillNothing')); return; }
     lastAutoFill = result;
-    saveState(false);
+    saveState();
     render();
     document.querySelector('.autofill-result')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
   if (action === 'auto-fill-keep') { lastAutoFill = null; render(); }
-  if (action === 'auto-fill-undo' && lastAutoFill) { undoAutoFill(lastAutoFill); lastAutoFill = null; saveState(false); render(); toast(t('schedule.autoFillUndone')); }
+  if (action === 'auto-fill-undo' && lastAutoFill) { undoAutoFill(lastAutoFill); lastAutoFill = null; saveState(); render(); toast(t('schedule.autoFillUndone')); }
   if (action === 'copy-company-code') { copyToClipboard(deriveCompanyCode(state.settings.companyName)); }
   if (action === 'copy-feedback-email') { copyToClipboard(state.settings.feedbackEmail || ''); }
   if (action === 'copy-feedback-link') { copyToClipboard(normalizeExternalUrl(state.settings.feedbackUrl) || ''); }
@@ -2765,7 +2784,7 @@ function handleChange(e) {
     }
     if (el.type === 'checkbox' || el.dataset.settingType === 'boolean') {
       state.settings[el.dataset.setting] = el.checked;
-      saveState(false);
+      saveState();
       render();
       return;
     }
@@ -2774,8 +2793,13 @@ function handleChange(e) {
     } else {
       state.settings[el.dataset.setting] = el.value;
     }
-    saveState(false);
+    saveState();
     render();
+    return;
+  }
+  if (action === 'import-json') {
+    importJson(el.files[0]);
+    el.value = '';
     return;
   }
   if (action === 'member-part-filter') {
@@ -2810,7 +2834,7 @@ function handleChange(e) {
   if (action === 'assign-schedule') {
     if (el.value) state.schedule[el.dataset.key] = el.value;
     else delete state.schedule[el.dataset.key];
-    saveState(false);
+    saveState();
     render();
     return;
   }
@@ -2822,7 +2846,7 @@ function handleChange(e) {
     if (action === 'availability-check') emp.availability[el.dataset.day].available = el.checked;
     if (action === 'availability-start') emp.availability[el.dataset.day].startTime = el.value;
     if (action === 'availability-end') emp.availability[el.dataset.day].endTime = el.value;
-    saveState(false);
+    saveState();
     render();
   }
 }
@@ -2831,13 +2855,13 @@ function addPart() {
   const name = document.getElementById('newPartName').value.trim();
   if (!name) return toast(t('messages.partNameRequired'));
   state.parts.push({ id: uid('part'), name, description: document.getElementById('newPartDesc').value.trim(), color: document.getElementById('newPartColor').value, sortOrder: state.parts.length + 1, active: true });
-  saveState(false); render(); toast(t('messages.partAdded'));
+  saveState(); render(); toast(t('messages.partAdded'));
 }
 function deletePart(id) {
   if (!confirm(t('messages.partDeleteConfirm'))) return;
   state.parts = state.parts.filter((p) => p.id !== id);
   if (selectedMemberPart === id) selectedMemberPart = 'all';
-  saveState(false); render();
+  saveState(); render();
 }
 function addStation() {
   const name = document.getElementById('newStationName').value.trim();
@@ -2845,12 +2869,12 @@ function addStation() {
   const partId = document.getElementById('newStationPart').value;
   if (!partId) return toast(t('messages.partSelectRequired'));
   state.stations.push({ id: uid('st'), partId, name, description: document.getElementById('newStationDesc').value.trim(), requiredSkillIds: [], sortOrder: state.stations.length + 1, active: true });
-  saveState(false); render(); toast(t('messages.stationAdded'));
+  saveState(); render(); toast(t('messages.stationAdded'));
 }
 function deleteStation(id) {
   if (!confirm(t('messages.stationDeleteConfirm'))) return;
   state.stations = state.stations.filter((s) => s.id !== id);
-  saveState(false); render();
+  saveState(); render();
 }
 function makeLevelTemplate(skillId, stationId, levelNumber, stepNumber, description, sortOrder) {
   return {
@@ -2898,7 +2922,7 @@ function addSkill() {
   const station = byId(state.stations, stationId);
   if (station) station.requiredSkillIds = Array.from(new Set([...(station.requiredSkillIds || []), id]));
   selectedSkillId = id;
-  saveState(false); render(); toast(t('messages.skillAdded'));
+  saveState(); render(); toast(t('messages.skillAdded'));
 }
 function deleteSkill(id) {
   if (!confirm(t('messages.skillDeleteConfirm'))) return;
@@ -2906,7 +2930,7 @@ function deleteSkill(id) {
   state.levelTemplates = state.levelTemplates.filter((l) => l.skillId !== id);
   state.employees.forEach((emp) => { if (emp.assignedSkills) delete emp.assignedSkills[id]; });
   selectedSkillId = state.skills[0]?.id || '';
-  saveState(false); render();
+  saveState(); render();
 }
 function addLevel(skillId = '') {
   const targetSkillId = skillId || selectedSkillId;
@@ -2919,11 +2943,11 @@ function addLevel(skillId = '') {
   const exists = state.levelTemplates.some((tpl) => tpl.skillId === targetSkillId && Number(tpl.levelNumber) === levelNumber && Number(tpl.stepNumber) === stepNumber);
   if (exists && !confirm(t('messages.levelExistsConfirm'))) return;
   state.levelTemplates.push(makeLevelTemplate(targetSkillId, skill?.stationId, levelNumber, stepNumber, description, state.levelTemplates.length + 1));
-  saveState(false); render(); toast(t('messages.levelAdded'));
+  saveState(); render(); toast(t('messages.levelAdded'));
 }
 function deleteLevel(id) {
   state.levelTemplates = state.levelTemplates.filter((l) => l.id !== id);
-  saveState(false); render();
+  saveState(); render();
 }
 function addEmployee() {
   const name = document.getElementById('newEmpName').value.trim();
@@ -2935,19 +2959,19 @@ function addEmployee() {
     saturdayMultiplier: 1.25, sundayMultiplier: 1.5, publicHolidayMultiplier: 2.25, maxWeeklyHours: num(document.getElementById('newEmpMax').value, 38), preferredWeeklyHours: 0,
     availability: defaultAvailability('10:00', '22:00'), active: true, notes: '', assignedSkills: {}
   });
-  saveState(false); render(); toast(t('messages.employeeAdded'));
+  saveState(); render(); toast(t('messages.employeeAdded'));
 }
 function deleteEmployee(id) {
   if (!confirm(t('messages.employeeDeleteConfirm'))) return;
   state.employees = state.employees.filter((emp) => emp.id !== id);
   Object.keys(state.schedule).forEach((key) => { if (state.schedule[key] === id) delete state.schedule[key]; });
-  saveState(false); render();
+  saveState(); render();
 }
 function toggleEmployee(id) {
   const emp = byId(state.employees, id);
   if (!emp) return;
   emp.active = !emp.active;
-  saveState(false); render();
+  saveState(); render();
 }
 function refreshNewSkillStationControl() {
   const partSelect = document.getElementById('newSkillPart');
@@ -3016,26 +3040,26 @@ function assignSkillToEmployee(empId) {
   if (!skill) return toast(t('messages.skillNotFound'));
   emp.assignedSkills = emp.assignedSkills || {};
   emp.assignedSkills[skillId] = { level: num(levelRaw), step: num(stepRaw), note: '' };
-  saveState(false); render(); toast(t('messages.skillSaved', { skill: skill.name, level: levelRaw, step: stepRaw }));
+  saveState(); render(); toast(t('messages.skillSaved', { skill: skill.name, level: levelRaw, step: stepRaw }));
 }
 function removeEmployeeSkill(empId, skillId) {
   const emp = byId(state.employees, empId);
   if (!emp?.assignedSkills) return;
   delete emp.assignedSkills[skillId];
-  saveState(false); render();
+  saveState(); render();
 }
 function addRequirement() {
   const label = document.getElementById('newReqLabel').value.trim() || 'New Block';
   const dayOfWeek = document.getElementById('newReqDay').value;
   selectedRequirementDay = dayOfWeek;
   state.requirements.push({ id: uid('req'), dayOfWeek, startTime: document.getElementById('newReqStart').value, endTime: document.getElementById('newReqEnd').value, label, minTotalStaff: 0, recommendedTotalStaff: 0, isPeak: document.getElementById('newReqPeak').value === 'true', needsHandover: false, handoverMinutes: 0, notes: '', stationRequirements: [] });
-  saveState(false); render(); toast(t('messages.requirementAdded'));
+  saveState(); render(); toast(t('messages.requirementAdded'));
 }
 function deleteRequirement(id) {
   if (!confirm(t('messages.requirementDeleteConfirm'))) return;
   state.requirements = state.requirements.filter((req) => req.id !== id);
   Object.keys(state.schedule).forEach((key) => { if (parseAssignmentKey(key).reqId === id) delete state.schedule[key]; });
-  saveState(false); render();
+  saveState(); render();
 }
 function addStationRequirement(reqId) {
   const req = getReqById(reqId);
@@ -3050,7 +3074,7 @@ function addStationRequirement(reqId) {
   req.stationRequirements.push({ id: uid('sreq'), partId: part, stationId: station, requiredSkillId: skill, requiredCount: 1, minLevel: level, minStep: step, needsLeader: false, canUseLowerStepAsEmergency: true });
   req.minTotalStaff = req.stationRequirements.length;
   req.recommendedTotalStaff = req.minTotalStaff;
-  saveState(false); render(); toast(t('messages.stationReqAdded'));
+  saveState(); render(); toast(t('messages.stationReqAdded'));
 }
 
 function cloneStationRequirement(reqId, sreqId) {
@@ -3060,7 +3084,7 @@ function cloneStationRequirement(reqId, sreqId) {
   req.stationRequirements.push({ ...source, id: uid('sreq'), requiredCount: 1 });
   req.minTotalStaff = req.stationRequirements.length;
   req.recommendedTotalStaff = req.minTotalStaff;
-  saveState(false); render(); toast(t('messages.stationReqCloned'));
+  saveState(); render(); toast(t('messages.stationReqCloned'));
 }
 
 function deleteStationRequirement(reqId, sreqId) {
@@ -3070,7 +3094,7 @@ function deleteStationRequirement(reqId, sreqId) {
   req.minTotalStaff = req.stationRequirements.length;
   req.recommendedTotalStaff = req.minTotalStaff;
   Object.keys(state.schedule).forEach((key) => { const parsed = parseAssignmentKey(key); if (parsed.reqId === reqId && parsed.stationReqId === sreqId) delete state.schedule[key]; });
-  saveState(false); render();
+  saveState(); render();
 }
 
 function exportRosterCsv() {
@@ -3117,7 +3141,7 @@ function importJson(file) {
     try {
       const parsed = JSON.parse(reader.result);
       state = migrateState(parsed);
-      saveState(false);
+      saveState();
       render();
       toast(t('messages.jsonImported'));
     } catch (err) {
@@ -3140,12 +3164,6 @@ function registerServiceWorker() {
 function init() {
   document.addEventListener('click', handleClick);
   document.addEventListener('change', handleChange);
-  document.getElementById('saveBtn').addEventListener('click', () => saveState(true));
-  document.getElementById('exportBtn').addEventListener('click', exportJson);
-  document.getElementById('importFile').addEventListener('change', (e) => {
-    importJson(e.target.files[0]);
-    e.target.value = '';
-  });
   registerServiceWorker();
   render();
 }

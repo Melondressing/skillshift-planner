@@ -87,3 +87,18 @@ test("saved data with missing lists is repaired instead of crashing", () => {
   assert.ok(getState().stations.length > 0);
   assert.ok(elements.get("validation").innerHTML.length > 0);
 });
+
+test("the header shows autosave instead of save/JSON buttons; backup lives in settings", () => {
+  const indexHtml = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  assert.ok(!indexHtml.includes("saveBtn"));
+  assert.ok(!indexHtml.includes("exportBtn"));
+  assert.ok(indexHtml.includes('id="saveStatus"'));
+  const { app, elements } = loadApp();
+  app.showView("settings");
+  const html = elements.get("settings").innerHTML;
+  assert.ok(html.includes('data-action="export-json"'));
+  assert.ok(html.includes('data-action="import-json"'));
+  assert.match(html, /백업 파일 받기/);
+  app.saveState();
+  assert.match(elements.get("saveStatus").textContent, /자동 저장됨 · /);
+});
