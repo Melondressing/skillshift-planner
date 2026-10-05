@@ -929,3 +929,6 @@ tr:last-child td { border-bottom: 0; }
 .roster-seat-name { display: grid; gap: 2px; }
 .roster-seat-controls .matrix-select { width: 100%; }
 .roster-seat-row.danger .roster-seat-name strong { color: var(--danger); }
+.week-nav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.week-range { font-size: 16px; min-width: 110px; text-align: center; }
+.pill-date { font-size: 11px; opacity: .7; }

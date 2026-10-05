@@ -1,12 +1,14 @@
 const STORE_KEY = 'skillshift_planner_v14';
 const STORE_PREFIX = 'skillshift_planner_';
-const APP_STATE_VERSION = 4;
+const APP_STATE_VERSION = 5;
 
 // Each step upgrades saved data to `version`. Steps run in order for anything
 // older, so add a new entry (instead of resetting) whenever the shape changes.
 const STATE_MIGRATIONS = [
   // v1–v3 → v4: same data shape; only the built-in sample roster changed.
   { version: 4, migrate: (saved) => saved },
+  // v5: the roster belongs to a dated week; older rosters become this week's.
+  { version: 5, migrate: (saved) => ({ ...saved, weekStart: saved.weekStart || currentWeekStart(), savedWeeks: saved.savedWeeks || {} }) },
 ];
 
 const DAYS = [
@@ -324,6 +326,13 @@ const I18N = {
       autoFillKeep: '확인',
       autoFillUndo: '취소',
       autoFillUndone: '되돌렸어요.',
+    },
+    week: {
+      previous: '지난주',
+      next: '다음 주',
+      thisWeek: '이번 주',
+      copyPrevious: '지난주 배정 가져오기',
+      copiedPrevious: '지난주 배정 {copied}자리를 이번 주 빈 자리에 넣었어요.',
     },
     start: {
       title: '시작하기: 4단계면 근무표가 완성돼요',
@@ -677,6 +686,13 @@ const I18N = {
       autoFillUndo: 'Undo',
       autoFillUndone: 'Undone.',
     },
+    week: {
+      previous: 'Previous week',
+      next: 'Next week',
+      thisWeek: 'This week',
+      copyPrevious: 'Bring in last week',
+      copiedPrevious: 'Filled {copied} empty seats with last week\'s assignments.',
+    },
     start: {
       title: 'Getting started: four steps to a roster',
       stations: 'Create parts and stations',
@@ -799,6 +815,45 @@ function cached(name, compute) {
   if (!renderCache) return compute();
   if (!renderCache.has(name)) renderCache.set(name, compute());
   return renderCache.get(name);
+}
+
+// Dates are local calendar days written as YYYY-MM-DD.
+function toIsoDate(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+function parseIsoDate(iso) {
+  const [y, m, d] = String(iso).split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+function addDays(iso, days) {
+  const date = parseIsoDate(iso);
+  date.setDate(date.getDate() + days);
+  return toIsoDate(date);
+}
+function mondayOf(date) {
+  const monday = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+  return toIsoDate(monday);
+}
+function currentWeekStart() {
+  return mondayOf(new Date());
+}
+function isIsoDate(value) {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+// The Monday of the week the current roster (state.schedule) belongs to.
+function activeWeekStart() {
+  return isIsoDate(state.weekStart) ? state.weekStart : currentWeekStart();
+}
+function shortDate(iso) {
+  const date = parseIsoDate(iso);
+  return `${date.getMonth() + 1}/${date.getDate()}`;
+}
+function dateForDay(dayKey) {
+  return addDays(activeWeekStart(), Math.max(0, dayIndex(dayKey)));
+}
+function weekRangeLabel(weekStart = activeWeekStart()) {
+  return `${shortDate(weekStart)}–${shortDate(addDays(weekStart, 6))}`;
 }
 
 function uid(prefix = 'id') {
@@ -989,7 +1044,9 @@ function createDefaultState() {
     levelTemplates,
     employees,
     requirements,
+    weekStart: '',
     schedule: {},
+    savedWeeks: {},
     trainingRecords: [],
     promotionChecklists: [],
     attendanceRecords: [],
@@ -1014,7 +1071,9 @@ function createBlankState(settings = createDefaultState().settings) {
     levelTemplates: [],
     employees: [],
     requirements: [],
+    weekStart: currentWeekStart(),
     schedule: {},
+    savedWeeks: {},
     trainingRecords: [],
     promotionChecklists: [],
     attendanceRecords: [],
@@ -1051,7 +1110,10 @@ function mergeState(parsed = {}) {
       ...req,
       stationRequirements: asArray(req?.stationRequirements),
     })),
+    weekStart: isIsoDate(parsed.weekStart) ? parsed.weekStart : currentWeekStart(),
     schedule: asObject(parsed.schedule, {}),
+    savedWeeks: Object.fromEntries(Object.entries(asObject(parsed.savedWeeks, {}))
+      .filter(([week, schedule]) => isIsoDate(week) && schedule && typeof schedule === 'object')),
     trainingRecords: asArray(parsed.trainingRecords),
     promotionChecklists: asArray(parsed.promotionChecklists),
     attendanceRecords: asArray(parsed.attendanceRecords),
@@ -1088,7 +1150,7 @@ function findLegacyStoredState() {
 }
 
 function makeFreshState() {
-  const fresh = createDefaultState();
+  const fresh = mergeState(createDefaultState());
   localStorage.setItem(STORE_KEY, JSON.stringify(fresh));
   return fresh;
 }
@@ -1518,6 +1580,61 @@ function autoFillEmptySeats() {
   return { filled, skipped };
 }
 
+// Removes assignments matching `drop(key, employeeId)` from this week and
+// every saved week.
+function removeAssignmentsWhere(drop) {
+  [state.schedule, ...Object.values(state.savedWeeks || {})].forEach((schedule) => {
+    Object.keys(schedule).forEach((key) => { if (drop(key, schedule[key])) delete schedule[key]; });
+  });
+}
+
+// Moves to another week: this week's roster is filed away and the target
+// week's roster (empty if it has none yet) becomes the current one.
+function switchWeek(weekStart) {
+  if (!isIsoDate(weekStart)) return;
+  const current = activeWeekStart();
+  if (weekStart === current) return;
+  state.savedWeeks = state.savedWeeks || {};
+  if (Object.keys(state.schedule).length) state.savedWeeks[current] = state.schedule;
+  else delete state.savedWeeks[current];
+  state.schedule = state.savedWeeks[weekStart] || {};
+  delete state.savedWeeks[weekStart];
+  state.weekStart = weekStart;
+  lastBulkChange = null;
+  recommendationContext = null;
+  replacementContext = null;
+}
+
+function previousWeekSchedule() {
+  return state.savedWeeks?.[addDays(activeWeekStart(), -7)] || null;
+}
+
+// Fills this week's empty seats with last week's assignments.
+function copyPreviousWeek() {
+  const previous = previousWeekSchedule() || {};
+  const seats = new Set(getRequirementSeatRows().map((row) => row.key));
+  const changes = [];
+  Object.entries(previous).forEach(([key, employeeId]) => {
+    if (!employeeId || state.schedule[key] || !seats.has(key)) return;
+    state.schedule[key] = employeeId;
+    changes.push({ key, before: '', after: employeeId });
+  });
+  return changes;
+}
+
+function renderWeekNav() {
+  const week = activeWeekStart();
+  const thisWeek = currentWeekStart();
+  const previous = previousWeekSchedule();
+  return `<div class="week-nav no-print">
+    <button class="btn small secondary" type="button" data-action="week-shift" data-days="-7" aria-label="${t('week.previous')}">◀</button>
+    <strong class="week-range">${weekRangeLabel(week)}</strong>
+    <button class="btn small secondary" type="button" data-action="week-shift" data-days="7" aria-label="${t('week.next')}">▶</button>
+    ${week !== thisWeek ? `<button class="btn small secondary" type="button" data-action="week-today">${t('week.thisWeek')}</button>` : `<span class="badge info">${t('week.thisWeek')}</span>`}
+    ${previous && Object.keys(previous).length ? `<button class="btn small secondary" type="button" data-action="copy-previous-week">${t('week.copyPrevious')}</button>` : ''}
+  </div>`;
+}
+
 // Restores each seat to what it was before a bulk change, unless it has
 // been edited by hand since.
 function undoScheduleChanges(changes) {
@@ -1557,7 +1674,7 @@ function copyDayRequirements(fromDay, toDays) {
   const targets = toDays.filter((day) => day !== fromDay);
   const removedIds = new Set(state.requirements.filter((req) => targets.includes(req.dayOfWeek)).map((req) => req.id));
   state.requirements = state.requirements.filter((req) => !removedIds.has(req.id));
-  Object.keys(state.schedule).forEach((key) => { if (removedIds.has(parseAssignmentKey(key).reqId)) delete state.schedule[key]; });
+  removeAssignmentsWhere((key) => removedIds.has(parseAssignmentKey(key).reqId));
   targets.forEach((day) => {
     source.forEach((req) => {
       state.requirements.push({
@@ -2213,9 +2330,9 @@ function renderEmployeeCard(emp) {
   `;
 }
 
-function renderDayPills(selectedDay, actionName) {
+function renderDayPills(selectedDay, actionName, withDates = false) {
   return `<div class="day-pills">
-    ${DAYS.map((day) => `<button class="day-pill ${selectedDay === day.key ? 'active' : ''}" data-action="${actionName}" data-day="${day.key}">${dayShort(day.key)}</button>`).join('')}
+    ${DAYS.map((day) => `<button class="day-pill ${selectedDay === day.key ? 'active' : ''}" data-action="${actionName}" data-day="${day.key}">${dayShort(day.key)}${withDates ? ` <span class="pill-date">${shortDate(dateForDay(day.key))}</span>` : ''}</button>`).join('')}
   </div>`;
 }
 
@@ -2325,7 +2442,8 @@ function renderSchedule() {
         <button class="btn small secondary" type="button" data-action="auto-fill-undo">${t('schedule.autoFillUndo')}</button>
       </div>
     </div>` : ''}
-    ${scheduleView === 'sheet' ? renderDayPills(selectedScheduleDay, 'schedule-day') : ''}
+    ${renderWeekNav()}
+    ${scheduleView === 'sheet' ? renderDayPills(selectedScheduleDay, 'schedule-day', true) : ''}
     ${scheduleView === 'sheet' && getDayRequirements(selectedScheduleDay).length ? renderCopyDayControls('assignments', selectedScheduleDay) : ''}
     ${views[scheduleView]()}
     ${recommendationContext ? renderRecommendationPanel() : ''}
@@ -2635,7 +2753,7 @@ function renderConfirmedRoster() {
         </div>
       </div>
       <div class="confirmed-print-title print-only">
-        <h2>${t('schedule.weeklyRoster')}</h2>
+        <h2>${t('schedule.weeklyRoster')} · ${weekRangeLabel()}</h2>
         <p>SkillShift Planner</p>
       </div>
       <div class="confirmed-sections">
@@ -2647,7 +2765,7 @@ function renderConfirmedRoster() {
                 <thead>
                   <tr>
                     <th class="phase-column">${t('schedule.phase')} / ${t('schedule.time')}</th>
-                    ${DAYS.map((day) => `<th>${dayLabel(day.key)}</th>`).join('')}
+                    ${DAYS.map((day) => `<th>${dayLabel(day.key)} ${shortDate(dateForDay(day.key))}</th>`).join('')}
                   </tr>
                 </thead>
                 <tbody>
@@ -3005,6 +3123,14 @@ function handleClick(e) {
     render();
     document.querySelector('.autofill-result')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
+  if (action === 'week-shift') { switchWeek(addDays(activeWeekStart(), num(target.dataset.days))); saveState(); render(); }
+  if (action === 'week-today') { switchWeek(currentWeekStart()); saveState(); render(); }
+  if (action === 'copy-previous-week') {
+    const changes = copyPreviousWeek();
+    lastBulkChange = { textKey: 'week.copiedPrevious', vars: { copied: changes.length }, changes };
+    saveState();
+    render();
+  }
   if (action === 'auto-fill-keep') { lastBulkChange = null; render(); }
   if (action === 'auto-fill-undo' && lastBulkChange) { undoScheduleChanges(lastBulkChange.changes); lastBulkChange = null; saveState(); render(); toast(t('schedule.autoFillUndone')); }
   if (action === 'copy-day-assignments') {
@@ -3220,7 +3346,7 @@ function addEmployee() {
 function deleteEmployee(id) {
   if (!confirm(t('messages.employeeDeleteConfirm'))) return;
   state.employees = state.employees.filter((emp) => emp.id !== id);
-  Object.keys(state.schedule).forEach((key) => { if (state.schedule[key] === id) delete state.schedule[key]; });
+  removeAssignmentsWhere((key, employeeId) => employeeId === id);
   saveState(); render();
 }
 function toggleEmployee(id) {
@@ -3251,7 +3377,7 @@ function addRequirement() {
 function deleteRequirement(id) {
   if (!confirm(t('messages.requirementDeleteConfirm'))) return;
   state.requirements = state.requirements.filter((req) => req.id !== id);
-  Object.keys(state.schedule).forEach((key) => { if (parseAssignmentKey(key).reqId === id) delete state.schedule[key]; });
+  removeAssignmentsWhere((key) => parseAssignmentKey(key).reqId === id);
   saveState(); render();
 }
 function addStationRequirement(reqId) {
@@ -3286,15 +3412,16 @@ function deleteStationRequirement(reqId, sreqId) {
   req.stationRequirements = req.stationRequirements.filter((r) => r.id !== sreqId);
   req.minTotalStaff = req.stationRequirements.length;
   req.recommendedTotalStaff = req.minTotalStaff;
-  Object.keys(state.schedule).forEach((key) => { const parsed = parseAssignmentKey(key); if (parsed.reqId === reqId && parsed.stationReqId === sreqId) delete state.schedule[key]; });
+  removeAssignmentsWhere((key) => { const parsed = parseAssignmentKey(key); return parsed.reqId === reqId && parsed.stationReqId === sreqId; });
   saveState(); render();
 }
 
 function exportRosterCsv() {
-  const rows = [['Day','Time','Block','Part','Station','Required Skill','Min Level','Min Step','Employee','Status']];
+  const rows = [['Date','Day','Time','Block','Part','Station','Required Skill','Min Level','Min Step','Employee','Status']];
   getRequirementSeatRows().forEach(({ req, sreq, key }) => {
     const status = getAssignmentStatus(req, sreq, key);
     rows.push([
+      dateForDay(req.dayOfWeek),
       dayLabel(req.dayOfWeek),
       `${req.startTime}-${req.endTime}`,
       req.label,
@@ -3312,7 +3439,7 @@ function exportRosterCsv() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'skillshift-roster.csv';
+  a.download = `skillshift-roster-${activeWeekStart()}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }
