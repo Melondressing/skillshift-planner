@@ -41,3 +41,16 @@ test("export script writes the default state as JSON", () => {
   assert.ok(Array.isArray(state.requirements) && state.requirements.length > 0);
   fs.rmSync(dir, { recursive: true, force: true });
 });
+
+test("saved data with missing lists is repaired instead of crashing", () => {
+  const { app } = loadApp();
+  const saved = app.createDefaultState();
+  saved.requirements[0].stationRequirements = undefined;
+  saved.schedule = null;
+  delete saved.stations;
+  const { getState, elements } = loadApp({ localStorage: { skillshift_planner_v14: JSON.stringify(saved) } });
+  assert.deepEqual(getState().requirements[0].stationRequirements.length, 0);
+  assert.equal(typeof getState().schedule, "object");
+  assert.ok(getState().stations.length > 0);
+  assert.ok(elements.get("validation").innerHTML.length > 0);
+});

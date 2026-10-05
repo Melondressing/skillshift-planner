@@ -245,6 +245,7 @@ export default function App() {
               />
               <View style={styles.rowWrap}>
                 {sampleState.parts
+                  .slice()
                   .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
                   .map((part) => (
                     <Pill key={part.id} tone="accent">
