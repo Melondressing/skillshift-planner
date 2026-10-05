@@ -2304,7 +2304,7 @@ function renderRequirementCard(req) {
 function renderSchedule() {
   const el = document.getElementById('schedule');
   const views = {
-    sheet: renderRosterSheet,
+    sheet: () => (isNarrowScreen() ? renderRosterCards() : renderRosterSheet()),
     confirmed: renderConfirmedRoster,
     member: renderScheduleMemberView,
     part: renderSchedulePartView,
@@ -2418,19 +2418,53 @@ function getHorizontalRosterData(dayKey) {
   return { reqs, rows };
 }
 
-function renderRosterCell(cell) {
-  if (!cell) return '<td class="empty-cell"><span>—</span></td>';
-  const { req, sreq, slotIndex, key } = cell;
+// The employee picker, status badge and recommend/replace buttons for one seat.
+function renderSeatControls({ req, sreq, slotIndex, key }, status) {
   const selected = state.schedule[key] || '';
-  const status = getAssignmentStatus(req, sreq, key);
-  return `<td class="matrix-cell ${status.className}">
-    <select class="matrix-select" data-action="assign-schedule" data-key="${key}">${employeeOptionsForRequirement(req, sreq, selected, key)}</select>
+  return `<select class="matrix-select" data-action="assign-schedule" data-key="${key}">${employeeOptionsForRequirement(req, sreq, selected, key)}</select>
     <div class="cell-meta"><span class="badge ${status.className}">${status.label}</span></div>
     <div class="matrix-actions">
       <button class="link-btn" data-action="show-recommend" data-req="${req.id}" data-sreq="${sreq.id}" data-slot="${slotIndex}">추천</button>
       <button class="link-btn" data-action="show-replace" data-req="${req.id}" data-sreq="${sreq.id}" data-slot="${slotIndex}" ${selected ? '' : 'disabled'}>대체</button>
+    </div>`;
+}
+
+function renderRosterCell(cell) {
+  if (!cell) return '<td class="empty-cell"><span>—</span></td>';
+  const status = getAssignmentStatus(cell.req, cell.sreq, cell.key);
+  return `<td class="matrix-cell ${status.className}">${renderSeatControls(cell, status)}</td>`;
+}
+
+const NARROW_SCREEN_QUERY = '(max-width: 720px)';
+function isNarrowScreen() {
+  return Boolean(window.matchMedia?.(NARROW_SCREEN_QUERY).matches);
+}
+
+// Phone layout of the roster sheet: one card per time block, one row per seat.
+function renderRosterCards() {
+  const reqs = getDayRequirements(selectedScheduleDay);
+  return `<div class="roster-cards">
+    <div class="section-head">
+      <h3>${dayLabel(selectedScheduleDay)} ${t('schedule.sheet')}</h3>
+      <button class="btn small secondary" data-action="export-roster-csv">${t('schedule.csv')}</button>
     </div>
-  </td>`;
+    ${reqs.map((req) => {
+      const seats = [...seatsByStation(req).values()].sort((a, b) =>
+        partSortValue(a.sreq.partId) - partSortValue(b.sreq.partId) ||
+        stationSortValue(a.sreq.stationId) - stationSortValue(b.sreq.stationId));
+      return `<div class="card roster-block-card">
+        <h4>${req.startTime}–${req.endTime} · ${escapeHtml(req.label)} ${req.isPeak ? `<span class="badge danger">${t('schedule.peak')}</span>` : ''}</h4>
+        ${seats.map((seat) => {
+          const status = getAssignmentStatus(seat.req, seat.sreq, seat.key);
+          const occurrence = seats.filter((s) => s.sreq.partId === seat.sreq.partId && s.sreq.stationId === seat.sreq.stationId).indexOf(seat);
+          return `<div class="roster-seat-row ${status.className}">
+            <div class="roster-seat-name"><strong>${escapeHtml(stationName(seat.sreq.stationId))}${occurrence ? ` #${occurrence + 1}` : ''}</strong><span class="small-text">${escapeHtml(partName(seat.sreq.partId))}</span></div>
+            <div class="roster-seat-controls">${renderSeatControls(seat, status)}</div>
+          </div>`;
+        }).join('') || `<p class="muted small-text">${t('requirements.noSeats')}</p>`}
+      </div>`;
+    }).join('') || `<div class="card"><p class="muted">${t('schedule.noRequirementDay')}</p></div>`}
+  </div>`;
 }
 
 function summarizeHorizontalRow(row, reqs) {
@@ -3324,6 +3358,7 @@ function init() {
   document.addEventListener('click', handleClick);
   document.addEventListener('change', handleChange);
   registerServiceWorker();
+  window.matchMedia?.(NARROW_SCREEN_QUERY).addEventListener?.('change', () => render());
   render();
 }
 

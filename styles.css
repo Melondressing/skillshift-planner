@@ -922,3 +922,10 @@ tr:last-child td { border-bottom: 0; }
 .start-steps li.done strong { color: var(--muted); text-decoration: line-through; }
 .start-check { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border); display: grid; place-items: center; font-size: 13px; color: white; }
 .start-steps li.done .start-check { background: var(--ok); border-color: var(--ok); }
+.roster-cards { display: grid; gap: 12px; }
+.roster-cards .section-head { margin-bottom: 0; }
+.roster-block-card h4 { margin: 0 0 8px; }
+.roster-seat-row { display: grid; grid-template-columns: minmax(80px, 30%) 1fr; gap: 8px; align-items: start; padding: 8px 0; border-top: 1px solid var(--line); }
+.roster-seat-name { display: grid; gap: 2px; }
+.roster-seat-controls .matrix-select { width: 100%; }
+.roster-seat-row.danger .roster-seat-name strong { color: var(--danger); }
