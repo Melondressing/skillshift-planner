@@ -915,3 +915,10 @@ tr:last-child td { border-bottom: 0; }
 .copy-day-targets { display: flex; gap: 4px; flex-wrap: wrap; }
 .copy-day-chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 999px; font-size: 13px; cursor: pointer; }
 .copy-day-chip input { width: auto; margin: 0; }
+.getting-started { margin-bottom: 14px; border-left: 4px solid var(--accent); }
+.start-steps { list-style: none; padding: 0; margin: 10px 0; display: grid; gap: 8px; }
+.start-steps li { display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; background: var(--panel-soft); }
+.start-steps li.next { background: #eff6ff; }
+.start-steps li.done strong { color: var(--muted); text-decoration: line-through; }
+.start-check { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border); display: grid; place-items: center; font-size: 13px; color: white; }
+.start-steps li.done .start-check { background: var(--ok); border-color: var(--ok); }

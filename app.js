@@ -325,6 +325,21 @@ const I18N = {
       autoFillUndo: '취소',
       autoFillUndone: '되돌렸어요.',
     },
+    start: {
+      title: '시작하기: 4단계면 근무표가 완성돼요',
+      stations: '파트와 스테이션 만들기',
+      stationsHelp: '예: 주방 → 화구, 프라이 / 홀 → 플로어, 캐셔',
+      staff: '직원 추가하고 할 수 있는 스테이션 고르기',
+      staffHelp: '시급, 근무 가능 시간, 스테이션별 숙련도',
+      requirements: '시간대별 필요 인원 정하기',
+      requirementsHelp: '하루를 시간 블록으로 나누고 필요한 자리를 추가',
+      assign: '자리에 직원 배정하기',
+      assignHelp: '"빈 자리 자동 채우기"로 한 번에 채울 수 있어요',
+      go: '하러 가기',
+      doneLabel: '완료',
+      sample: '예시 데이터로 둘러보기',
+      sampleHelp: '식당 예시(직원 7명, 주방/홀)를 불러옵니다. 설정에서 언제든 초기화할 수 있어요.',
+    },
     copy: {
       requirementsLabel: '{day} 시간 블록을 다른 요일에도 똑같이:',
       assignmentsLabel: '{day} 배정을 다른 요일의 같은 자리에 복사:',
@@ -661,6 +676,21 @@ const I18N = {
       autoFillKeep: 'Keep',
       autoFillUndo: 'Undo',
       autoFillUndone: 'Undone.',
+    },
+    start: {
+      title: 'Getting started: four steps to a roster',
+      stations: 'Create parts and stations',
+      stationsHelp: 'e.g. Kitchen → Grill, Fry / Hall → Floor, Cashier',
+      staff: 'Add staff and pick the stations they can work',
+      staffHelp: 'Rate, availability and proficiency per station',
+      requirements: 'Set how many people each time block needs',
+      requirementsHelp: 'Split the day into time blocks and add the seats needed',
+      assign: 'Assign staff to seats',
+      assignHelp: '"Auto-fill empty seats" can fill them in one go',
+      go: 'Go',
+      doneLabel: 'Done',
+      sample: 'Explore with sample data',
+      sampleHelp: 'Loads a sample restaurant (7 staff, kitchen and hall). You can reset it any time in Settings.',
     },
     copy: {
       requirementsLabel: 'Use the {day} time blocks on other days too:',
@@ -1749,6 +1779,7 @@ function renderDashboard() {
         <label class="small-text">${t('dashboard.ratioEdit')} <input type="number" value="${state.settings.targetLaborRatio}" data-setting="targetLaborRatio" /></label>
       </div>
     </div>
+    ${renderGettingStarted()}
     <div class="grid four">
       ${metricCard(t('dashboard.assignedHours'), `${totalHours.toFixed(1)}h`, t('dashboard.currentSchedule'))}
       ${metricCard(t('dashboard.totalCost'), money(cost), t('dashboard.budgetTarget', { amount: money(budget) }), budgetStatus)}
@@ -1765,6 +1796,46 @@ function renderDashboard() {
       <p class="small-text">${budgetNote}</p>
     </div>
   `;
+}
+
+// The four things a new store has to do, in order, and whether each is done.
+function getSetupProgress() {
+  return [
+    { key: 'stations', view: 'setup', done: state.parts.length > 0 && state.stations.length > 0 },
+    { key: 'staff', view: 'members', done: state.employees.some((emp) => Object.keys(emp.assignedSkills || {}).length) },
+    { key: 'requirements', view: 'roster', done: state.requirements.some((req) => req.stationRequirements?.length) },
+    { key: 'assign', view: 'roster', done: getAssignments().length > 0 },
+  ];
+}
+
+function isEmptyStore() {
+  return !state.parts.length && !state.stations.length && !state.employees.length && !state.requirements.length;
+}
+
+function renderGettingStarted() {
+  const steps = getSetupProgress();
+  if (steps.every((step) => step.done)) return '';
+  const next = steps.find((step) => !step.done);
+  return `<div class="card getting-started">
+    <h3>${t('start.title')}</h3>
+    <ol class="start-steps">
+      ${steps.map((step) => `<li class="${step.done ? 'done' : ''} ${step === next ? 'next' : ''}">
+        <span class="start-check" aria-hidden="true">${step.done ? '✓' : ''}</span>
+        <span><strong>${t(`start.${step.key}`)}</strong><br><span class="small-text">${t(`start.${step.key}Help`)}</span></span>
+        ${step.done ? `<span class="badge ok">${t('start.doneLabel')}</span>` : `<button class="btn small ${step === next ? '' : 'secondary'}" type="button" data-tab="${step.view}">${t('start.go')}</button>`}
+      </li>`).join('')}
+    </ol>
+    ${isEmptyStore() ? `<div class="inline-actions"><button class="btn secondary" type="button" data-action="load-sample">${t('start.sample')}</button><span class="small-text">${t('start.sampleHelp')}</span></div>` : ''}
+  </div>`;
+}
+
+// Fills an empty store with the built-in example roster, keeping settings.
+function loadSampleData() {
+  if (!isEmptyStore()) return;
+  state = { ...createDefaultState(), settings: { ...state.settings } };
+  selectedSkillId = state.skills[0]?.id || '';
+  saveState();
+  render();
 }
 
 function issueBadge(issue) {
@@ -2885,6 +2956,7 @@ function handleClick(e) {
   if (action === 'close-panels') { recommendationContext = null; replacementContext = null; render(); }
   if (action === 'apply-recommend') { state.schedule[target.dataset.key] = target.dataset.emp; saveState(); recommendationContext = null; replacementContext = null; render(); toast(t('messages.scheduled')); }
   if (action === 'reset-all') resetState();
+  if (action === 'load-sample') loadSampleData();
   if (action === 'export-json') exportJson();
   if (action === 'fix-issue') openIssueInRoster(target.dataset.req, target.dataset.sreq, target.dataset.slot === '' ? NaN : Number(target.dataset.slot));
   if (action === 'auto-fill') {
