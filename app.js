@@ -739,6 +739,16 @@ let recommendationContext = null;
 let replacementContext = null;
 let lastAutoFill = null;
 
+// Derived data (assignments, labor, recommendations, validation) shared by
+// every panel in one render pass. It only exists while render() runs, so
+// handlers that change state always compute fresh values.
+let renderCache = null;
+function cached(name, compute) {
+  if (!renderCache) return compute();
+  if (!renderCache.has(name)) renderCache.set(name, compute());
+  return renderCache.get(name);
+}
+
 function uid(prefix = 'id') {
   return `${prefix}_${Math.random().toString(36).slice(2, 9)}_${Date.now().toString(36)}`;
 }
@@ -1178,12 +1188,23 @@ function parseAssignmentKey(key) {
 }
 
 function getAssignments() {
-  return Object.entries(state.schedule)
+  return cached('assignments', () => Object.entries(state.schedule)
     .filter(([, employeeId]) => employeeId)
-    .map(([key, employeeId]) => ({ key, employeeId, ...parseAssignmentKey(key) }));
+    .map(([key, employeeId]) => ({ key, employeeId, ...parseAssignmentKey(key) })));
 }
 
-function getReqById(reqId) { return state.requirements.find((req) => req.id === reqId); }
+function assignmentsOf(employeeId) {
+  const byEmployee = cached('assignmentsByEmployee', () => getAssignments().reduce((acc, a) => {
+    (acc[a.employeeId] ||= []).push(a);
+    return acc;
+  }, {}));
+  return byEmployee[employeeId] || [];
+}
+
+function getReqById(reqId) {
+  if (!renderCache) return state.requirements.find((req) => req.id === reqId);
+  return cached('reqById', () => new Map(state.requirements.map((req) => [req.id, req]))).get(reqId);
+}
 function getStationReq(reqId, stationReqId) { return getReqById(reqId)?.stationRequirements.find((s) => s.id === stationReqId); }
 function getRequiredSkillId(stationReq) {
   if (stationReq?.requiredSkillId) return stationReq.requiredSkillId;
@@ -1198,8 +1219,13 @@ function requiredSkillName(stationReq) {
 function seatCount(sreq) {
   return Math.max(1, Number(sreq.requiredCount || 1));
 }
+function dayIndex(key) {
+  return DAYS.findIndex((d) => d.key === key);
+}
 function getRequirementSeatRows() {
-  const dayOrder = Object.fromEntries(DAYS.map((d, i) => [d.key, i]));
+  return cached('seatRows', buildRequirementSeatRows);
+}
+function buildRequirementSeatRows() {
   const rows = [];
   state.requirements.forEach((req) => {
     (req.stationRequirements || []).forEach((sreq) => {
@@ -1209,7 +1235,7 @@ function getRequirementSeatRows() {
     });
   });
   return rows.sort((a, b) =>
-    (dayOrder[a.req.dayOfWeek] - dayOrder[b.req.dayOfWeek]) ||
+    (dayIndex(a.req.dayOfWeek) - dayIndex(b.req.dayOfWeek)) ||
     (toMinutes(a.req.startTime) - toMinutes(b.req.startTime)) ||
     partName(a.sreq.partId).localeCompare(partName(b.sreq.partId)) ||
     stationName(a.sreq.stationId).localeCompare(stationName(b.sreq.stationId)) ||
@@ -1218,6 +1244,9 @@ function getRequirementSeatRows() {
 }
 
 function employeeWorkBreakdown(employeeId) {
+  return cached(`breakdown:${employeeId}`, () => computeWorkBreakdown(employeeId));
+}
+function computeWorkBreakdown(employeeId) {
   const employee = byId(state.employees, employeeId);
   const empty = {
     weekdayHours: 0,
@@ -1230,8 +1259,7 @@ function employeeWorkBreakdown(employeeId) {
     totalCost: 0,
   };
   if (!employee) return empty;
-  return getAssignments().reduce((acc, assignment) => {
-    if (assignment.employeeId !== employeeId) return acc;
+  return assignmentsOf(employeeId).reduce((acc, assignment) => {
     const req = getReqById(assignment.reqId);
     if (!req) return acc;
     const hours = durationHours(req.startTime, req.endTime);
@@ -1302,9 +1330,8 @@ function isEmployeeAvailable(employee, req) {
 }
 
 function hasOverlappingAssignment(employeeId, req, ignoreKey = '') {
-  return getAssignments().some((assignment) => {
+  return assignmentsOf(employeeId).some((assignment) => {
     if (assignment.key === ignoreKey) return false;
-    if (assignment.employeeId !== employeeId) return false;
     const other = getReqById(assignment.reqId);
     if (!other || other.dayOfWeek !== req.dayOfWeek) return false;
     return toMinutes(other.startTime) < toMinutes(req.endTime) && toMinutes(other.endTime) > toMinutes(req.startTime);
@@ -1408,10 +1435,10 @@ function getEmployeeLevelTemplate(employee, skillId) {
 }
 
 function getRecommendations(req, stationReq, excludeEmployeeId = '', ignoreKey = '') {
-  return state.employees
-    .filter((emp) => emp.id !== excludeEmployeeId)
+  const all = cached(`recs:${req.id}:${stationReq.id}:${ignoreKey}`, () => state.employees
     .map((emp) => ({ employee: emp, ...getCandidateStatus(emp, req, stationReq, ignoreKey) }))
-    .sort((a, b) => b.score - a.score);
+    .sort((a, b) => b.score - a.score));
+  return excludeEmployeeId ? all.filter((rec) => rec.employee.id !== excludeEmployeeId) : all;
 }
 
 // Fills every empty seat with the highest-scoring fully fitting ('fit')
@@ -1420,9 +1447,8 @@ function getRecommendations(req, stationReq, excludeEmployeeId = '', ignoreKey =
 function autoFillEmptySeats() {
   const filled = [];
   let skipped = 0;
-  const dayOrder = (key) => DAYS.findIndex((d) => d.key === key);
   const reqs = [...state.requirements].sort((a, b) =>
-    dayOrder(a.dayOfWeek) - dayOrder(b.dayOfWeek) || toMinutes(a.startTime) - toMinutes(b.startTime));
+    dayIndex(a.dayOfWeek) - dayIndex(b.dayOfWeek) || toMinutes(a.startTime) - toMinutes(b.startTime));
   reqs.forEach((req) => {
     req.stationRequirements.forEach((sreq) => {
       for (let i = 0; i < seatCount(sreq); i += 1) {
@@ -1465,7 +1491,14 @@ function openIssueInRoster(reqId, sreqId, slotIndex) {
 }
 
 function calculateValidation() {
+  return cached('validation', computeValidation);
+}
+function computeValidation() {
   const issues = [];
+  const assignmentsByReq = getAssignments().reduce((acc, a) => {
+    (acc[a.reqId] ||= []).push(a);
+    return acc;
+  }, {});
 
   state.requirements.forEach((req) => {
     req.stationRequirements.forEach((sreq) => {
@@ -1499,8 +1532,7 @@ function calculateValidation() {
       }
     });
 
-    const inSlot = getAssignments().filter((a) => a.reqId === req.id);
-    const duplicates = inSlot.reduce((acc, a) => {
+    const duplicates = (assignmentsByReq[req.id] || []).reduce((acc, a) => {
       acc[a.employeeId] = (acc[a.employeeId] || 0) + 1;
       return acc;
     }, {});
@@ -1526,19 +1558,39 @@ function calculateValidation() {
   return issues;
 }
 
+const PANEL_RENDERERS = {
+  dashboard: () => renderDashboard(),
+  parts: () => renderParts(),
+  skills: () => renderSkills(),
+  members: () => renderMembers(),
+  requirements: () => renderRequirements(),
+  schedule: () => renderSchedule(),
+  labor: () => renderLabor(),
+  validation: () => renderValidation(),
+  settings: () => renderSettings(),
+  roadmap: () => renderRoadmap(),
+};
+
+// Draws only the panels of the current view; hidden panels are emptied so
+// no stale inputs linger in the page.
 function render() {
-  syncDocumentLanguage();
-  renderTabs();
-  renderDashboard();
-  renderParts();
-  renderSkills();
-  renderMembers();
-  renderRequirements();
-  renderSchedule();
-  renderLabor();
-  renderValidation();
-  renderSettings();
-  renderRoadmap();
+  renderCache = new Map();
+  try {
+    syncDocumentLanguage();
+    renderTabs();
+    const visible = findView(activeTab).panels;
+    Object.entries(PANEL_RENDERERS).forEach(([id, draw]) => {
+      if (visible.includes(id)) draw();
+      else document.getElementById(id).innerHTML = '';
+    });
+  } finally {
+    renderCache = null;
+  }
+}
+
+function showView(id) {
+  activeTab = findView(id).id;
+  render();
 }
 
 function findView(id) {
@@ -2076,7 +2128,7 @@ function getAssignmentStatus(req, sreq, key) {
   if (!employeeId) return { label: '미배정', className: 'danger', detail: '직원을 선택하세요.' };
   const employee = byId(state.employees, employeeId);
   if (!employee) return { label: '직원 없음', className: 'danger', detail: '삭제된 직원입니다.' };
-  const status = getCandidateStatus(employee, req, sreq, key);
+  const status = getRecommendations(req, sreq, '', key).find((rec) => rec.employee.id === employeeId);
   if (status.category === 'fit') return { label: '적합', className: 'ok', detail: status.reasons.join(' · ') };
   if (status.category === 'partial') return { label: '주의', className: 'warn', detail: status.reasons.join(' · ') };
   if (status.category === 'emergency') return { label: '긴급', className: 'warn', detail: status.reasons.join(' · ') };
@@ -2419,9 +2471,9 @@ function renderRecommendationGroups(recs, key, isReplacement = false) {
 
 function renderScheduleMemberView() {
   return `<div class="grid">${state.employees.map((emp) => {
-    const assignments = getAssignments().filter((a) => a.employeeId === emp.id).sort((a,b) => {
+    const assignments = assignmentsOf(emp.id).slice().sort((a,b) => {
       const ra = getReqById(a.reqId); const rb = getReqById(b.reqId);
-      return DAYS.findIndex(d=>d.key===ra?.dayOfWeek) - DAYS.findIndex(d=>d.key===rb?.dayOfWeek) || toMinutes(ra?.startTime) - toMinutes(rb?.startTime);
+      return dayIndex(ra?.dayOfWeek) - dayIndex(rb?.dayOfWeek) || toMinutes(ra?.startTime) - toMinutes(rb?.startTime);
     });
     return `<div class="card"><h3>${escapeHtml(emp.name)} <span class="badge info">${employeeWeeklyHours(emp.id).toFixed(1)}h</span> <span class="badge">${money(employeeWeeklyCost(emp.id))}</span></h3>
       ${assignments.map((a) => {
@@ -2652,8 +2704,7 @@ function handleClick(e) {
   if (!target) return;
   const tab = target.dataset.tab;
   if (tab) {
-    activeTab = tab;
-    render();
+    showView(tab);
     return;
   }
   const action = target.dataset.action;

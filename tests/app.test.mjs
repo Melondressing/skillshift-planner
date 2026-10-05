@@ -46,7 +46,8 @@ test("unreadable saved data is backed up before starting fresh", () => {
 });
 
 test("reset lives at the bottom of settings, not in the header", () => {
-  const { elements } = loadApp();
+  const { app, elements } = loadApp();
+  app.showView("settings");
   const html = elements.get("settings").innerHTML;
   assert.ok(html.includes('data-action="reset-all"'));
   assert.ok(html.lastIndexOf('data-action="reset-all"') > html.indexOf("feedback-block"));
