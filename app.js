@@ -921,9 +921,11 @@ function createBlankState(settings = createDefaultState().settings) {
 function mergeState(parsed = {}) {
   const defaults = createDefaultState();
   const asArray = (value) => (Array.isArray(value) ? value : []);
+  const listOr = (value, fallback) => (Array.isArray(value) ? value : fallback);
+  const asObject = (value, fallback) => (value && typeof value === 'object' && !Array.isArray(value) ? value : fallback);
   const settings = {
     ...defaults.settings,
-    ...(parsed.settings || {}),
+    ...asObject(parsed.settings, {}),
   };
   settings.companyName = String(settings.companyName || '').trim();
   settings.employeePortalEnabled = Boolean(settings.employeePortalEnabled);
@@ -934,6 +936,16 @@ function mergeState(parsed = {}) {
     ...parsed,
     appVersion: Math.max(Number(parsed.appVersion || 0), defaults.appVersion),
     settings,
+    parts: listOr(parsed.parts, defaults.parts),
+    stations: listOr(parsed.stations, defaults.stations),
+    skills: listOr(parsed.skills, defaults.skills),
+    levelTemplates: listOr(parsed.levelTemplates, defaults.levelTemplates),
+    employees: listOr(parsed.employees, defaults.employees),
+    requirements: listOr(parsed.requirements, defaults.requirements).map((req) => ({
+      ...req,
+      stationRequirements: asArray(req?.stationRequirements),
+    })),
+    schedule: asObject(parsed.schedule, {}),
     trainingRecords: asArray(parsed.trainingRecords),
     promotionChecklists: asArray(parsed.promotionChecklists),
     attendanceRecords: asArray(parsed.attendanceRecords),
@@ -1117,13 +1129,15 @@ function requiredSkillName(stationReq) {
   const skillId = getRequiredSkillId(stationReq);
   return skillId ? skillName(skillId) : 'Station linked skill 없음';
 }
+function seatCount(sreq) {
+  return Math.max(1, Number(sreq.requiredCount || 1));
+}
 function getRequirementSeatRows() {
   const dayOrder = Object.fromEntries(DAYS.map((d, i) => [d.key, i]));
   const rows = [];
   state.requirements.forEach((req) => {
     (req.stationRequirements || []).forEach((sreq) => {
-      const count = Math.max(1, Number(sreq.requiredCount || 1));
-      for (let slotIndex = 0; slotIndex < count; slotIndex += 1) {
+      for (let slotIndex = 0; slotIndex < seatCount(sreq); slotIndex += 1) {
         rows.push({ req, sreq, slotIndex, key: assignmentKey(req.id, sreq.id, slotIndex) });
       }
     });
@@ -1322,7 +1336,7 @@ function calculateValidation() {
 
   state.requirements.forEach((req) => {
     req.stationRequirements.forEach((sreq) => {
-      for (let i = 0; i < Number(sreq.requiredCount); i += 1) {
+      for (let i = 0; i < seatCount(sreq); i += 1) {
         const key = assignmentKey(req.id, sreq.id, i);
         const employeeId = state.schedule[key];
         if (!employeeId) {
@@ -1479,9 +1493,9 @@ function renderParts() {
           <button class="btn" data-action="add-part">${t('common.add')}</button>
         </div>
         <div class="table-wrap"><table><thead><tr><th>${t('parts.partHeader')}</th><th>${t('parts.description')}</th><th>${t('parts.statusHeader')}</th><th></th></tr></thead><tbody>
-          ${state.parts.sort((a,b)=>a.sortOrder-b.sortOrder).map((part) => `
+          ${state.parts.slice().sort((a,b)=>a.sortOrder-b.sortOrder).map((part) => `
             <tr>
-              <td><span class="badge dark" style="background:${part.color}">${escapeHtml(part.name)}</span></td>
+              <td><span class="badge dark" style="background:${escapeHtml(part.color)}">${escapeHtml(part.name)}</span></td>
               <td>${escapeHtml(part.description)}</td>
               <td>${part.active ? `<span class="badge ok">${t('common.active')}</span>` : `<span class="badge">${t('common.inactive')}</span>`}</td>
               <td><button class="btn small danger" data-action="delete-part" data-id="${part.id}">${t('common.delete')}</button></td>
@@ -1497,7 +1511,7 @@ function renderParts() {
           <button class="btn" data-action="add-station">${t('common.add')}</button>
         </div>
         <div class="table-wrap"><table><thead><tr><th>${t('parts.partHeader')}</th><th>${t('parts.stationHeader')}</th><th>${t('parts.description')}</th><th></th></tr></thead><tbody>
-          ${state.stations.sort(sortStations).map((station) => `
+          ${state.stations.slice().sort(sortStations).map((station) => `
             <tr>
               <td>${escapeHtml(partName(station.partId))}</td>
               <td><span class="badge info">${escapeHtml(station.name)}</span></td>
@@ -1768,7 +1782,7 @@ function renderMembers() {
       </div>
     </div>
     ${grouped.map(({ part, employees }) => `
-      <h3 class="group-title"><span class="badge dark" style="background:${part.color}">${escapeHtml(part.name)}</span> ${employees.length}명</h3>
+      <h3 class="group-title"><span class="badge dark" style="background:${escapeHtml(part.color)}">${escapeHtml(part.name)}</span> ${employees.length}명</h3>
       <div class="grid">
         ${employees.map(renderEmployeeCard).join('') || `<p class="muted">${t('members.noEmployeesHere')}</p>`}
       </div>
@@ -2007,8 +2021,7 @@ function getHorizontalRosterData(dayKey) {
         stationName(a.stationId).localeCompare(stationName(b.stationId))
       )
       .forEach((sreq) => {
-        const count = Math.max(1, Number(sreq.requiredCount || 1));
-        for (let slotIndex = 0; slotIndex < count; slotIndex += 1) {
+        for (let slotIndex = 0; slotIndex < seatCount(sreq); slotIndex += 1) {
           const pairKey = `${sreq.partId}__${sreq.stationId}`;
           const occurrence = localCounts[pairKey] || 0;
           localCounts[pairKey] = occurrence + 1;
@@ -2174,8 +2187,7 @@ function getConfirmedRosterData() {
           .sort((a, b) => stationSortValue(a.stationId) - stationSortValue(b.stationId) || stationName(a.stationId).localeCompare(stationName(b.stationId)))
           .forEach((sreq) => {
             if (sreq.partId !== part.id) return;
-            const count = Math.max(1, Number(sreq.requiredCount || 1));
-            for (let slotIndex = 0; slotIndex < count; slotIndex += 1) {
+            for (let slotIndex = 0; slotIndex < seatCount(sreq); slotIndex += 1) {
               const pairKey = `${sreq.partId}__${sreq.stationId}`;
               const occurrence = localCounts[pairKey] || 0;
               localCounts[pairKey] = occurrence + 1;
@@ -2233,7 +2245,7 @@ function renderConfirmedRoster() {
       <div class="confirmed-sections">
         ${sections.map((section) => `
           <div class="confirmed-section">
-            <div class="confirmed-category-title" style="background:${section.color || '#111827'}">${escapeHtml(section.label)}</div>
+            <div class="confirmed-category-title" style="background:${escapeHtml(section.color || '#111827')}">${escapeHtml(section.label)}</div>
             <div class="table-wrap roster-wrap confirmed-week-wrap">
               <table class="confirmed-week-matrix compact-confirmed-matrix">
                 <thead>
@@ -2374,7 +2386,7 @@ function renderSchedulePartView() {
       const emp = byId(state.employees, a.employeeId); const req = getReqById(a.reqId);
       return emp && req ? sum + durationHours(req.startTime, req.endTime) * getRate(emp, req.dayOfWeek) : sum;
     }, 0);
-    return `<div class="card" style="margin-bottom:14px;"><h3><span class="badge dark" style="background:${part.color}">${escapeHtml(part.name)}</span> ${partAssignments.length} assignments · ${money(cost)}</h3>
+    return `<div class="card" style="margin-bottom:14px;"><h3><span class="badge dark" style="background:${escapeHtml(part.color)}">${escapeHtml(part.name)}</span> ${partAssignments.length} assignments · ${money(cost)}</h3>
       ${partAssignments.map((a) => {
         const req = getReqById(a.reqId); const sreq = getStationReq(a.reqId, a.stationReqId);
         return `<span class="badge ${req?.isPeak ? 'danger' : 'info'}">${dayLabel(req?.dayOfWeek)} ${req?.startTime}–${req?.endTime} · ${stationName(sreq?.stationId)} · ${employeeName(a.employeeId)}</span>`;
@@ -2411,7 +2423,7 @@ function renderLabor() {
     return `<tr><td>${escapeHtml(part.name)}</td><td>${h.toFixed(1)}h</td><td>${money(c)}</td></tr>`;
   }).join('');
 
-  el = document.getElementById('labor');
+  const el = document.getElementById('labor');
   el.innerHTML = `
     <div class="section-head"><div><h2>${t('tabs.labor')}</h2><p>${t('labor.subtitle')}</p></div></div>
     <div class="grid four">
@@ -3032,7 +3044,10 @@ function init() {
   document.getElementById('saveBtn').addEventListener('click', () => saveState(true));
   document.getElementById('resetBtn').addEventListener('click', resetState);
   document.getElementById('exportBtn').addEventListener('click', exportJson);
-  document.getElementById('importFile').addEventListener('change', (e) => importJson(e.target.files[0]));
+  document.getElementById('importFile').addEventListener('change', (e) => {
+    importJson(e.target.files[0]);
+    e.target.value = '';
+  });
   registerServiceWorker();
   render();
 }

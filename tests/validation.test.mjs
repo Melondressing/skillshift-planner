@@ -69,3 +69,10 @@ test("going over max weekly hours is flagged", () => {
   const over = app.calculateValidation().find((i) => i.type === "주간 최대시간 초과");
   assert.equal(over?.employee.id, "emp_minjun");
 });
+
+test("a seat with no requiredCount still counts as one seat", () => {
+  delete t.sreq(MON_LUNCH_PEAK, HOT(MON_LUNCH_PEAK)).requiredCount;
+  const unassigned = app.calculateValidation().filter((i) => i.type === "미배정");
+  assert.equal(unassigned.length, app.getRequirementSeatRows().length);
+  assert.ok(unassigned.some((i) => i.sreq?.id === HOT(MON_LUNCH_PEAK)));
+});
