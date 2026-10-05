@@ -2083,7 +2083,7 @@ function findView(id) {
 function renderTabs() {
   const tabs = document.getElementById('tabs');
   const isSettings = activeTab === 'settings' || activeTab === 'roadmap';
-  tabs.innerHTML = `${STEPS.map((step, i) => `<button class="tab-btn ${activeTab === step.id ? 'active' : ''}" data-tab="${step.id}"><span class="step-num">${i + 1}</span>${t(step.labelKey)}</button>`).join('')}
+  tabs.innerHTML = `${STEPS.map((step, i) => `<button class="tab-btn ${activeTab === step.id ? 'active' : ''}" data-tab="${step.id}"${activeTab === step.id ? ' aria-current="page"' : ''}><span class="step-num" aria-hidden="true">${i + 1}</span>${t(step.labelKey)}</button>`).join('')}
     <button class="tab-btn gear ${isSettings ? 'active' : ''}" data-tab="settings" title="${t('steps.settings')}" aria-label="${t('steps.settings')}">⚙</button>`;
   const panels = findView(activeTab).panels;
   document.querySelectorAll('.tab-panel').forEach((panel) => panel.classList.toggle('active', panels.includes(panel.id)));
