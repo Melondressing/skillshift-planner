@@ -6,10 +6,11 @@ import { fileURLToPath } from "url";
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const sourcePath = path.join(rootDir, "app.js");
 
-// Expose the script's top-level `let state` so callers can read and replace it.
+// Expose the script's top-level `let state` (to read and replace it) and the I18N table.
 const hooks = `
 ;globalThis.__getState = () => state;
 ;globalThis.__setState = (next) => { state = next; };
+;globalThis.__getI18n = () => I18N;
 `;
 
 function createElement() {
@@ -128,5 +129,6 @@ export function loadApp({ localStorage = {} } = {}) {
     elements,
     getState: () => context.__getState(),
     setState: (next) => context.__setState(next),
+    i18n: () => context.__getI18n(),
   };
 }
