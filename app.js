@@ -2,6 +2,13 @@ const STORE_KEY = 'skillshift_planner_v14';
 const STORE_PREFIX = 'skillshift_planner_';
 const APP_STATE_VERSION = 4;
 
+// Each step upgrades saved data to `version`. Steps run in order for anything
+// older, so add a new entry (instead of resetting) whenever the shape changes.
+const STATE_MIGRATIONS = [
+  // v1–v3 → v4: same data shape; only the built-in sample roster changed.
+  { version: 4, migrate: (saved) => saved },
+];
+
 const DAYS = [
   { key: 'monday', ko: { label: '월요일', short: '월' }, en: { label: 'Monday', short: 'Mon' } },
   { key: 'tuesday', ko: { label: '화요일', short: '화' }, en: { label: 'Tuesday', short: 'Tue' } },
@@ -138,6 +145,8 @@ const I18N = {
       feedbackUrlHelp: '아직 공백으로 두고, 나중에 질문 링크를 넣으면 된다.',
       feedbackOpenEmail: '질문 보내기',
       feedbackOpenLink: '질문 링크 열기',
+      dataTitle: '데이터 초기화',
+      resetHelp: '직원, 근무표, 필요 인원 등 입력한 내용을 모두 지웁니다. 되돌릴 수 없으니 먼저 JSON 내보내기로 백업하세요.',
       current: '현재 언어',
       koreanLabel: '한국어',
       englishLabel: '영어',
@@ -448,6 +457,8 @@ const I18N = {
       feedbackUrlHelp: 'Leave it blank for now, and add a question link later.',
       feedbackOpenEmail: 'Send question',
       feedbackOpenLink: 'Open question link',
+      dataTitle: 'Reset data',
+      resetHelp: 'Deletes everything you entered, including staff, roster and requirements. This cannot be undone, so export a JSON backup first.',
       current: 'Current language',
       koreanLabel: 'Korean',
       englishLabel: 'English',
@@ -681,8 +692,6 @@ function syncDocumentLanguage() {
   if (saveBtn) saveBtn.textContent = t('common.save');
   const exportBtn = document.getElementById('exportBtn');
   if (exportBtn) exportBtn.textContent = t('common.exportJson');
-  const resetBtn = document.getElementById('resetBtn');
-  if (resetBtn) resetBtn.textContent = t('common.resetAll');
 }
 
 let state = loadState();
@@ -962,22 +971,43 @@ function clearStoredState() {
   }
 }
 
+function migrateState(saved = {}) {
+  const from = Number(saved?.appVersion || 0);
+  const upgraded = STATE_MIGRATIONS
+    .filter((step) => step.version > from && step.version <= APP_STATE_VERSION)
+    .reduce((acc, step) => ({ ...step.migrate(acc), appVersion: step.version }), saved);
+  return mergeState(upgraded);
+}
+
+// Data saved by builds that used an older storage key (e.g. skillshift_planner_v13).
+function findLegacyStoredState() {
+  let best = null;
+  for (let i = 0; i < localStorage.length; i += 1) {
+    const key = localStorage.key(i);
+    const match = key && key !== STORE_KEY && key.startsWith(STORE_PREFIX) && key.slice(STORE_PREFIX.length).match(/^v(\d+)$/);
+    if (match && (!best || Number(match[1]) > best.n)) best = { key, n: Number(match[1]) };
+  }
+  return best ? localStorage.getItem(best.key) : null;
+}
+
 function makeFreshState() {
   const fresh = createDefaultState();
-  clearStoredState();
   localStorage.setItem(STORE_KEY, JSON.stringify(fresh));
   return fresh;
 }
 
 function loadState() {
+  let raw = null;
   try {
-    const raw = localStorage.getItem(STORE_KEY);
+    raw = localStorage.getItem(STORE_KEY) ?? findLegacyStoredState();
     if (!raw) return makeFreshState();
-    const parsed = JSON.parse(raw);
-    if (Number(parsed?.appVersion || 0) < APP_STATE_VERSION) return makeFreshState();
-    return mergeState(parsed);
+    const migrated = migrateState(JSON.parse(raw));
+    localStorage.setItem(STORE_KEY, JSON.stringify(migrated));
+    return migrated;
   } catch (err) {
     console.error(err);
+    // Keep unreadable data around instead of silently discarding it.
+    if (raw) localStorage.setItem(`${STORE_KEY}_unreadable`, raw);
     return makeFreshState();
   }
 }
@@ -2518,6 +2548,11 @@ function renderSettings() {
         </div>
       </div>
     </div>
+    <div class="card danger-zone" style="margin-top: 24px;">
+      <h3>${t('settings.dataTitle')}</h3>
+      <p class="small-text">${t('settings.resetHelp')}</p>
+      <button class="btn danger" type="button" data-action="reset-all">${t('common.resetAll')}</button>
+    </div>
   `;
 }
 
@@ -2561,6 +2596,7 @@ function handleClick(e) {
   if (action === 'show-replace') { replacementContext = { reqId: target.dataset.req, sreqId: target.dataset.sreq, slotIndex: Number(target.dataset.slot) }; recommendationContext = null; render(); }
   if (action === 'close-panels') { recommendationContext = null; replacementContext = null; render(); }
   if (action === 'apply-recommend') { state.schedule[target.dataset.key] = target.dataset.emp; saveState(false); recommendationContext = null; replacementContext = null; render(); toast(t('messages.scheduled')); }
+  if (action === 'reset-all') resetState();
   if (action === 'copy-company-code') { copyToClipboard(deriveCompanyCode(state.settings.companyName)); }
   if (action === 'copy-feedback-email') { copyToClipboard(state.settings.feedbackEmail || ''); }
   if (action === 'copy-feedback-link') { copyToClipboard(normalizeExternalUrl(state.settings.feedbackUrl) || ''); }
@@ -2927,7 +2963,7 @@ function importJson(file) {
   reader.onload = () => {
     try {
       const parsed = JSON.parse(reader.result);
-      state = mergeState(parsed);
+      state = migrateState(parsed);
       saveState(false);
       render();
       toast(t('messages.jsonImported'));
@@ -2952,7 +2988,6 @@ function init() {
   document.addEventListener('click', handleClick);
   document.addEventListener('change', handleChange);
   document.getElementById('saveBtn').addEventListener('click', () => saveState(true));
-  document.getElementById('resetBtn').addEventListener('click', resetState);
   document.getElementById('exportBtn').addEventListener('click', exportJson);
   document.getElementById('importFile').addEventListener('change', (e) => {
     importJson(e.target.files[0]);

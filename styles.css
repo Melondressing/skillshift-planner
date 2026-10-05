@@ -898,3 +898,5 @@ tr:last-child td { border-bottom: 0; }
 @media (max-width: 900px) {
   .member-skill-editor { grid-template-columns: 1fr !important; }
 }
+
+.danger-zone { border: 1px solid #fecaca; }

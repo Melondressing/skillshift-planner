@@ -5,6 +5,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { loadApp } from "../scripts/load-app.mjs";
+import { plain } from "./helpers.mjs";
 
 test("app boots and renders with no saved data", () => {
   const { app, getState, elements } = loadApp();
@@ -14,12 +15,43 @@ test("app boots and renders with no saved data", () => {
   assert.ok(elements.get("dashboard").innerHTML.length > 0);
 });
 
-test("saved data from an older app version is replaced with defaults", () => {
-  const { app, getState } = loadApp({
-    localStorage: { skillshift_planner_v14: JSON.stringify({ appVersion: 1, employees: [] }) },
-  });
+test("saved data from an older app version is migrated, not wiped", () => {
+  const { app } = loadApp();
+  const saved = app.createDefaultState();
+  saved.appVersion = 3;
+  saved.employees = saved.employees.slice(0, 1);
+  saved.employees[0].name = "Old Staff";
+  saved.schedule = { "req_monday_0__sreq_monday_0_0_0__0": saved.employees[0].id };
+  const { getState, app: loaded } = loadApp({ localStorage: { skillshift_planner_v14: JSON.stringify(saved) } });
   assert.equal(getState().appVersion, app.createDefaultState().appVersion);
+  assert.deepEqual(plain(getState().employees.map((e) => e.name)), ["Old Staff"]);
+  assert.equal(Object.keys(getState().schedule).length, 1);
+  assert.equal(JSON.parse(loaded.localStorage.getItem("skillshift_planner_v14")).appVersion, getState().appVersion);
+});
+
+test("data under an older storage key is carried over", () => {
+  const { getState } = loadApp({
+    localStorage: {
+      skillshift_planner_v12: JSON.stringify({ appVersion: 2, employees: [{ id: "a", name: "Too old" }] }),
+      skillshift_planner_v13: JSON.stringify({ appVersion: 3, employees: [{ id: "b", name: "Legacy" }] }),
+    },
+  });
+  assert.deepEqual(plain(getState().employees.map((e) => e.name)), ["Legacy"]);
+});
+
+test("unreadable saved data is backed up before starting fresh", () => {
+  const { app, getState } = loadApp({ localStorage: { skillshift_planner_v14: "{not json" } });
   assert.ok(getState().employees.length > 0);
+  assert.equal(app.localStorage.getItem("skillshift_planner_v14_unreadable"), "{not json");
+});
+
+test("reset lives at the bottom of settings, not in the header", () => {
+  const { elements } = loadApp();
+  const html = elements.get("settings").innerHTML;
+  assert.ok(html.includes('data-action="reset-all"'));
+  assert.ok(html.lastIndexOf('data-action="reset-all"') > html.indexOf("feedback-block"));
+  const indexHtml = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  assert.ok(!indexHtml.includes("resetBtn"));
 });
 
 test("saved data from the current version is kept", () => {
