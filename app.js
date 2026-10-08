@@ -325,7 +325,7 @@ const I18N = {
       confirmedHint: 'PDF 출력용 로스터다. 요일은 가로축, 시간대는 세로축이며 파트별로 한 페이지씩 출력되도록 압축했다.',
       rosterHintShort: '시간을 가로축에 둔 배치표다.',
       autoFill: '빈 자리 자동 채우기',
-      autoFillHint: '일주일 전체의 빈 자리에 완전 적합한 직원을 넣습니다. 피크 시간과 사람 구하기 어려운 자리부터 채웁니다.',
+      autoFillHint: '일주일 전체의 빈 자리에 완전 적합한 직원을 넣습니다. 한가한 시간에도 같은 숙련도 기준을 지키고, 피크 시간과 사람 구하기 어려운 자리부터 채웁니다.',
       autoFillResult: '{filled}자리를 채웠어요. {skipped}자리는 완전 적합한 직원이 없어 비워 뒀어요.',
       autoFillResultBudget: '{filled}자리를 채웠어요. {skipped}자리는 완전 적합한 직원이 없고, {overBudget}자리는 인건비 예산을 넘어서 비워 뒀어요.',
       autoFillBudget: '예산 안에서만 채우기',
@@ -1833,9 +1833,9 @@ function getRecommendations(req, stationReq, excludeEmployeeId = '', ignoreKey =
 
 // Fills empty seats with fully fitting ('fit') employees. Peak seats go
 // first, then the hardest seats (fewest fitting employees), so scarce skills
-// and the budget are not used up on easy seats. Among the fitting employees
-// the pick is the least over-qualified, then the cheapest, then the least
-// busy this week, so strong staff stay free for demanding seats. With
+// and the budget are not used up on easy seats. Every seat, busy or quiet,
+// keeps the same minimum Level/Step; among the employees who meet it the pick
+// is the cheapest, then the least busy this week. With
 // `withinBudget` a seat is left empty rather than pushing the week's labor
 // cost past the budget. A seat's candidates only change for the employee just
 // placed, so only that employee is re-checked. Returns what was filled so it
@@ -1869,8 +1869,7 @@ function autoFillEmptySeats({ withinBudget = Boolean(state.settings.autoFillWith
         }
       });
     });
-    const rank = (a, b) => a.skill.score - b.skill.score
-      || a.addedCost - b.addedCost
+    const rank = (a, b) => a.addedCost - b.addedCost
       || a.projectedHours / num(a.employee.maxWeeklyHours, 999) - b.projectedHours / num(b.employee.maxWeeklyHours, 999);
     const harder = (a, b) => Number(Boolean(b.req.isPeak)) - Number(Boolean(a.req.isPeak))
       || a.fits.size - b.fits.size

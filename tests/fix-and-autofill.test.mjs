@@ -102,3 +102,13 @@ test("the roster shows the budget switch and the budget-aware result message", (
   assert.match(elements.get("schedule").innerHTML, /data-setting="autoFillWithinBudget" checked/);
   assert.match(app.t("schedule.autoFillResultBudget", { filled: 5, skipped: 2, overBudget: 3 }), /3자리는 인건비 예산/);
 });
+
+test("quiet-time seats keep the same minimum level as busy ones", () => {
+  app.autoFillEmptySeats({ withinBudget: false });
+  const { schedule } = t.getState();
+  Object.entries(schedule).forEach(([key, employeeId]) => {
+    const { reqId, stationReqId } = app.parseAssignmentKey(key);
+    const status = app.getCandidateStatus(t.employee(employeeId), t.req(reqId), t.sreq(reqId, stationReqId), key);
+    assert.equal(status.skill.status, "ok", `${key} -> ${employeeId}`);
+  });
+});
