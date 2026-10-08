@@ -325,8 +325,11 @@ const I18N = {
       confirmedHint: 'PDF 출력용 로스터다. 요일은 가로축, 시간대는 세로축이며 파트별로 한 페이지씩 출력되도록 압축했다.',
       rosterHintShort: '시간을 가로축에 둔 배치표다.',
       autoFill: '빈 자리 자동 채우기',
-      autoFillHint: '일주일 전체의 빈 자리에 완전 적합한 직원 중 1순위를 넣습니다.',
+      autoFillHint: '일주일 전체의 빈 자리에 완전 적합한 직원을 넣습니다. 한가한 시간에도 같은 숙련도 기준을 지키고, 피크 시간과 사람 구하기 어려운 자리부터 채웁니다.',
       autoFillResult: '{filled}자리를 채웠어요. {skipped}자리는 완전 적합한 직원이 없어 비워 뒀어요.',
+      autoFillResultBudget: '{filled}자리를 채웠어요. {skipped}자리는 완전 적합한 직원이 없고, {overBudget}자리는 인건비 예산을 넘어서 비워 뒀어요.',
+      autoFillBudget: '예산 안에서만 채우기',
+      autoFillBudgetHint: '켜면 이번 주 인건비가 목표 인건비를 넘지 않는 선에서, 피크 시간과 사람 구하기 어려운 자리부터 채웁니다.',
       autoFillNothing: '채울 빈 자리가 없어요.',
       autoFillKeep: '확인',
       autoFillUndo: '취소',
@@ -799,8 +802,11 @@ const I18N = {
       confirmedHint: 'PDF output roster with days across the top and phases down the side, compressed to one page per Part.',
       rosterHintShort: 'A horizontal work grid with time across the top.',
       autoFill: 'Auto-fill empty seats',
-      autoFillHint: 'Puts the top fully-fitting staff member into every empty seat this week.',
+      autoFillHint: 'Puts fully-fitting staff into the empty seats this week, peak and hard-to-staff seats first.',
       autoFillResult: 'Filled {filled} seats. {skipped} seats had no fully-fitting staff and were left empty.',
+      autoFillResultBudget: 'Filled {filled} seats. {skipped} seats had no fully-fitting staff and {overBudget} would have gone over the labor budget, so they were left empty.',
+      autoFillBudget: 'Stay within labor budget',
+      autoFillBudgetHint: 'When on, fills peak and hard-to-staff seats first and stops before this week\'s labor cost passes the target budget.',
       autoFillNothing: 'There are no empty seats to fill.',
       autoFillKeep: 'Keep',
       autoFillUndo: 'Undo',
@@ -1299,6 +1305,7 @@ function createDefaultState() {
       companyName: '',
       employeePortalEnabled: true,
       laborBudget: 4000,
+      autoFillWithinBudget: true,
       targetLaborRatio: 28,
       currency: '$',
       weekLabel: '주방/홀 기본 스케줄',
@@ -1824,27 +1831,75 @@ function getRecommendations(req, stationReq, excludeEmployeeId = '', ignoreKey =
   return excludeEmployeeId ? all.filter((rec) => rec.employee.id !== excludeEmployeeId) : all;
 }
 
-// Fills every empty seat with the highest-scoring fully fitting ('fit')
-// employee, one seat at a time so later picks see earlier ones (overlaps,
-// weekly hours). Returns what was filled so it can be undone.
-function autoFillEmptySeats() {
+// Fills empty seats with fully fitting ('fit') employees. Peak seats go
+// first, then the hardest seats (fewest fitting employees), so scarce skills
+// and the budget are not used up on easy seats. Every seat, busy or quiet,
+// keeps the same minimum Level/Step; among the employees who meet it the pick
+// is the cheapest, then the least busy this week. With
+// `withinBudget` a seat is left empty rather than pushing the week's labor
+// cost past the budget. A seat's candidates only change for the employee just
+// placed, so only that employee is re-checked. Returns what was filled so it
+// can be undone: `skipped` seats had nobody who fits, `overBudget` seats were
+// left because of the budget.
+function autoFillEmptySeats({ withinBudget = Boolean(state.settings.autoFillWithinBudget) } = {}) {
   const filled = [];
   let skipped = 0;
-  const reqs = [...state.requirements].sort((a, b) =>
-    dayIndex(a.dayOfWeek) - dayIndex(b.dayOfWeek) || toMinutes(a.startTime) - toMinutes(b.startTime));
-  reqs.forEach((req) => {
-    req.stationRequirements.forEach((sreq) => {
-      for (let i = 0; i < seatCount(sreq); i += 1) {
-        const key = assignmentKey(req.id, sreq.id, i);
-        if (state.schedule[key]) continue;
-        const best = getRecommendations(req, sreq, '', key).find((rec) => rec.category === 'fit');
-        if (!best) { skipped += 1; continue; }
-        state.schedule[key] = best.employee.id;
-        filled.push({ key, employeeId: best.employee.id });
-      }
+  let overBudget = 0;
+  // Totals are re-read after every placement; keep them cached in between.
+  const outerCache = renderCache;
+  renderCache = new Map();
+  try {
+    const budget = withinBudget ? num(state.settings.laborBudget) : 0;
+    let cost = totalLaborCost();
+    const reqs = [...state.requirements].sort((a, b) =>
+      dayIndex(a.dayOfWeek) - dayIndex(b.dayOfWeek) || toMinutes(a.startTime) - toMinutes(b.startTime));
+    const seats = [];
+    reqs.forEach((req) => {
+      req.stationRequirements.forEach((sreq) => {
+        for (let i = 0; i < seatCount(sreq); i += 1) {
+          const key = assignmentKey(req.id, sreq.id, i);
+          if (state.schedule[key]) continue;
+          const fits = new Map();
+          state.employees.forEach((employee) => {
+            const status = getCandidateStatus(employee, req, sreq, key);
+            if (status.category === 'fit') fits.set(employee.id, status);
+          });
+          if (fits.size) seats.push({ key, req, sreq, fits, order: seats.length });
+          else skipped += 1;
+        }
+      });
     });
-  });
-  return { filled, skipped };
+    const rank = (a, b) => a.addedCost - b.addedCost
+      || a.projectedHours / num(a.employee.maxWeeklyHours, 999) - b.projectedHours / num(b.employee.maxWeeklyHours, 999);
+    const harder = (a, b) => Number(Boolean(b.req.isPeak)) - Number(Boolean(a.req.isPeak))
+      || a.fits.size - b.fits.size
+      || a.order - b.order;
+    while (seats.length) {
+      let pick = 0;
+      seats.forEach((seat, i) => { if (harder(seat, seats[pick]) < 0) pick = i; });
+      const [seat] = seats.splice(pick, 1);
+      const affordable = [...seat.fits]
+        .map(([id, status]) => ({ employee: byId(state.employees, id), ...status }))
+        .filter((rec) => !budget || cost + rec.addedCost <= budget)
+        .sort(rank);
+      if (!affordable.length) { overBudget += 1; continue; }
+      const best = affordable[0];
+      state.schedule[seat.key] = best.employee.id;
+      filled.push({ key: seat.key, employeeId: best.employee.id });
+      cost += best.addedCost;
+      renderCache.clear();
+      for (let i = seats.length - 1; i >= 0; i -= 1) {
+        const other = seats[i];
+        const status = getCandidateStatus(best.employee, other.req, other.sreq, other.key);
+        if (status.category === 'fit') other.fits.set(best.employee.id, status);
+        else other.fits.delete(best.employee.id);
+        if (!other.fits.size) { seats.splice(i, 1); skipped += 1; }
+      }
+    }
+  } finally {
+    renderCache = outerCache;
+  }
+  return { filled, skipped, overBudget };
 }
 
 // Removes assignments matching `drop(key, employeeId)` from this week and
@@ -2702,6 +2757,7 @@ function renderSchedule() {
       <div><h2>${t('tabs.schedule')}</h2><p>${t('schedule.subtitle')}</p></div>
       <div class="inline-actions">
         ${Object.keys(views).map((view) => `<button class="btn ${scheduleView === view ? '' : 'secondary'}" data-action="schedule-view" data-view="${view}">${t(`schedule.${view}`)}</button>`).join('')}
+        <label class="small-text inline-check" title="${escapeHtml(t('schedule.autoFillBudgetHint'))}"><input type="checkbox" data-setting="autoFillWithinBudget" ${state.settings.autoFillWithinBudget ? 'checked' : ''} /> ${t('schedule.autoFillBudget')}</label>
         <button class="btn" type="button" title="${escapeHtml(t('schedule.autoFillHint'))}" data-action="auto-fill">${t('schedule.autoFill')}</button>
       </div>
     </div>
@@ -3381,10 +3437,10 @@ function handleClick(e) {
   if (action === 'fix-issue') openIssueInRoster(target.dataset.req, target.dataset.sreq, target.dataset.slot === '' ? NaN : Number(target.dataset.slot));
   if (action === 'auto-fill') {
     const result = autoFillEmptySeats();
-    if (!result.filled.length && !result.skipped) { toast(t('schedule.autoFillNothing')); return; }
+    if (!result.filled.length && !result.skipped && !result.overBudget) { toast(t('schedule.autoFillNothing')); return; }
     lastBulkChange = {
-      textKey: 'schedule.autoFillResult',
-      vars: { filled: result.filled.length, skipped: result.skipped },
+      textKey: result.overBudget ? 'schedule.autoFillResultBudget' : 'schedule.autoFillResult',
+      vars: { filled: result.filled.length, skipped: result.skipped, overBudget: result.overBudget },
       changes: result.filled.map(({ key, employeeId }) => ({ key, before: '', after: employeeId })),
     };
     saveState();
