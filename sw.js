@@ -1,7 +1,19 @@
-const CACHE_NAME = 'skillshift-planner-v28';
+const CACHE_NAME = 'skillshift-planner-v29';
 const CORE_ASSETS = [
   './index.html',
   './styles.css',
+  './js/config.js',
+  './js/i18n.js',
+  './js/state.js',
+  './js/helpers.js',
+  './js/labor.js',
+  './js/scheduling.js',
+  './js/validation.js',
+  './js/render.js',
+  './js/views-setup.js',
+  './js/views-roster.js',
+  './js/views-reports.js',
+  './js/actions.js',
   './app.js',
   './manifest.webmanifest',
   './icon.svg',

@@ -4,6 +4,12 @@ import vm from "vm";
 import { fileURLToPath } from "url";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+
+// The app is a set of plain scripts that share one global scope; index.html
+// lists them in load order, so the tests load exactly the same files.
+const indexHtml = fs.readFileSync(path.join(rootDir, "index.html"), "utf8");
+const sourceFiles = [...indexHtml.matchAll(/<script src="([^"]+)"><\/script>/g)].map((m) => m[1]);
+if (!sourceFiles.length) throw new Error("No <script src> found in index.html");
 const sourcePath = path.join(rootDir, "app.js");
 
 // Expose the script's top-level `let state` so callers can read and replace it.
@@ -66,7 +72,7 @@ function createLocalStorage(initial = {}) {
   };
 }
 
-// Runs app.js inside a VM with minimal browser stubs and returns its global
+// Runs the app scripts inside a VM with minimal browser stubs and returns its global
 // context, so its top-level functions (and state via getState/setState) can be called.
 export function loadApp({ localStorage = {}, narrowScreen = false } = {}) {
   const elements = new Map();
@@ -119,7 +125,8 @@ export function loadApp({ localStorage = {}, narrowScreen = false } = {}) {
   };
 
   vm.createContext(context);
-  vm.runInContext(`${fs.readFileSync(sourcePath, "utf8")}\n${hooks}`, context, {
+  const source = sourceFiles.map((file) => fs.readFileSync(path.join(rootDir, file), "utf8")).join("\n");
+  vm.runInContext(`${source}\n${hooks}`, context, {
     filename: sourcePath,
     timeout: 5000,
   });

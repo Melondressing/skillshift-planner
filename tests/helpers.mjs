@@ -4,7 +4,7 @@ import { loadApp } from "../scripts/load-app.mjs";
 // through JSON before deep comparisons.
 export const plain = (value) => JSON.parse(JSON.stringify(value));
 
-// Loads app.js once and returns helpers that reset to the built-in default
+// Loads the app scripts once and returns helpers that reset to the built-in default
 // roster (fixed ids, empty schedule) before each test.
 export function setupApp() {
   const loaded = loadApp();

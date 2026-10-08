@@ -27,7 +27,13 @@ The live web app is here:
 
 - `index.html`
 - `styles.css`
-- `app.js`
+- `app.js` (starts the app)
+- `js/` (the app code, loaded in the order listed in `index.html`):
+  - `config.js` constants, `i18n.js` Korean/English text, `state.js` saved data and dates,
+  - `helpers.js` lookups and formatting, `labor.js` hours and cost, `scheduling.js` candidates, auto-fill and weeks,
+  - `validation.js` roster checks, `render.js` panel switching and dashboard,
+  - `views-setup.js` parts/skills/members/requirements, `views-roster.js` roster sheet, `views-reports.js` labor/checks/settings,
+  - `actions.js` click/change handlers and import/export
 - `manifest.webmanifest`
 - `sw.js`
 - `icon.svg`
@@ -44,7 +50,7 @@ Then open `http://localhost:8000` in your browser.
 
 ## Tests
 
-Tests use Node's built-in test runner (Node 20+), with no dependencies to install. They load `app.js` in a sandbox with small browser stubs and cover staff recommendations, roster validation and labor cost.
+Tests use Node's built-in test runner (Node 20+), with no dependencies to install. They load the app scripts in a sandbox with small browser stubs and cover staff recommendations, roster validation and labor cost.
 
 ```bash
 npm test
