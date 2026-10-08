@@ -8,7 +8,7 @@ const outputPath = path.resolve(rootDir, process.argv[2] || path.join("mobile", 
 const { getState } = loadApp();
 const state = getState();
 if (!state) {
-  throw new Error("Failed to export default state from app.js");
+  throw new Error("Failed to export default state from the app scripts");
 }
 
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });

@@ -14,7 +14,7 @@ jobs:
         with:
           node-version: 22
       - name: Check syntax
-        run: node --check app.js && node --check sw.js
+        run: for f in app.js js/*.js sw.js; do node --check "$f"; done
       - name: Run tests
         run: npm test
       - name: Run export script
